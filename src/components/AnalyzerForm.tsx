@@ -37,29 +37,43 @@ export default function AnalyzerForm({ onResult, onLoading }: AnalyzerFormProps)
 
     const formData = new FormData(e.currentTarget);
 
-    // Validation and parsing data
+    // Parse form values
+    const sport = formData.get('sport') as string;
+    const league = formData.get('league') as string;
+    const homeTeam = formData.get('teamA') as string;
+    const awayTeam = formData.get('teamB') as string;
+    const oddsHome = parseFloat(formData.get('oddsHome') as string) || 0;
+    const oddsDraw = parseFloat(formData.get('oddsDraw') as string) || null;
+    const oddsAway = parseFloat(formData.get('oddsAway') as string) || 0;
+    const userPick = formData.get('userPrediction') as string;
+    const userStake = parseFloat(formData.get('stake') as string) || 0;
+
+    // Build request in new format
     const data: AnalyzeRequest = {
-      sport: formData.get('sport') as string,
-      league: formData.get('league') as string,
-      teamA: formData.get('teamA') as string,
-      teamB: formData.get('teamB') as string,
-      odds: {
-        home: parseFloat(formData.get('oddsHome') as string) || 0,
-        draw: parseFloat(formData.get('oddsDraw') as string) || 0,
-        away: parseFloat(formData.get('oddsAway') as string) || 0,
+      matchData: {
+        sport,
+        league,
+        homeTeam,
+        awayTeam,
+        sourceType: 'MANUAL',
+        odds: {
+          home: oddsHome,
+          draw: oddsDraw,
+          away: oddsAway,
+        },
       },
-      userPrediction: formData.get('userPrediction') as string,
-      stake: parseFloat(formData.get('stake') as string) || 0,
+      userPick,
+      userStake,
     };
 
     // Basic validation
-    if (!data.sport || !data.league || !data.teamA || !data.teamB) {
+    if (!sport || !league || !homeTeam || !awayTeam) {
       setError('Please fill in all required fields.');
       onLoading(false);
       return;
     }
 
-    if (data.odds.home <= 0 || data.odds.away <= 0) {
+    if (data.matchData.odds.home <= 0 || data.matchData.odds.away <= 0) {
       setError('Odds must be greater than 0.');
       onLoading(false);
       return;

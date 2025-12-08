@@ -1,21 +1,22 @@
 /**
  * API Route: /api/analyze
  * 
- * AI-powered sports match analysis endpoint using OpenAI GPT-4.
- * Returns comprehensive analysis following the BetSense AI JSON schema.
+ * AI-powered sports match analysis endpoint.
+ * Returns analysis strictly following the FINAL JSON schema.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import {
-  AnalyzeRequestV2,
-  AnalyzeResponseV2,
+  AnalyzeRequest,
+  AnalyzeResponse,
   RiskLevel,
   ValueFlag,
   Trend,
   DataQuality,
   BestValueSide,
   MarketType,
+  MarketConfidence,
 } from '@/types';
 
 // ============================================
@@ -37,63 +38,42 @@ function getOpenAIClient(): OpenAI | null {
 }
 
 // ============================================
-// SYSTEM PROMPT
+// FINAL SYSTEM PROMPT
 // ============================================
 
-const SYSTEM_PROMPT = `You are an expert sports analyst AI for BetSense AI, an educational sports analytics platform. Your role is to analyze football matches and provide structured, data-driven insights strictly for informational and educational purposes.
+const SYSTEM_PROMPT = `You are an assistant that analyzes football matches strictly for educational and informational purposes.
 
-=== ABSOLUTE RULES ===
-1. NEVER give betting tips or tell the user what to bet.
-2. NEVER imply certainty, guaranteed outcomes, or "safe bets".
-3. NEVER recommend specific wagers or stake amounts.
-4. ALWAYS include responsible gambling messaging.
-5. ALWAYS return ONLY a single valid JSON object - no markdown, no commentary, no prose before or after.
-6. ALWAYS stay realistic and avoid overconfidence in probability estimates.
+You MUST follow these rules:
+- NEVER give betting tips.
+- NEVER tell the user what to bet.
+- NEVER imply certainty or guaranteed outcomes.
+- ALWAYS include responsible gambling messaging.
+- ALWAYS return a SINGLE valid JSON object EXACTLY following the schema provided below.
 
-=== YOUR ANALYTICAL TASKS ===
-1. PROBABILITY ESTIMATION: Estimate realistic win/draw/loss probabilities based on available data. Account for uncertainty by avoiding extreme values (rarely below 10% or above 75% unless clearly justified).
+Your tasks include:
+- Estimating probabilities
+- Comparing implied odds
+- Identifying potential value levels cautiously
+- Explaining risk
+- Analyzing psychological biases
+- Evaluating momentum and form trends
+- Scoring market stability
+- Describing tactical dynamics
+- Generating an expert-style one-liner
+- Incorporating user context
 
-2. VALUE ANALYSIS: Compare your estimated probabilities against implied probabilities from bookmaker odds. Flag value levels cautiously - HIGH value should be rare and well-justified.
+You must return ONLY valid JSON, no commentary, no markdown, no prose.
 
-3. RISK ASSESSMENT: Evaluate overall risk considering match volatility, data quality, and unpredictability factors. Be conservative - most matches should be MEDIUM or HIGH risk.
-
-4. PSYCHOLOGICAL BIAS DETECTION: Identify cognitive biases that might affect perception of this match (recency bias, favorite-longshot bias, home team bias, etc.).
-
-5. MOMENTUM & FORM: Score team momentum (1-10) and identify trends based on recent performance. Use UNKNOWN when data is insufficient.
-
-6. MARKET STABILITY: Assess how predictable each market type is for this specific match. Lower confidence when data is limited.
-
-7. UPSET POTENTIAL: Calculate realistic upset probability. Upsets in football are common (20-35% typically for favorites).
-
-8. TACTICAL ANALYSIS: Describe playing styles, key matchup factors, and generate a neutral expert-style conclusion.
-
-9. USER CONTEXT: If the user provided a pick, comment on it neutrally without endorsing or discouraging. Never say "good pick" or "bad pick".
-
-=== DATA QUALITY RULES ===
-- HIGH: Live API data with recent form, head-to-head, multiple bookmaker odds
-- MEDIUM: API data but limited stats, or manual entry with reasonable detail
-- LOW: Manual entry with minimal data, or critical information missing
-
-=== PROBABILITY GUIDELINES ===
-- Probabilities must sum to approximately 100% for homeWin + draw + awayWin
-- Avoid extreme confidence: rarely go below 15% or above 70%
-- Heavy favorites: 55-70% max
-- Clear underdogs: 15-25% typical
-- Over/under probabilities should reflect realistic goal expectations
-
-=== OUTPUT FORMAT ===
-Return ONLY this JSON structure with every field populated:
+=== REQUIRED JSON SCHEMA ===
 
 {
   "success": true,
-  "confidenceScore": <number 1-100>,
   "matchInfo": {
-    "matchId": <string | null>,
-    "sport": <string>,
-    "leagueName": <string>,
-    "matchDate": <string ISO 8601>,
-    "homeTeam": <string>,
-    "awayTeam": <string>,
+    "sport": "<string>",
+    "leagueName": "<string>",
+    "matchDate": "<string ISO 8601>",
+    "homeTeam": "<string>",
+    "awayTeam": "<string>",
     "sourceType": "MANUAL" | "API",
     "dataQuality": "LOW" | "MEDIUM" | "HIGH"
   },
@@ -101,7 +81,6 @@ Return ONLY this JSON structure with every field populated:
     "homeWin": <number 0-100 | null>,
     "draw": <number 0-100 | null>,
     "awayWin": <number 0-100 | null>,
-    "overUnderLine": <number | null>,
     "over": <number 0-100 | null>,
     "under": <number 0-100 | null>
   },
@@ -117,16 +96,16 @@ Return ONLY this JSON structure with every field populated:
       "awayWin": "NONE" | "LOW" | "MEDIUM" | "HIGH"
     },
     "bestValueSide": "HOME" | "DRAW" | "AWAY" | "NONE",
-    "valueCommentShort": <string>,
-    "valueCommentDetailed": <string>
+    "valueCommentShort": "<string>",
+    "valueCommentDetailed": "<string>"
   },
   "riskAnalysis": {
     "overallRiskLevel": "LOW" | "MEDIUM" | "HIGH",
-    "riskExplanation": <string>,
-    "bankrollImpact": <string>,
-    "psychologicalBias": {
-      "name": <string>,
-      "description": <string>
+    "riskExplanation": "<string>",
+    "bankrollImpact": "<string>",
+    "psychologyBias": {
+      "name": "<string>",
+      "description": "<string>"
     }
   },
   "momentumAndForm": {
@@ -134,53 +113,52 @@ Return ONLY this JSON structure with every field populated:
     "awayMomentumScore": <number 1-10 | null>,
     "homeTrend": "RISING" | "FALLING" | "STABLE" | "UNKNOWN",
     "awayTrend": "RISING" | "FALLING" | "STABLE" | "UNKNOWN",
-    "keyFormFactors": [<string>, ...]
+    "keyFormFactors": ["<string>", ...]
   },
   "marketStability": {
     "markets": {
       "main_1x2": {
         "stability": "LOW" | "MEDIUM" | "HIGH",
         "confidence": <1-5>,
-        "comment": <string>
+        "comment": "<string>"
       },
       "over_under": {
         "stability": "LOW" | "MEDIUM" | "HIGH",
         "confidence": <1-5>,
-        "comment": <string>
+        "comment": "<string>"
       },
       "btts": {
         "stability": "LOW" | "MEDIUM" | "HIGH",
         "confidence": <1-5>,
-        "comment": <string>
+        "comment": "<string>"
       }
     },
     "safestMarketType": "1X2" | "OVER_UNDER" | "BTTS" | "NONE",
-    "safestMarketExplanation": <string>
+    "safestMarketExplanation": "<string>"
   },
   "upsetPotential": {
     "upsetProbability": <number 0-100>,
-    "upsetComment": <string>
+    "upsetComment": "<string>"
   },
   "tacticalAnalysis": {
-    "stylesSummary": <string>,
-    "matchNarrative": <string>,
-    "keyMatchFactors": [<string>, ...],
-    "expertConclusionOneLiner": <string>
+    "stylesSummary": "<string>",
+    "matchNarrative": "<string>",
+    "keyMatchFactors": ["<string>", ...],
+    "expertConclusionOneLiner": "<string>"
   },
   "userContext": {
-    "userPick": <string | null>,
-    "userStake": <number | null>,
-    "pickComment": <string>
+    "userPick": "<string>",
+    "userStake": <number>,
+    "pickComment": "<string>"
   },
   "responsibleGambling": {
-    "coreNote": <string>,
-    "tailoredNote": <string>
+    "coreNote": "<string>",
+    "tailoredNote": "<string>"
   },
   "meta": {
     "modelVersion": "1.0.0",
-    "analysisGeneratedAt": <string ISO 8601>,
-    "dataSourcesUsed": [<string>, ...],
-    "warnings": [<string>, ...]
+    "analysisGeneratedAt": "<string ISO 8601>",
+    "warnings": ["<string>", ...]
   }
 }`;
 
@@ -189,7 +167,7 @@ Return ONLY this JSON structure with every field populated:
 // ============================================
 
 function buildUserPrompt(
-  matchData: AnalyzeRequestV2['matchData'],
+  matchData: AnalyzeRequest['matchData'],
   userPick?: string,
   userStake?: number
 ): string {
@@ -202,19 +180,19 @@ ${matchDataJson}
 
 === USER CONTEXT ===
 User's Pick: ${userPick || 'None provided'}
-User's Stake: ${userStake !== undefined ? `€${userStake}` : 'Not specified'}
+User's Stake: ${userStake !== undefined ? userStake : 0}
 
 === INSTRUCTIONS ===
-1. Analyze all available data and fill every field in the JSON schema.
-2. If critical data is missing (no team names), set "success": false and populate the "error" field.
-3. If data is limited but usable, set "dataQuality": "LOW", add warnings to meta.warnings, and still produce a complete analysis.
-4. Calculate implied probabilities from odds using: impliedProb = (1 / decimalOdds) * 100
-5. Be realistic with probabilities - football is unpredictable. Avoid extremes.
-6. For the user's pick, provide neutral commentary without endorsing or discouraging it.
-7. Always include a responsible gambling note tailored to the stake amount and risk level.
-8. Use "modelVersion": "1.0.0" and set "analysisGeneratedAt" to the current ISO timestamp.
+1. Fill every field of the JSON schema.
+2. If data is missing, mark quality as LOW, add warnings, and still produce a full analysis.
+3. If something is critically missing (e.g. no teams), set success=false and fill the "error" field.
+4. Use realistic football logic and statistical reasoning.
+5. NEVER exceed the JSON schema boundaries.
+6. NEVER recommend a bet.
+7. Calculate implied probabilities from odds using: impliedProb = (1 / decimalOdds) * 100
+8. Use "modelVersion": "1.0.0" and set "analysisGeneratedAt" to current ISO timestamp.
 
-Return ONLY the JSON object. No other text.`;
+Return ONLY the JSON object defined in the schema. No other text.`;
 }
 
 // ============================================
@@ -225,7 +203,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Support both legacy and new request formats
+    // Normalize request to standard format
     const normalizedRequest = normalizeRequest(body);
     
     // Validate minimum required fields
@@ -270,13 +248,29 @@ export async function POST(request: NextRequest) {
 // REQUEST NORMALIZATION
 // ============================================
 
-function normalizeRequest(body: any): AnalyzeRequestV2 {
-  // Check if it's the new format
+function normalizeRequest(body: any): AnalyzeRequest {
+  // Check if it's the new format with matchData
   if (body.matchData) {
-    return body as AnalyzeRequestV2;
+    return {
+      matchData: {
+        sport: body.matchData.sport || 'Soccer',
+        league: body.matchData.league || 'Unknown League',
+        homeTeam: body.matchData.homeTeam || '',
+        awayTeam: body.matchData.awayTeam || '',
+        matchDate: body.matchData.matchDate,
+        sourceType: body.matchData.sourceType || 'MANUAL',
+        odds: {
+          home: body.matchData.odds?.home || 0,
+          draw: body.matchData.odds?.draw ?? null,
+          away: body.matchData.odds?.away || 0,
+        },
+      },
+      userPick: body.userPick,
+      userStake: body.userStake,
+    };
   }
 
-  // Convert legacy format to new format
+  // Convert legacy format
   return {
     matchData: {
       sport: body.sport || 'Soccer',
@@ -286,7 +280,7 @@ function normalizeRequest(body: any): AnalyzeRequestV2 {
       sourceType: 'MANUAL',
       odds: {
         home: body.odds?.home || 0,
-        draw: body.odds?.draw || null,
+        draw: body.odds?.draw ?? null,
         away: body.odds?.away || 0,
       },
     },
@@ -299,7 +293,7 @@ function normalizeRequest(body: any): AnalyzeRequestV2 {
 // VALIDATION
 // ============================================
 
-function validateRequest(req: AnalyzeRequestV2): { valid: boolean; error?: string } {
+function validateRequest(req: AnalyzeRequest): { valid: boolean; error?: string } {
   if (!req.matchData) {
     return { valid: false, error: 'matchData is required' };
   }
@@ -307,7 +301,7 @@ function validateRequest(req: AnalyzeRequestV2): { valid: boolean; error?: strin
     return { valid: false, error: 'homeTeam and awayTeam are required' };
   }
   if (!req.matchData.odds || req.matchData.odds.home <= 0 || req.matchData.odds.away <= 0) {
-    return { valid: false, error: 'Valid odds (home and away) are required' };
+    return { valid: false, error: 'Valid odds (home and away > 0) are required' };
   }
   return { valid: true };
 }
@@ -318,8 +312,8 @@ function validateRequest(req: AnalyzeRequestV2): { valid: boolean; error?: strin
 
 async function callOpenAI(
   openai: OpenAI,
-  request: AnalyzeRequestV2
-): Promise<AnalyzeResponseV2> {
+  request: AnalyzeRequest
+): Promise<AnalyzeResponse> {
   const userPrompt = buildUserPrompt(
     request.matchData,
     request.userPick,
@@ -354,17 +348,14 @@ async function callOpenAI(
 
 function validateAndSanitizeResponse(
   raw: any,
-  request: AnalyzeRequestV2
-): AnalyzeResponseV2 {
+  request: AnalyzeRequest
+): AnalyzeResponse {
   const now = new Date().toISOString();
   
-  // Ensure all required fields exist with proper defaults
   return {
     success: raw.success ?? true,
-    confidenceScore: clamp(raw.confidenceScore ?? 50, 1, 100),
     
     matchInfo: {
-      matchId: raw.matchInfo?.matchId ?? request.matchData.matchId ?? null,
       sport: raw.matchInfo?.sport ?? request.matchData.sport ?? 'Soccer',
       leagueName: raw.matchInfo?.leagueName ?? request.matchData.league ?? 'Unknown',
       matchDate: raw.matchInfo?.matchDate ?? request.matchData.matchDate ?? now,
@@ -378,7 +369,6 @@ function validateAndSanitizeResponse(
       homeWin: clampNullable(raw.probabilities?.homeWin, 0, 100),
       draw: clampNullable(raw.probabilities?.draw, 0, 100),
       awayWin: clampNullable(raw.probabilities?.awayWin, 0, 100),
-      overUnderLine: raw.probabilities?.overUnderLine ?? request.matchData.odds.overUnderLine ?? null,
       over: clampNullable(raw.probabilities?.over, 0, 100),
       under: clampNullable(raw.probabilities?.under, 0, 100),
     },
@@ -403,9 +393,9 @@ function validateAndSanitizeResponse(
       overallRiskLevel: validateRiskLevel(raw.riskAnalysis?.overallRiskLevel),
       riskExplanation: raw.riskAnalysis?.riskExplanation ?? 'Risk assessment not available.',
       bankrollImpact: raw.riskAnalysis?.bankrollImpact ?? 'Consider your bankroll limits.',
-      psychologicalBias: {
-        name: raw.riskAnalysis?.psychologicalBias?.name ?? 'General Caution',
-        description: raw.riskAnalysis?.psychologicalBias?.description ?? 'Be aware of cognitive biases when analyzing matches.',
+      psychologyBias: {
+        name: raw.riskAnalysis?.psychologyBias?.name ?? 'General Caution',
+        description: raw.riskAnalysis?.psychologyBias?.description ?? 'Be aware of cognitive biases when analyzing matches.',
       },
     },
     
@@ -444,8 +434,8 @@ function validateAndSanitizeResponse(
     },
     
     userContext: {
-      userPick: request.userPick ?? null,
-      userStake: request.userStake ?? null,
+      userPick: request.userPick ?? '',
+      userStake: request.userStake ?? 0,
       pickComment: raw.userContext?.pickComment ?? 'No specific commentary on your selection.',
     },
     
@@ -459,9 +449,6 @@ function validateAndSanitizeResponse(
     meta: {
       modelVersion: '1.0.0',
       analysisGeneratedAt: now,
-      dataSourcesUsed: Array.isArray(raw.meta?.dataSourcesUsed)
-        ? raw.meta.dataSourcesUsed
-        : [request.matchData.sourceType === 'API' ? 'The Odds API' : 'Manual Input'],
       warnings: Array.isArray(raw.meta?.warnings) ? raw.meta.warnings : [],
     },
     
@@ -524,10 +511,10 @@ function validateMarketType(type: any): MarketType {
   return valid.includes(normalized as MarketType) ? (normalized as MarketType) : 'NONE';
 }
 
-function validateMarketStabilityItem(item: any): { stability: RiskLevel; confidence: 1 | 2 | 3 | 4 | 5; comment: string } {
+function validateMarketStabilityItem(item: any): { stability: RiskLevel; confidence: MarketConfidence; comment: string } {
   return {
     stability: validateRiskLevel(item?.stability),
-    confidence: clamp(item?.confidence ?? 3, 1, 5) as 1 | 2 | 3 | 4 | 5,
+    confidence: clamp(item?.confidence ?? 3, 1, 5) as MarketConfidence,
     comment: item?.comment ?? 'Market analysis not available.',
   };
 }
@@ -536,14 +523,12 @@ function validateMarketStabilityItem(item: any): { stability: RiskLevel; confide
 // ERROR RESPONSE
 // ============================================
 
-function createErrorResponse(error: string): AnalyzeResponseV2 {
+function createErrorResponse(error: string): AnalyzeResponse {
   const now = new Date().toISOString();
   
   return {
     success: false,
-    confidenceScore: 0,
     matchInfo: {
-      matchId: null,
       sport: 'Unknown',
       leagueName: 'Unknown',
       matchDate: now,
@@ -556,7 +541,6 @@ function createErrorResponse(error: string): AnalyzeResponseV2 {
       homeWin: null,
       draw: null,
       awayWin: null,
-      overUnderLine: null,
       over: null,
       under: null,
     },
@@ -571,7 +555,7 @@ function createErrorResponse(error: string): AnalyzeResponseV2 {
       overallRiskLevel: 'HIGH',
       riskExplanation: 'Unable to assess risk due to error.',
       bankrollImpact: 'Exercise caution.',
-      psychologicalBias: { name: 'N/A', description: 'N/A' },
+      psychologyBias: { name: 'N/A', description: 'N/A' },
     },
     momentumAndForm: {
       homeMomentumScore: null,
@@ -600,8 +584,8 @@ function createErrorResponse(error: string): AnalyzeResponseV2 {
       expertConclusionOneLiner: 'Analysis unavailable.',
     },
     userContext: {
-      userPick: null,
-      userStake: null,
+      userPick: '',
+      userStake: 0,
       pickComment: 'N/A',
     },
     responsibleGambling: {
@@ -611,7 +595,6 @@ function createErrorResponse(error: string): AnalyzeResponseV2 {
     meta: {
       modelVersion: '1.0.0',
       analysisGeneratedAt: now,
-      dataSourcesUsed: [],
       warnings: ['Analysis failed due to an error.'],
     },
     error,
@@ -622,7 +605,7 @@ function createErrorResponse(error: string): AnalyzeResponseV2 {
 // FALLBACK ANALYSIS (NO OPENAI)
 // ============================================
 
-function generateFallbackAnalysis(request: AnalyzeRequestV2): AnalyzeResponseV2 {
+function generateFallbackAnalysis(request: AnalyzeRequest): AnalyzeResponse {
   const now = new Date().toISOString();
   const { matchData, userPick, userStake } = request;
 
@@ -655,10 +638,8 @@ function generateFallbackAnalysis(request: AnalyzeRequestV2): AnalyzeResponseV2 
 
   return {
     success: true,
-    confidenceScore: 45,
     
     matchInfo: {
-      matchId: matchData.matchId ?? null,
       sport: matchData.sport || 'Soccer',
       leagueName: matchData.league || 'Unknown League',
       matchDate: matchData.matchDate || now,
@@ -672,7 +653,6 @@ function generateFallbackAnalysis(request: AnalyzeRequestV2): AnalyzeResponseV2 
       homeWin,
       draw,
       awayWin,
-      overUnderLine: matchData.odds.overUnderLine ?? null,
       over: null,
       under: null,
     },
@@ -697,7 +677,7 @@ function generateFallbackAnalysis(request: AnalyzeRequestV2): AnalyzeResponseV2 
       overallRiskLevel: riskLevel,
       riskExplanation: `Risk level determined by odds spread. Maximum odds: ${maxOdds.toFixed(2)}.`,
       bankrollImpact: 'Without detailed analysis, consider reducing stake size.',
-      psychologicalBias: {
+      psychologyBias: {
         name: 'Insufficient Data Bias',
         description: 'Be cautious when making decisions with limited information.',
       },
@@ -734,8 +714,8 @@ function generateFallbackAnalysis(request: AnalyzeRequestV2): AnalyzeResponseV2 
     },
     
     userContext: {
-      userPick: userPick ?? null,
-      userStake: userStake ?? null,
+      userPick: userPick ?? '',
+      userStake: userStake ?? 0,
       pickComment: userPick 
         ? 'Your selection has been noted. Consider the limited analysis available.'
         : 'No selection provided.',
@@ -751,7 +731,6 @@ function generateFallbackAnalysis(request: AnalyzeRequestV2): AnalyzeResponseV2 
     meta: {
       modelVersion: '1.0.0',
       analysisGeneratedAt: now,
-      dataSourcesUsed: ['Manual Input', 'Odds Calculation'],
       warnings: [
         'AI analysis unavailable - using fallback odds-based calculation',
         'Limited data quality - exercise additional caution',

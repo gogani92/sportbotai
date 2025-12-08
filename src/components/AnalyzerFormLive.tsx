@@ -163,29 +163,44 @@ export default function AnalyzerFormLive({ onResult, onLoading }: AnalyzerFormPr
 
     const formData = new FormData(e.currentTarget);
 
-    // Validate and parse data
+    // Parse form values
+    const sport = formData.get('sport') as string || selectedEvent?.sport_title || 'Soccer';
+    const league = formData.get('league') as string || selectedEvent?.sport_title || 'Unknown League';
+    const homeTeam = formData.get('teamA') as string || selectedEvent?.home_team || '';
+    const awayTeam = formData.get('teamB') as string || selectedEvent?.away_team || '';
+    const oddsHome = parseFloat(formData.get('oddsHome') as string) || selectedEvent?.analysis?.averageOdds.home || 0;
+    const oddsDraw = parseFloat(formData.get('oddsDraw') as string) || selectedEvent?.analysis?.averageOdds.draw || null;
+    const oddsAway = parseFloat(formData.get('oddsAway') as string) || selectedEvent?.analysis?.averageOdds.away || 0;
+    const userPick = formData.get('userPrediction') as string;
+    const userStake = parseFloat(formData.get('stake') as string) || 0;
+
+    // Build request in new format
     const data: AnalyzeRequest = {
-      sport: formData.get('sport') as string || selectedEvent?.sport_title || '',
-      league: formData.get('league') as string || selectedEvent?.sport_title || '',
-      teamA: formData.get('teamA') as string || selectedEvent?.home_team || '',
-      teamB: formData.get('teamB') as string || selectedEvent?.away_team || '',
-      odds: {
-        home: parseFloat(formData.get('oddsHome') as string) || selectedEvent?.analysis?.averageOdds.home || 0,
-        draw: parseFloat(formData.get('oddsDraw') as string) || selectedEvent?.analysis?.averageOdds.draw || 0,
-        away: parseFloat(formData.get('oddsAway') as string) || selectedEvent?.analysis?.averageOdds.away || 0,
+      matchData: {
+        sport,
+        league,
+        homeTeam,
+        awayTeam,
+        sourceType: 'API',
+        matchDate: selectedEvent?.commence_time,
+        odds: {
+          home: oddsHome,
+          draw: oddsDraw,
+          away: oddsAway,
+        },
       },
-      userPrediction: formData.get('userPrediction') as string,
-      stake: parseFloat(formData.get('stake') as string) || 0,
+      userPick,
+      userStake,
     };
 
     // Basic validation
-    if (!data.teamA || !data.teamB) {
+    if (!homeTeam || !awayTeam) {
       setError('Please fill in the teams or select a match.');
       onLoading(false);
       return;
     }
 
-    if (data.odds.home <= 0 || data.odds.away <= 0) {
+    if (data.matchData.odds.home <= 0 || data.matchData.odds.away <= 0) {
       setError('Odds must be greater than 0.');
       onLoading(false);
       return;
