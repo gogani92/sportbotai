@@ -1,0 +1,148 @@
+/**
+ * Result Card komponenta
+ * 
+ * Prikazuje rezultate AI analize meča.
+ */
+
+import { AnalyzeResponse, RiskLevel } from '@/types';
+
+interface ResultCardProps {
+  result: AnalyzeResponse;
+}
+
+// Boje za različite nivoe rizika
+const riskColors: Record<RiskLevel, { bg: string; text: string; border: string }> = {
+  LOW: {
+    bg: 'bg-green-50',
+    text: 'text-green-800',
+    border: 'border-green-200',
+  },
+  MEDIUM: {
+    bg: 'bg-amber-50',
+    text: 'text-amber-800',
+    border: 'border-amber-200',
+  },
+  HIGH: {
+    bg: 'bg-red-50',
+    text: 'text-red-800',
+    border: 'border-red-200',
+  },
+};
+
+// Labele za nivoe rizika
+const riskLabels: Record<RiskLevel, string> = {
+  LOW: 'Nizak Rizik',
+  MEDIUM: 'Srednji Rizik',
+  HIGH: 'Visok Rizik',
+};
+
+export default function ResultCard({ result }: ResultCardProps) {
+  const risk = riskColors[result.riskLevel];
+
+  return (
+    <div className="card space-y-6">
+      {/* Header sa rizikom */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold text-gray-900">Rezultat Analize</h3>
+        <span
+          className={`px-4 py-2 rounded-full text-sm font-semibold ${risk.bg} ${risk.text} ${risk.border} border`}
+        >
+          {riskLabels[result.riskLevel]}
+        </span>
+      </div>
+
+      {/* Verovatnoće */}
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 mb-3">Procenjene Verovatnoće</h4>
+        <div className="grid grid-cols-3 gap-4">
+          {/* Domaćin */}
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-xs text-gray-500 mb-1">Domaćin (1)</p>
+            <p className="text-2xl font-bold text-primary-600">
+              {result.probabilities.homeWin !== null
+                ? `${result.probabilities.homeWin}%`
+                : '-'}
+            </p>
+          </div>
+
+          {/* Nerešeno */}
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-xs text-gray-500 mb-1">Nerešeno (X)</p>
+            <p className="text-2xl font-bold text-gray-600">
+              {result.probabilities.draw !== null
+                ? `${result.probabilities.draw}%`
+                : '-'}
+            </p>
+          </div>
+
+          {/* Gost */}
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-xs text-gray-500 mb-1">Gost (2)</p>
+            <p className="text-2xl font-bold text-primary-600">
+              {result.probabilities.awayWin !== null
+                ? `${result.probabilities.awayWin}%`
+                : '-'}
+            </p>
+          </div>
+        </div>
+
+        {/* Over/Under ako postoje */}
+        {(result.probabilities.over !== null || result.probabilities.under !== null) && (
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-500 mb-1">Over 2.5</p>
+              <p className="text-xl font-bold text-gray-700">
+                {result.probabilities.over !== null ? `${result.probabilities.over}%` : '-'}
+              </p>
+            </div>
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-500 mb-1">Under 2.5</p>
+              <p className="text-xl font-bold text-gray-700">
+                {result.probabilities.under !== null ? `${result.probabilities.under}%` : '-'}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Value komentar */}
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">Value Analiza</h4>
+        <p className="text-gray-600 leading-relaxed">{result.valueComment}</p>
+      </div>
+
+      {/* Analiza */}
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">Rezime Analize</h4>
+        <p className="text-gray-600 leading-relaxed">{result.analysisSummary}</p>
+      </div>
+
+      {/* Responsible gambling note */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <svg
+            className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <div>
+            <h4 className="text-sm font-semibold text-amber-800 mb-1">Upozorenje</h4>
+            <p className="text-sm text-amber-700">{result.responsibleGamblingNote}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <p className="text-xs text-gray-400 text-center">
+        Ova analiza je generisana AI algoritmom i ima isključivo informativni karakter.
+        Ne snosimo odgovornost za odluke bazirane na ovoj analizi.
+      </p>
+    </div>
+  );
+}

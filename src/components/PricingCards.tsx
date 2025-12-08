@@ -1,0 +1,218 @@
+/**
+ * Pricing Cards komponenta
+ * 
+ * Prikazuje tri pricing plana: FREE, PRO, PREMIUM
+ * Sa Stripe checkout integracijom (skeleton).
+ */
+
+'use client';
+
+import { useState } from 'react';
+
+// Tipovi za pricing planove
+interface PricingPlan {
+  id: string;
+  name: string;
+  price: string;
+  priceId: string; // Stripe Price ID - PROMENI OVO nakon kreiranja proizvoda u Stripe-u
+  description: string;
+  features: string[];
+  highlighted?: boolean;
+  buttonText: string;
+}
+
+// Definicija planova
+// TODO: Zameni priceId sa pravim Stripe Price ID-jevima iz tvog Stripe dashboarda
+const plans: PricingPlan[] = [
+  {
+    id: 'free',
+    name: 'Free',
+    price: '€0',
+    priceId: '', // Free plan nema Stripe checkout
+    description: 'Probaj osnovne funkcije besplatno',
+    features: [
+      '3 analize dnevno',
+      'Osnovni sportovi (fudbal)',
+      'Standardna AI analiza',
+      'Email podrška',
+    ],
+    buttonText: 'Započni Besplatno',
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: '€9.99',
+    priceId: 'price_PRO_PLACEHOLDER', // TODO: Zameni sa pravim Stripe Price ID-jem
+    description: 'Za ozbiljne analitičare',
+    features: [
+      '30 analiza dnevno',
+      'Svi sportovi',
+      'Napredna AI analiza',
+      'Value betting indikatori',
+      'Prioritetna podrška',
+      'Istorija analiza (30 dana)',
+    ],
+    highlighted: true,
+    buttonText: 'Aktiviraj Pro',
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    price: '€19.99',
+    priceId: 'price_PREMIUM_PLACEHOLDER', // TODO: Zameni sa pravim Stripe Price ID-jem
+    description: 'Maksimalne mogućnosti',
+    features: [
+      'Neograničene analize',
+      'Svi sportovi + eSports',
+      'Premium AI model',
+      'Napredna value detekcija',
+      'API pristup',
+      'Prioritetna podrška 24/7',
+      'Istorija analiza (neograničeno)',
+      'Custom alerta',
+    ],
+    buttonText: 'Aktiviraj Premium',
+  },
+];
+
+export default function PricingCards() {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Funkcija za Stripe checkout
+  const handleCheckout = async (plan: PricingPlan) => {
+    // Free plan ne ide kroz Stripe
+    if (plan.id === 'free') {
+      // TODO: Implementiraj registraciju za free plan
+      alert('Registracija za Free plan - implementiraj ovu funkcionalnost');
+      return;
+    }
+
+    setLoading(plan.id);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: plan.priceId,
+          planName: plan.name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Greška pri kreiranju checkout sesije');
+      }
+
+      // Redirect na Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Neočekivana greška');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      {plans.map((plan) => (
+        <div
+          key={plan.id}
+          className={`card relative ${
+            plan.highlighted
+              ? 'border-2 border-primary-600 shadow-xl scale-105'
+              : 'border border-gray-200'
+          }`}
+        >
+          {/* Popular badge */}
+          {plan.highlighted && (
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-sm font-bold px-4 py-1 rounded-full">
+              NAJPOPULARNIJI
+            </div>
+          )}
+
+          {/* Plan header */}
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+            <div className="mb-2">
+              <span className={`text-4xl font-bold ${plan.highlighted ? 'text-primary-600' : 'text-gray-900'}`}>
+                {plan.price}
+              </span>
+              <span className="text-gray-500">/mesečno</span>
+            </div>
+            <p className="text-gray-600 text-sm">{plan.description}</p>
+          </div>
+
+          {/* Features lista */}
+          <ul className="space-y-3 mb-8">
+            {plan.features.map((feature, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <svg
+                  className={`w-5 h-5 flex-shrink-0 ${plan.highlighted ? 'text-primary-600' : 'text-accent-green'}`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-gray-700 text-sm">{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* CTA Button */}
+          <button
+            onClick={() => handleCheckout(plan)}
+            disabled={loading === plan.id}
+            className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 ${
+              plan.highlighted
+                ? 'bg-primary-600 text-white hover:bg-primary-700'
+                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+            } ${loading === plan.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {loading === plan.id ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Učitavanje...
+              </span>
+            ) : (
+              plan.buttonText
+            )}
+          </button>
+        </div>
+      ))}
+
+      {/* Error poruka */}
+      {error && (
+        <div className="col-span-full bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-center">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
