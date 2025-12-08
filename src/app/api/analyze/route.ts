@@ -87,11 +87,16 @@ function buildSystemPrompt(sport: string, sportKey?: string): string {
 
 ${sportContext}
 
-VALIDATION RULES:
-- Probabilities for all outcomes must sum to approximately 100% (±${VALIDATION_RULES.probabilitySumTolerance}%)
-- Value flags: LOW (>${VALIDATION_RULES.valueFlagThresholds.LOW}% diff), MEDIUM (>${VALIDATION_RULES.valueFlagThresholds.MEDIUM}% diff), HIGH (>${VALIDATION_RULES.valueFlagThresholds.HIGH}% diff)
-- Upset probability for heavy favorites should not exceed ${VALIDATION_RULES.maxUpsetForHeavyFavorite}%
-- Close matches should have minimum ${VALIDATION_RULES.minUpsetForCloseMatch}% upset probability
+VALUE FLAG THRESHOLDS (based on AI vs Implied probability difference):
+- NONE: <${VALIDATION_RULES.valueFlagThresholds.NONE}% difference
+- LOW: ${VALIDATION_RULES.valueFlagThresholds.NONE}%-${VALIDATION_RULES.valueFlagThresholds.LOW}% difference
+- MEDIUM: ${VALIDATION_RULES.valueFlagThresholds.LOW}%-${VALIDATION_RULES.valueFlagThresholds.MEDIUM}% difference
+- HIGH: >${VALIDATION_RULES.valueFlagThresholds.HIGH}% difference
+
+PROBABILITY VALIDATION:
+- All outcomes must sum to 100% (±${VALIDATION_RULES.probabilitySumTolerance}% rounding tolerance)
+- Upset probability for heavy favorites: max ${VALIDATION_RULES.maxUpsetForHeavyFavorite}%
+- Close matches minimum upset probability: ${VALIDATION_RULES.minUpsetForCloseMatch}%
 
 RESPONSIBLE GAMBLING:
 Core message to include: "${RESPONSIBLE_GAMBLING_MESSAGES.core}"

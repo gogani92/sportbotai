@@ -55,6 +55,67 @@ export const ACCURACY_ENHANCERS = [
 ];
 
 // ============================================
+// INTERNAL REASONING FRAMEWORK
+// ============================================
+
+export const INTERNAL_REASONING_STEPS = `
+Before producing the final JSON, perform hidden reasoning using this structure.
+Do NOT include this section in the final JSON.
+
+[INTERNAL REASONING STEPS]
+
+Step A — Parse Input
+- Review matchData fields for completeness.
+- Identify missing stats.
+- Identify sample size (low/medium/high data quality).
+
+Step B — Probability Estimation Framework
+1. Start with bookmaker implied probabilities.
+2. Apply corrections:
+   - form factor weighting
+   - home/away weighting
+   - injuries availability weighting
+   - tactical mismatch weighting
+   - market sharpness weighting
+3. Ensure:
+   - home+draw+away stays within 100% ± 2% rounding.
+   - Over/under probabilities follow typical sport scoring distributions.
+
+Step C — Value Logic
+- Value = AI probability – implied probability.
+- Categorize:
+  NONE (<1.5%)
+  LOW (1.5–3%)
+  MEDIUM (3–6%)
+  HIGH (>6%)
+
+Step D — Risk Logic
+- Evaluate variance, data completeness, sport volatility.
+- Identify psychological bias user may fall for.
+
+Step E — Market Stability
+- Evaluate bookmaker spread, consistency, time drift.
+- Classify stability (LOW/MEDIUM/HIGH).
+
+Step F — Upset Model
+- Underdog chance influenced by:
+  - form differential
+  - injury imbalance
+  - tactical mismatch
+  - historical patterns
+- Override unrealistic predictions (no 40% underdog for huge mismatches).
+
+Step G — Consistency Checks (very important)
+- Validate all probabilities are within bounds.
+- Validate risk level matches volatility.
+- Validate value classification matches numerical difference.
+
+Only AFTER all steps:
+→ Execute the VALIDATION MODULE.
+→ THEN output the final JSON.
+`;
+
+// ============================================
 // BUILD CORE SYSTEM PROMPT
 // ============================================
 
@@ -72,6 +133,8 @@ ${ANALYSIS_TASKS.map(t => `- ${t}`).join('\n')}
 
 Accuracy Enhancers:
 ${ACCURACY_ENHANCERS.map(e => `- ${e}`).join('\n')}
+
+${INTERNAL_REASONING_STEPS}
 
 You MUST produce extremely stable and consistent output.
 Only the final JSON object is returned.`;
@@ -221,7 +284,7 @@ export const SPORT_KEY_FACTORS: Record<string, string[]> = {
 
 export const VALIDATION_RULES = {
   // Probabilities must sum to ~100% (allowing for some margin)
-  probabilitySumTolerance: 5,
+  probabilitySumTolerance: 2, // Updated: stricter ±2% tolerance
   
   // Maximum upset probability for heavy favorites
   maxUpsetForHeavyFavorite: 25,
@@ -230,10 +293,12 @@ export const VALIDATION_RULES = {
   minUpsetForCloseMatch: 15,
   
   // Value flag thresholds (difference between implied and estimated)
+  // Updated to match internal reasoning framework
   valueFlagThresholds: {
-    LOW: 3,    // 3%+ difference
-    MEDIUM: 7, // 7%+ difference
-    HIGH: 12,  // 12%+ difference
+    NONE: 1.5,   // <1.5% difference
+    LOW: 3,      // 1.5-3% difference
+    MEDIUM: 6,   // 3-6% difference
+    HIGH: 6,     // >6% difference
   },
 };
 
