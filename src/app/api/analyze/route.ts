@@ -116,6 +116,8 @@ Odgovori ISKLJUČIVO u JSON formatu:
         homeWin: Math.min(100, Math.max(0, aiResponse.probabilities?.homeWin || 33)),
         draw: aiResponse.probabilities?.draw ?? null,
         awayWin: Math.min(100, Math.max(0, aiResponse.probabilities?.awayWin || 33)),
+        over: null,
+        under: null,
       },
       valueComment: aiResponse.valueComment || 'Analiza kvota nije dostupna.',
       riskLevel: validateRiskLevel(aiResponse.riskLevel),
@@ -172,7 +174,7 @@ function generateMockAnalysis(data: AnalyzeRequest): AnalyzeResponse {
   else if (maxOdds < 1.8) riskLevel = 'LOW';
 
   return {
-    probabilities: { homeWin, draw, awayWin },
+    probabilities: { homeWin, draw, awayWin, over: null, under: null },
     valueComment: `Analiza bazirana na kvotama. Margin kladionice: ${(total - 100).toFixed(1)}%.`,
     riskLevel,
     analysisSummary: `Meč ${data.teamA || 'Tim A'} vs ${data.teamB || 'Tim B'}: Domaćin ${homeWin}%, ${draw !== null ? `nerešeno ${draw}%, ` : ''}gost ${awayWin}%.`,
