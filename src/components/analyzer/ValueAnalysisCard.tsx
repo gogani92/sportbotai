@@ -19,7 +19,7 @@ interface ValueAnalysisCardProps {
 }
 
 const valueFlagConfig: Record<ValueFlag, { label: string; bgColor: string; textColor: string; borderColor: string; barColor: string }> = {
-  NONE: { label: 'No Edge', bgColor: 'bg-gray-50', textColor: 'text-gray-500', borderColor: 'border-gray-200', barColor: 'bg-gray-300' },
+  NONE: { label: 'No Edge', bgColor: 'bg-bg-hover', textColor: 'text-text-muted', borderColor: 'border-divider', barColor: 'bg-gray-300' },
   LOW: { label: 'Slight Edge', bgColor: 'bg-blue-50', textColor: 'text-blue-600', borderColor: 'border-blue-200', barColor: 'bg-blue-400' },
   MEDIUM: { label: 'Good Edge', bgColor: 'bg-accent-lime/10', textColor: 'text-accent-lime', borderColor: 'border-accent-lime/30', barColor: 'bg-accent-lime' },
   HIGH: { label: 'Strong Edge', bgColor: 'bg-accent-green/10', textColor: 'text-accent-green', borderColor: 'border-accent-green/30', barColor: 'bg-accent-green' },
@@ -27,9 +27,9 @@ const valueFlagConfig: Record<ValueFlag, { label: string; bgColor: string; textC
 
 const bestValueSideConfig: Record<BestValueSide, { label: string; icon: string; color: string }> = {
   HOME: { label: 'Home Win', icon: '🏠', color: 'text-accent-green' },
-  DRAW: { label: 'Draw', icon: '🤝', color: 'text-gray-600' },
+  DRAW: { label: 'Draw', icon: '🤝', color: 'text-text-secondary' },
   AWAY: { label: 'Away Win', icon: '✈️', color: 'text-accent-cyan' },
-  NONE: { label: 'No Clear Edge', icon: '⚖️', color: 'text-gray-500' },
+  NONE: { label: 'No Clear Edge', icon: '⚖️', color: 'text-text-muted' },
 };
 
 // Kelly Criterion calculator (client-side for user input)
@@ -81,17 +81,17 @@ function ProbabilityComparison({ label, impliedProb, aiProb, flag, isActive }: P
       ${isActive ? 'ring-2 ring-primary-900/20 border-primary-900' : config.borderColor}
       ${config.bgColor}
     `}>
-      <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wider mb-2">{label}</p>
+      <p className="text-[10px] sm:text-xs text-text-muted font-medium uppercase tracking-wider mb-2">{label}</p>
       
       {/* Probability Bars */}
       <div className="space-y-2 mb-3">
         {/* Market/Implied */}
         <div>
-          <div className="flex justify-between text-[10px] text-gray-500 mb-0.5">
+          <div className="flex justify-between text-[10px] text-text-muted mb-0.5">
             <span>Market</span>
             <span className="font-medium">{impliedProb !== null ? `${impliedProb.toFixed(0)}%` : '—'}</span>
           </div>
-          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-divider rounded-full overflow-hidden">
             <div 
               className="h-full bg-gray-400 rounded-full transition-all duration-500"
               style={{ width: `${impliedProb || 0}%` }}
@@ -101,11 +101,11 @@ function ProbabilityComparison({ label, impliedProb, aiProb, flag, isActive }: P
         
         {/* AI Estimate */}
         <div>
-          <div className="flex justify-between text-[10px] text-gray-500 mb-0.5">
+          <div className="flex justify-between text-[10px] text-text-muted mb-0.5">
             <span>AI Est.</span>
             <span className={`font-medium ${config.textColor}`}>{aiProb !== null ? `${aiProb.toFixed(0)}%` : '—'}</span>
           </div>
-          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-divider rounded-full overflow-hidden">
             <div 
               className={`h-full rounded-full transition-all duration-500 ${config.barColor}`}
               style={{ width: `${aiProb || 0}%` }}
@@ -139,12 +139,12 @@ function KellyDisplay({ kelly, bestSide }: KellyDisplayProps) {
   
   if (!kelly || bestSide === 'NONE') {
     return (
-      <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+      <div className="bg-bg-hover rounded-xl p-4 border border-divider">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-sm">📊</span>
-          <span className="text-sm font-semibold text-gray-700">Kelly Criterion</span>
+          <span className="text-sm font-semibold text-text-secondary">Kelly Criterion</span>
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-text-muted">
           No positive edge detected. Kelly suggests no stake.
         </p>
       </div>
@@ -164,11 +164,11 @@ function KellyDisplay({ kelly, bestSide }: KellyDisplayProps) {
   };
   
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-100">
+    <div className="bg-gradient-to-br from-bg-hover to-bg-card rounded-xl p-4 border border-divider">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-base">📊</span>
-          <span className="text-sm font-semibold text-gray-900">Kelly Criterion</span>
+          <span className="text-sm font-semibold text-white">Kelly Criterion</span>
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${confidenceColors[kelly.confidence]}`}>
           {kelly.confidence} confidence
@@ -176,9 +176,9 @@ function KellyDisplay({ kelly, bestSide }: KellyDisplayProps) {
       </div>
       
       {/* Edge indicator */}
-      <div className="mb-3 px-3 py-2 bg-white rounded-lg border border-gray-100">
+      <div className="mb-3 px-3 py-2 bg-bg-card rounded-lg border border-divider">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-500">Expected Edge</span>
+          <span className="text-xs text-text-muted">Expected Edge</span>
           <span className={`text-sm font-bold ${kelly.edge > 5 ? 'text-accent-green' : kelly.edge > 2 ? 'text-accent-lime' : 'text-blue-600'}`}>
             +{kelly.edge.toFixed(1)}%
           </span>
@@ -195,17 +195,17 @@ function KellyDisplay({ kelly, bestSide }: KellyDisplayProps) {
               p-2 rounded-lg text-center transition-all duration-200 border-2
               ${selectedFraction === key 
                 ? 'border-primary-900 bg-primary-900 text-white' 
-                : 'border-gray-200 bg-white hover:border-gray-300'
+                : 'border-divider bg-bg-card hover:border-gray-300'
               }
             `}
           >
-            <p className={`text-[10px] ${selectedFraction === key ? 'text-gray-300' : 'text-gray-500'}`}>
+            <p className={`text-[10px] ${selectedFraction === key ? 'text-gray-300' : 'text-text-muted'}`}>
               {label}
             </p>
-            <p className={`text-lg font-bold ${selectedFraction === key ? 'text-white' : 'text-gray-900'}`}>
+            <p className={`text-lg font-bold ${selectedFraction === key ? 'text-white' : 'text-white'}`}>
               {value.toFixed(1)}%
             </p>
-            <p className={`text-[9px] ${selectedFraction === key ? 'text-gray-300' : 'text-gray-400'}`}>
+            <p className={`text-[9px] ${selectedFraction === key ? 'text-gray-300' : 'text-text-muted'}`}>
               {desc}
             </p>
           </button>
@@ -213,7 +213,7 @@ function KellyDisplay({ kelly, bestSide }: KellyDisplayProps) {
       </div>
       
       {/* Example calculation */}
-      <div className="text-[10px] text-gray-500 bg-gray-50 rounded-lg p-2">
+      <div className="text-[10px] text-text-muted bg-bg-hover rounded-lg p-2">
         <span className="font-medium">Example:</span> On a $1,000 bankroll → stake ${(fractions.find(f => f.key === selectedFraction)?.value || 0) * 10}
       </div>
     </div>
@@ -236,7 +236,7 @@ export default function ValueAnalysisCard({ valueAnalysis }: ValueAnalysisCardPr
         <div className="flex items-center gap-2">
           <span className="text-lg">{bestValueConfig.icon}</span>
           <div>
-            <h4 className="text-sm font-semibold text-gray-900">Best Value</h4>
+            <h4 className="text-sm font-semibold text-white">Best Value</h4>
             <p className={`text-xs font-medium ${bestValueConfig.color}`}>
               {bestValueConfig.label}
             </p>
@@ -281,16 +281,16 @@ export default function ValueAnalysisCard({ valueAnalysis }: ValueAnalysisCardPr
       />
 
       {/* Short Comment */}
-      <p className="text-sm text-gray-700 leading-relaxed">
+      <p className="text-sm text-text-secondary leading-relaxed">
         {valueAnalysis.valueCommentShort}
       </p>
 
       {/* Expandable Detailed Analysis */}
       <button
         onClick={() => setShowDetailed(!showDetailed)}
-        className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+        className="w-full flex items-center justify-between p-3 bg-bg-hover rounded-lg hover:bg-bg-hover transition-colors"
       >
-        <span className="text-xs font-medium text-gray-600">
+        <span className="text-xs font-medium text-text-secondary">
           {showDetailed ? 'Hide detailed analysis' : 'Show detailed analysis'}
         </span>
         <svg
@@ -305,8 +305,8 @@ export default function ValueAnalysisCard({ valueAnalysis }: ValueAnalysisCardPr
       </button>
       
       {showDetailed && (
-        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 animate-fadeIn">
-          <p className="text-sm text-gray-600 leading-relaxed">
+        <div className="p-4 bg-bg-hover rounded-xl border border-divider animate-fadeIn">
+          <p className="text-sm text-text-secondary leading-relaxed">
             {valueAnalysis.valueCommentDetailed}
           </p>
         </div>

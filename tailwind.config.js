@@ -28,12 +28,14 @@ module.exports = {
           light: '#D6FFEC',
         },
         
-        // Background / Surface
+        // Background / Surface (Dark Theme)
         bg: {
           DEFAULT: '#0B0E11',
           card: '#14181D',
           hover: '#1C2229',
-          light: '#F8FAFC',
+          elevated: '#1F252C',
+          subtle: '#111518',
+          light: '#F8FAFC', // Legacy - avoid using
         },
         
         // Dividers & Borders
@@ -63,6 +65,10 @@ module.exports = {
         'primary-900': '#0B0E11',
         'surface-card': '#14181D',
         'surface-border': '#2A3036',
+        'bg-elevated': '#1F252C',
+        'bg-page': '#0E1116',
+        'bg-surface': '#14181D',
+        'bg-surface-alt': '#1C2229',
       },
       
       fontFamily: {

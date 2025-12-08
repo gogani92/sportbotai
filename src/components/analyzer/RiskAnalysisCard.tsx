@@ -114,7 +114,7 @@ function RiskMeter({ level }: { level: RiskLevel }) {
   return (
     <div className="relative">
       {/* Background track */}
-      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-3 bg-bg-hover rounded-full overflow-hidden">
         {/* Gradient fill */}
         <div 
           className="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-green-400 via-amber-400 to-red-500"
@@ -130,7 +130,7 @@ function RiskMeter({ level }: { level: RiskLevel }) {
       </div>
       
       {/* Label track */}
-      <div className="flex justify-between mt-1.5 text-[10px] text-gray-400 font-medium">
+      <div className="flex justify-between mt-1.5 text-[10px] text-text-muted font-medium">
         <span>Safe</span>
         <span>Moderate</span>
         <span>Risky</span>
@@ -148,15 +148,15 @@ function DetectedBiasCard({ bias, isActive }: { bias: typeof COGNITIVE_BIASES[0]
       className={`
         p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer
         ${isActive 
-          ? 'bg-amber-50 border-amber-300 shadow-sm' 
-          : 'bg-gray-50 border-gray-200 opacity-60 hover:opacity-100'
+          ? 'bg-warning/10 border-amber-300 shadow-sm' 
+          : 'bg-bg-hover border-divider opacity-60 hover:opacity-100'
         }
       `}
       onClick={() => setIsExpanded(!isExpanded)}
     >
       <div className="flex items-center gap-2">
         <span className="text-lg">{bias.icon}</span>
-        <span className={`text-sm font-semibold ${isActive ? 'text-amber-900' : 'text-gray-600'}`}>
+        <span className={`text-sm font-semibold ${isActive ? 'text-amber-900' : 'text-text-secondary'}`}>
           {bias.name}
         </span>
         {isActive && (
@@ -167,11 +167,11 @@ function DetectedBiasCard({ bias, isActive }: { bias: typeof COGNITIVE_BIASES[0]
       </div>
       
       {isExpanded && (
-        <div className="mt-2 pt-2 border-t border-gray-200 animate-fadeIn">
-          <p className="text-xs text-gray-600 mb-2">{bias.description}</p>
+        <div className="mt-2 pt-2 border-t border-divider animate-fadeIn">
+          <p className="text-xs text-text-secondary mb-2">{bias.description}</p>
           <div className="flex items-start gap-1.5 text-[10px]">
             <span className="text-green-600 font-bold">💡</span>
-            <span className="text-gray-700">{bias.mitigation}</span>
+            <span className="text-text-secondary">{bias.mitigation}</span>
           </div>
         </div>
       )}
@@ -230,11 +230,11 @@ export default function RiskAnalysisCard({ riskAnalysis }: RiskAnalysisCardProps
   return (
     <div className="space-y-4">
       {/* Risk Level Header with Meter */}
-      <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+      <div className="bg-bg-card rounded-xl p-4 border border-divider shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${config.bgColor}`}></div>
-            <h4 className="text-sm font-semibold text-gray-900">Risk Level</h4>
+            <h4 className="text-sm font-semibold text-white">Risk Level</h4>
           </div>
           <span className={`text-lg font-bold ${config.color}`}>
             {config.label}
@@ -243,37 +243,37 @@ export default function RiskAnalysisCard({ riskAnalysis }: RiskAnalysisCardProps
         
         <RiskMeter level={riskAnalysis.overallRiskLevel} />
         
-        <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+        <p className="mt-3 text-sm text-text-secondary leading-relaxed">
           {riskAnalysis.riskExplanation}
         </p>
       </div>
 
       {/* Bankroll Impact */}
-      <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-4 border border-gray-100">
+      <div className="bg-gradient-to-br from-bg-hover to-bg-card rounded-xl p-4 border border-divider">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-base">💼</span>
-          <h4 className="text-sm font-semibold text-gray-900">Bankroll Consideration</h4>
+          <h4 className="text-sm font-semibold text-white">Bankroll Consideration</h4>
         </div>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           {riskAnalysis.bankrollImpact}
         </p>
       </div>
 
       {/* Detected Psychology Bias */}
-      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
+      <div className="bg-warning/10 rounded-xl p-4 border border-amber-200">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="text-base">🧠</span>
-            <h4 className="text-sm font-semibold text-amber-900">Psychology Alert</h4>
+            <h4 className="text-sm font-semibold text-warning">Psychology Alert</h4>
           </div>
           <span className="px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] font-bold rounded-full uppercase">
             Watch Out
           </span>
         </div>
-        <p className="text-sm font-medium text-amber-900 mb-1">
+        <p className="text-sm font-medium text-warning mb-1">
           {riskAnalysis.psychologyBias.name}
         </p>
-        <p className="text-sm text-amber-800">
+        <p className="text-sm text-warning">
           {riskAnalysis.psychologyBias.description}
         </p>
       </div>
@@ -281,7 +281,7 @@ export default function RiskAnalysisCard({ riskAnalysis }: RiskAnalysisCardProps
       {/* Cognitive Bias Gallery */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
             Common Betting Biases
           </h4>
           <button

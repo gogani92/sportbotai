@@ -16,7 +16,7 @@ export function Skeleton({ className = '', animate = true }: SkeletonProps) {
   return (
     <div 
       className={`
-        bg-gray-200 rounded
+        bg-bg-hover rounded
         ${animate ? 'animate-pulse' : ''}
         ${className}
       `}
@@ -41,7 +41,7 @@ export function SkeletonText({ lines = 1, className = '' }: { lines?: number; cl
 // Card skeleton
 export function SkeletonCard({ className = '' }: { className?: string }) {
   return (
-    <div className={`bg-white rounded-xl border border-gray-100 p-6 ${className}`}>
+    <div className={`bg-bg-card rounded-xl border border-divider p-6 ${className}`}>
       <div className="flex items-center gap-4 mb-4">
         <Skeleton className="w-12 h-12 rounded-full" />
         <div className="flex-1">
@@ -57,7 +57,7 @@ export function SkeletonCard({ className = '' }: { className?: string }) {
 // Match card skeleton for match selector
 export function SkeletonMatchCard() {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
+    <div className="bg-bg-card rounded-xl border border-divider p-4 animate-pulse">
       <div className="flex items-center justify-between mb-3">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-3 w-16" />
@@ -81,7 +81,7 @@ export function SkeletonAnalysisResult() {
   return (
     <div className="space-y-6 animate-pulse">
       {/* Quick glance */}
-      <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl p-6">
+      <div className="bg-gradient-to-br from-bg-hover to-bg-card rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <Skeleton className="w-10 h-10 rounded-full" />
           <div className="flex-1">
@@ -91,7 +91,7 @@ export function SkeletonAnalysisResult() {
         </div>
         <div className="grid grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white rounded-xl p-3">
+            <div key={i} className="bg-bg-card rounded-xl p-3">
               <Skeleton className="h-3 w-16 mb-2" />
               <Skeleton className="h-6 w-12" />
             </div>
@@ -101,7 +101,7 @@ export function SkeletonAnalysisResult() {
       
       {/* Accordion sections */}
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="bg-white rounded-xl border border-gray-100 p-4">
+        <div key={i} className="bg-bg-card rounded-xl border border-divider p-4">
           <div className="flex items-center gap-3">
             <Skeleton className="w-10 h-10 rounded-lg" />
             <div className="flex-1">
@@ -135,7 +135,7 @@ export function SkeletonLeagueList() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map(i => (
-        <div key={i} className="bg-white rounded-xl border border-gray-100 p-4">
+        <div key={i} className="bg-bg-card rounded-xl border border-divider p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Skeleton className="w-10 h-10 rounded-lg" />
@@ -155,7 +155,7 @@ export function SkeletonLeagueList() {
 // Full page loading
 export function SkeletonPage() {
   return (
-    <div className="min-h-screen bg-gray-50 p-6 animate-pulse">
+    <div className="min-h-screen bg-bg p-6 animate-pulse">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -183,7 +183,7 @@ export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   };
   
   return (
-    <div className={`${sizeClasses[size]} border-gray-200 border-t-primary-900 rounded-full animate-spin`} />
+    <div className={`${sizeClasses[size]} border-divider border-t-primary rounded-full animate-spin`} />
   );
 }
 

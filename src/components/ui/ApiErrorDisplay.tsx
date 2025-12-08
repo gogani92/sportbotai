@@ -73,7 +73,7 @@ export default function ApiErrorDisplay({
   // Inline variant (compact)
   if (variant === 'inline') {
     return (
-      <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+      <div className="flex items-center gap-3 p-3 bg-danger/15 border border-danger/30 rounded-lg text-danger">
         <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -81,7 +81,7 @@ export default function ApiErrorDisplay({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="text-sm font-medium text-red-700 hover:text-red-800 underline"
+            className="text-sm font-medium text-danger hover:text-danger/80 underline"
           >
             {displayAction}
           </button>
@@ -93,17 +93,17 @@ export default function ApiErrorDisplay({
   // Fullscreen variant (for critical errors)
   if (variant === 'fullscreen') {
     return (
-      <div className="fixed inset-0 bg-gray-50 flex items-center justify-center p-6">
+      <div className="fixed inset-0 bg-bg flex items-center justify-center p-6">
         <div className="max-w-md text-center">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
+          <div className="w-20 h-20 bg-danger/15 rounded-full flex items-center justify-center mx-auto mb-6 text-danger">
             {getIcon()}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">{displayTitle}</h1>
-          <p className="text-gray-600 mb-6">{displayDescription}</p>
+          <h1 className="text-2xl font-bold text-white mb-3">{displayTitle}</h1>
+          <p className="text-text-secondary mb-6">{displayDescription}</p>
           {onRetry && (
             <button
               onClick={onRetry}
-              className="px-6 py-3 bg-primary-900 text-white font-semibold rounded-xl hover:bg-primary-900/90 transition-colors"
+              className="px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-colors"
             >
               {displayAction}
             </button>
@@ -115,16 +115,16 @@ export default function ApiErrorDisplay({
   
   // Card variant (default)
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center shadow-sm">
-      <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+    <div className="bg-bg-card rounded-2xl border border-divider p-8 text-center shadow-card">
+      <div className="w-16 h-16 bg-danger/15 rounded-full flex items-center justify-center mx-auto mb-4 text-danger">
         {getIcon()}
       </div>
-      <h3 className="text-lg font-bold text-gray-900 mb-2">{displayTitle}</h3>
-      <p className="text-gray-600 text-sm mb-6 max-w-sm mx-auto">{displayDescription}</p>
+      <h3 className="text-lg font-bold text-white mb-2">{displayTitle}</h3>
+      <p className="text-text-secondary text-sm mb-6 max-w-sm mx-auto">{displayDescription}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-900 text-white font-medium rounded-xl hover:bg-primary-900/90 transition-all active:scale-95"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-all active:scale-95"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

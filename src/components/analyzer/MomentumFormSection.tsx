@@ -45,17 +45,17 @@ const trendConfig: Record<Trend, {
   STABLE: { 
     label: 'Stable', 
     icon: '→', 
-    color: 'text-gray-600', 
-    bgColor: 'bg-gray-50', 
-    borderColor: 'border-gray-200',
+    color: 'text-text-secondary', 
+    bgColor: 'bg-bg-hover', 
+    borderColor: 'border-divider',
     animation: ''
   },
   UNKNOWN: { 
     label: 'Unknown', 
     icon: '?', 
-    color: 'text-gray-400', 
-    bgColor: 'bg-gray-50', 
-    borderColor: 'border-gray-200',
+    color: 'text-text-muted', 
+    bgColor: 'bg-bg-hover', 
+    borderColor: 'border-divider',
     animation: ''
   },
 };
@@ -105,10 +105,10 @@ function CircularGauge({ score, maxScore = 10, size = 100 }: { score: number | n
       </svg>
       {/* Center text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold text-gray-900">
+        <span className="text-2xl font-bold text-white">
           {score !== null ? score : '—'}
         </span>
-        <span className="text-[10px] text-gray-400 uppercase tracking-wider">/ 10</span>
+        <span className="text-[10px] text-text-muted uppercase tracking-wider">/ 10</span>
       </div>
     </div>
   );
@@ -193,7 +193,7 @@ function TeamMomentumCard({ score, trend, teamName, isHome }: TeamMomentumCardPr
           <span className={`text-[10px] uppercase tracking-wider font-semibold ${isHome ? 'text-green-600' : 'text-blue-600'}`}>
             {isHome ? '🏠 Home' : '✈️ Away'}
           </span>
-          <p className="text-sm font-bold text-gray-900 truncate max-w-[120px]" title={teamName}>
+          <p className="text-sm font-bold text-white truncate max-w-[120px]" title={teamName}>
             {teamName}
           </p>
         </div>
@@ -215,7 +215,7 @@ function TeamMomentumCard({ score, trend, teamName, isHome }: TeamMomentumCardPr
       
       {/* Form timeline */}
       <div>
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 text-center">Recent Form</p>
+        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5 text-center">Recent Form</p>
         <div className="flex justify-center gap-1">
           {mockForm.map((result, i) => (
             <FormResult key={i} result={result} index={i} />
@@ -235,11 +235,11 @@ function MomentumComparisonBar({ homeScore, awayScore }: { homeScore: number | n
   
   return (
     <div className="mb-4">
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+      <div className="flex items-center justify-between text-xs text-text-muted mb-1">
         <span>Home momentum</span>
         <span>Away momentum</span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
+      <div className="h-2 bg-bg-hover rounded-full overflow-hidden flex">
         <div 
           className="h-full bg-gradient-to-r from-green-400 to-green-500 transition-all duration-500"
           style={{ width: `${homePercentage}%` }}
@@ -284,14 +284,14 @@ export default function MomentumFormSection({ momentumAndForm, homeTeam, awayTea
 
       {/* Key Form Factors */}
       {momentumAndForm.keyFormFactors && momentumAndForm.keyFormFactors.length > 0 && (
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+        <div className="bg-bg-hover rounded-xl p-4 border border-divider">
+          <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <span>📋</span>
             Key Factors
           </h4>
           <ul className="space-y-2">
             {momentumAndForm.keyFormFactors.map((factor, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+              <li key={index} className="flex items-start gap-2 text-sm text-text-secondary">
                 <span className="flex-shrink-0 w-5 h-5 bg-primary-900/10 text-primary-900 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5">
                   {index + 1}
                 </span>
