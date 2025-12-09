@@ -163,7 +163,7 @@ export async function canUserAnalyze(userId: string): Promise<{
     return { allowed: false, remaining: 0, limit: 0, plan: 'FREE' };
   }
 
-  const limit = PLAN_LIMITS[user.plan];
+  const limit = PLAN_LIMITS[user.plan as keyof typeof PLAN_LIMITS];
   
   // Unlimited plan
   if (limit === -1) {
