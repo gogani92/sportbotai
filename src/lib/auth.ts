@@ -83,7 +83,7 @@ export const authOptions: NextAuthOptions = {
   ],
   
   session: {
-    strategy: 'database',
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   
@@ -112,12 +112,21 @@ export const authOptions: NextAuthOptions = {
       // For all other cases (including home page, empty, etc.), go to analyzer
       return `${siteUrl}/analyzer`;
     },
-    async session({ session, user }) {
-      if (session.user && user) {
-        session.user.id = user.id;
-        session.user.plan = (user as any).plan || 'FREE';
-        session.user.analysisCount = (user as any).analysisCount || 0;
-        session.user.subscriptionTier = (user as any).plan || 'FREE';
+    async jwt({ token, user, account }) {
+      // First time jwt callback is run, user object is available
+      if (user) {
+        token.id = user.id;
+        token.plan = (user as any).plan || 'FREE';
+        token.analysisCount = (user as any).analysisCount || 0;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.plan = token.plan as any;
+        session.user.analysisCount = (token.analysisCount as number) || 0;
+        session.user.subscriptionTier = (token.plan as string) || 'FREE';
       }
       return session;
     },

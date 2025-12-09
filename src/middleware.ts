@@ -1,21 +1,22 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 /**
  * Auth routes - redirect to analyzer if already logged in.
- * We check for session cookie to determine if user is logged in.
  */
 const authRoutes = ['/login', '/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Check for NextAuth session cookie (works with database sessions)
-  // NextAuth uses different cookie names in production vs development
-  const sessionToken = request.cookies.get('__Secure-next-auth.session-token') || 
-                       request.cookies.get('next-auth.session-token');
+  // Get JWT token (works with jwt session strategy)
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
   
-  const isLoggedIn = !!sessionToken?.value;
+  const isLoggedIn = !!token;
   
   // Check if route is an auth route
   const isAuthRoute = authRoutes.some(route => 
@@ -32,7 +33,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Auth routes only - we'll handle /analyzer protection on the page itself
     '/login',
     '/register',
   ],
