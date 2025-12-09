@@ -39,26 +39,42 @@ const SPORT_MAPPING: Record<string, string> = {
   'soccer_italy_serie_a': 'soccer',
   'soccer_france_ligue_one': 'soccer',
   'soccer_uefa_champs_league': 'soccer',
+  // Common league names that should map to soccer
+  'premier_league': 'soccer',
+  'la_liga': 'soccer',
+  'bundesliga': 'soccer',
+  'serie_a': 'soccer',
+  'ligue_1': 'soccer',
+  'ligue_one': 'soccer',
+  'champions_league': 'soccer',
+  'europa_league': 'soccer',
+  'english_premier_league': 'soccer',
+  'epl': 'soccer',
   
   // Basketball variants
   'basketball': 'basketball',
   'basketball_nba': 'basketball',
   'basketball_euroleague': 'basketball',
   'basketball_ncaab': 'basketball',
+  'nba': 'basketball',
   
   // American Football
   'americanfootball': 'american_football',
   'americanfootball_nfl': 'american_football',
   'americanfootball_ncaaf': 'american_football',
+  'nfl': 'american_football',
+  'ncaaf': 'american_football',
   
   // Hockey
   'hockey': 'hockey',
   'icehockey': 'hockey',
   'icehockey_nhl': 'hockey',
+  'nhl': 'hockey',
   
   // Baseball
   'baseball': 'baseball',
   'baseball_mlb': 'baseball',
+  'mlb': 'baseball',
 };
 
 // ============================================
