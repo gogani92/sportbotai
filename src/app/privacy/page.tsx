@@ -5,10 +5,15 @@
  */
 
 import { Metadata } from 'next';
+import { META } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: 'Privacy policy for the BetSense AI platform.',
+  title: META.privacy.title,
+  description: META.privacy.description,
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function PrivacyPage() {

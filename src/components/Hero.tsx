@@ -26,18 +26,17 @@ export default function Hero() {
               AI-Powered Sports Analytics
             </div>
 
-            {/* Headline */}
+            {/* Headline - H1 for SEO */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              Smarter sports analysis
+              AI-Powered Sports Analytics
               <br />
-              <span className="text-accent">with AI</span>
-              <span className="text-gray-400"> — not betting tips</span>
+              <span className="text-accent">& Match Intelligence</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg text-gray-400 leading-relaxed mb-8 max-w-xl">
-              BetSense AI helps you understand probabilities, value, and risk across multiple sports. 
-              No fixed matches. No guarantees. Just transparent analysis.
+              Real-time probability models, value detection, and risk insights for Soccer, NBA, NFL, Tennis & more. 
+              <strong className="text-gray-300"> Not betting tips—pure sports intelligence.</strong>
             </p>
 
             {/* CTA Buttons */}

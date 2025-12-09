@@ -7,10 +7,15 @@
 
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { META } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Responsible Gambling',
-  description: 'Information about responsible gambling and resources for help.',
+  title: META.responsibleGambling.title,
+  description: META.responsibleGambling.description,
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function ResponsibleGamblingPage() {

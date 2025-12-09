@@ -5,10 +5,15 @@
  */
 
 import { Metadata } from 'next';
+import { META } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Terms & Conditions',
-  description: 'Terms of use for the BetSense AI platform.',
+  title: META.terms.title,
+  description: META.terms.description,
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function TermsPage() {

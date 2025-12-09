@@ -6,15 +6,48 @@
 
 import { Metadata } from 'next';
 import PricingCards from '@/components/PricingCards';
+import { META, getFAQSchema } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Pricing',
-  description: 'Choose the plan that suits you - Free, Pro or Premium. AI analysis of sports events.',
+  title: META.pricing.title,
+  description: META.pricing.description,
+  keywords: META.pricing.keywords,
+  openGraph: {
+    title: META.pricing.title,
+    description: META.pricing.description,
+  },
 };
 
+// FAQ data for structured markup
+const pricingFAQs = [
+  {
+    question: 'Can I cancel my subscription?',
+    answer: 'Yes, you can cancel your subscription at any time. There are no fixed-term contracts. Access remains active until the end of the paid period.',
+  },
+  {
+    question: 'Is BetSense AI a tipster service?',
+    answer: 'No. BetSense AI is an analytics tool that provides probability models and statistical insights. We do not provide betting tips, picks, or guaranteed outcomes.',
+  },
+  {
+    question: 'What sports are covered?',
+    answer: 'BetSense AI covers Soccer (Premier League, La Liga, UCL), NBA, NFL, NHL, Tennis, UFC/MMA, and more. Each sport uses AI models optimized for its specific dynamics.',
+  },
+  {
+    question: 'How accurate are the probability models?',
+    answer: 'Our AI models provide estimated probabilities based on statistical analysis. No prediction system is 100% accurate. We focus on transparency and helping users understand the data.',
+  },
+];
+
 export default function PricingPage() {
+  const faqSchema = getFAQSchema(pricingFAQs);
+
   return (
     <div className="bg-bg min-h-screen">
+      {/* FAQ Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       {/* Header section */}
       <section className="bg-bg-card border-b border-divider text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

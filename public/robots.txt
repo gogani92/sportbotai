@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Disallow admin/API routes
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+
+# Allow important pages
+Allow: /
+Allow: /analyzer
+Allow: /pricing
+Allow: /terms
+Allow: /privacy
+Allow: /responsible-gambling
+
+# Sitemap location
+Sitemap: https://betsense-ai.vercel.app/sitemap.xml
+
+# Crawl delay (be nice to bots)
+Crawl-delay: 1
