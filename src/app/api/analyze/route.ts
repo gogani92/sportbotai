@@ -367,6 +367,7 @@ export async function POST(request: NextRequest) {
       try {
         const dataSource = getDataSourceLabel(sportInput);
         console.log(`[${dataSource}] Fetching real data for ${sportInput} match...`);
+        console.log(`[${dataSource}] Teams: "${normalizedRequest.matchData.homeTeam}" vs "${normalizedRequest.matchData.awayTeam}"`);
         
         enrichedData = await getMultiSportEnrichedData(
           normalizedRequest.matchData.homeTeam,
@@ -374,6 +375,16 @@ export async function POST(request: NextRequest) {
           sportInput,
           normalizedRequest.matchData.league
         );
+        
+        // Log what data we got back
+        console.log(`[${dataSource}] Data received:`, {
+          hasHomeForm: !!enrichedData.homeForm,
+          hasAwayForm: !!enrichedData.awayForm,
+          hasH2H: !!enrichedData.headToHead,
+          hasHomeStats: !!enrichedData.homeStats,
+          hasAwayStats: !!enrichedData.awayStats,
+          dataSource: enrichedData.dataSource,
+        });
         
         if (enrichedData.homeForm || enrichedData.awayForm) {
           console.log(`[${dataSource}] Real data retrieved successfully`);

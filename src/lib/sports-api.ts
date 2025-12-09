@@ -191,16 +191,23 @@ function getApiBase(sportKey: string): string | null {
 async function findSoccerTeam(teamName: string, baseUrl: string): Promise<number | null> {
   const cacheKey = `soccer:team:${teamName}`;
   const cached = getCached<number>(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    console.log(`[Soccer] Cache hit for team: ${teamName} -> ${cached}`);
+    return cached;
+  }
 
+  console.log(`[Soccer] Searching for team: "${teamName}"`);
   const response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
   
   if (response?.response?.length > 0) {
     const teamId = response.response[0].team.id;
+    const foundName = response.response[0].team.name;
+    console.log(`[Soccer] Found team: "${foundName}" (ID: ${teamId})`);
     setCache(cacheKey, teamId);
     return teamId;
   }
   
+  console.log(`[Soccer] Team not found: "${teamName}"`);
   return null;
 }
 

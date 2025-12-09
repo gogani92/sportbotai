@@ -16,9 +16,10 @@
 'use client';
 
 import { useState } from 'react';
-import { AnalyzeResponse, ValueFlag, RiskLevel, Trend, MarketConfidence } from '@/types';
+import { AnalyzeResponse, ValueFlag, RiskLevel, MarketConfidence } from '@/types';
 import HeadToHeadSection from './HeadToHeadSection';
 import TeamStatsSection from './TeamStatsSection';
+import MomentumFormSection from './MomentumFormSection';
 
 interface AnalysisAccordionProps {
   result: AnalyzeResponse;
@@ -97,14 +98,6 @@ const stabilityConfig: Record<RiskLevel, { label: string; color: string; bgClass
   LOW: { label: 'Volatile', color: 'text-danger', bgClass: 'bg-danger/10 border-danger/20' },
   MEDIUM: { label: 'Moderate', color: 'text-warning', bgClass: 'bg-warning/10 border-warning/20' },
   HIGH: { label: 'Stable', color: 'text-success', bgClass: 'bg-success/10 border-success/20' },
-};
-
-// Trend styling - Design System v2.0
-const trendConfig: Record<Trend, { label: string; icon: string; color: string; bgClass: string }> = {
-  RISING: { label: 'Rising', icon: '↗', color: 'text-success', bgClass: 'bg-success/10' },
-  FALLING: { label: 'Falling', icon: '↘', color: 'text-danger', bgClass: 'bg-danger/10' },
-  STABLE: { label: 'Stable', icon: '→', color: 'text-text-secondary', bgClass: 'bg-bg-hover' },
-  UNKNOWN: { label: 'Unknown', icon: '?', color: 'text-text-muted', bgClass: 'bg-bg-hover' },
 };
 
 function ConfidenceStars({ confidence }: { confidence: MarketConfidence }) {
@@ -318,67 +311,21 @@ export default function AnalysisAccordion({ result }: AnalysisAccordionProps) {
         </div>
       </AccordionSection>
 
-      {/* Section 3: Form & Momentum */}
+      {/* Section 3: Form & Momentum - Using full MomentumFormSection component */}
       <AccordionSection
         title="Form & Momentum"
         subtitle="Team performance & trends"
         icon={<FormIcon />}
+        badge={momentumAndForm.formDataSource === 'API_FOOTBALL' ? { text: 'Real Data', color: 'bg-success/15 text-success' } : undefined}
         isOpen={openSections.has('form')}
         onToggle={() => toggleSection('form')}
       >
-        <div className="pt-4 space-y-4">
-          {/* Team Momentum Cards */}
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { team: matchInfo.homeTeam, score: momentumAndForm.homeMomentumScore, trend: momentumAndForm.homeTrend, isHome: true },
-              { team: matchInfo.awayTeam, score: momentumAndForm.awayMomentumScore, trend: momentumAndForm.awayTrend, isHome: false },
-            ].map(({ team, score, trend, isHome }) => {
-              const trendStyle = trendConfig[trend];
-              const scoreColor = score !== null 
-                ? (score >= 7 ? 'text-success' : score >= 5 ? 'text-warning' : 'text-danger')
-                : 'text-text-muted';
-              
-              return (
-                <div 
-                  key={team} 
-                  className={`p-4 rounded-card border ${isHome ? 'bg-success/5 border-success/20' : 'bg-info/5 border-info/20'}`}
-                >
-                  <p className="text-[10px] sm:text-xs text-text-muted uppercase tracking-wide">{isHome ? 'Home' : 'Away'}</p>
-                  <p className="font-semibold text-text-primary text-sm sm:text-base mb-3 truncate">{team}</p>
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-[10px] text-text-muted mb-0.5">Momentum</p>
-                      <span className={`text-2xl sm:text-3xl font-bold ${scoreColor}`}>
-                        {score !== null ? score : '-'}
-                      </span>
-                      <span className="text-text-muted text-sm">/10</span>
-                    </div>
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded-chip text-xs font-medium ${trendStyle.bgClass} ${trendStyle.color}`}>
-                      <span className="text-sm">{trendStyle.icon}</span>
-                      <span>{trendStyle.label}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Key Form Factors */}
-          {momentumAndForm.keyFormFactors.length > 0 && (
-            <div>
-              <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">Key Form Factors</h4>
-              <ul className="space-y-2">
-                {momentumAndForm.keyFormFactors.map((factor, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
-                    <span className="flex-shrink-0 w-5 h-5 bg-accent/20 text-accent rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5">
-                      {i + 1}
-                    </span>
-                    <span>{factor}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+        <div className="pt-4">
+          <MomentumFormSection 
+            momentumAndForm={momentumAndForm}
+            homeTeam={matchInfo.homeTeam}
+            awayTeam={matchInfo.awayTeam}
+          />
         </div>
       </AccordionSection>
 
