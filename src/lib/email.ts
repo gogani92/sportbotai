@@ -1,0 +1,352 @@
+/**
+ * Email Service for SportBot AI
+ * 
+ * Handles transactional emails using Resend
+ * - Subscription confirmations
+ * - Payment failures
+ * - Cancellation notices
+ * - Welcome emails
+ */
+
+import { SITE_CONFIG } from './seo';
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const FROM_EMAIL = `SportBot AI <noreply@${SITE_CONFIG.domain}>`;
+const SUPPORT_EMAIL = SITE_CONFIG.email;
+
+interface SendEmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+  replyTo?: string;
+}
+
+/**
+ * Send an email using Resend API
+ */
+export async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions): Promise<boolean> {
+  if (!RESEND_API_KEY) {
+    console.log('[Email] RESEND_API_KEY not configured, skipping email');
+    return false;
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [to],
+        subject,
+        html,
+        reply_to: replyTo || SUPPORT_EMAIL,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('[Email] Failed to send:', error);
+      return false;
+    }
+
+    const result = await response.json();
+    console.log(`[Email] Sent to ${to}: ${subject} (ID: ${result.id})`);
+    return true;
+  } catch (error) {
+    console.error('[Email] Error sending email:', error);
+    return false;
+  }
+}
+
+// ============================================
+// EMAIL TEMPLATES
+// ============================================
+
+const baseStyles = `
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background: #0f172a;
+  color: #e2e8f0;
+`;
+
+const buttonStyle = `
+  display: inline-block;
+  background: #10B981;
+  color: #0f172a;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  margin: 20px 0;
+`;
+
+const footerStyle = `
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #334155;
+  font-size: 12px;
+  color: #94a3b8;
+`;
+
+function emailWrapper(content: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background: #020617;">
+      <div style="${baseStyles}">
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #f8fafc; margin: 0;">
+            SportBot<span style="color: #10B981;">AI</span>
+          </h1>
+        </div>
+        
+        ${content}
+        
+        <!-- Footer -->
+        <div style="${footerStyle}">
+          <p>© ${new Date().getFullYear()} SportBot AI. All rights reserved.</p>
+          <p>
+            <a href="https://${SITE_CONFIG.domain}" style="color: #10B981;">Visit Website</a> |
+            <a href="https://${SITE_CONFIG.domain}/contact" style="color: #10B981;">Contact Support</a>
+          </p>
+          <p style="font-size: 11px; color: #64748b;">
+            SportBot AI provides analytical insights for educational purposes only.
+            We do not offer betting tips or guarantees. 18+ only.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// ============================================
+// SUBSCRIPTION EMAILS
+// ============================================
+
+/**
+ * Welcome email after successful subscription
+ */
+export async function sendWelcomeEmail(
+  email: string,
+  planName: string
+): Promise<boolean> {
+  const html = emailWrapper(`
+    <h2 style="color: #10B981; margin-bottom: 20px;">Welcome to SportBot AI ${planName}! 🎉</h2>
+    
+    <p>Thank you for subscribing! Your account has been upgraded and you now have access to all ${planName} features.</p>
+    
+    <h3 style="color: #f8fafc; margin-top: 30px;">What's included:</h3>
+    <ul style="color: #cbd5e1; line-height: 1.8;">
+      ${planName === 'Premium' ? `
+        <li>✅ Unlimited AI analyses per day</li>
+        <li>✅ All sports covered</li>
+        <li>✅ Advanced probability models</li>
+        <li>✅ Head-to-head statistics</li>
+        <li>✅ Form & momentum analysis</li>
+        <li>✅ Weather & injury data</li>
+        <li>✅ Priority support</li>
+      ` : `
+        <li>✅ 20 AI analyses per day</li>
+        <li>✅ All major sports</li>
+        <li>✅ Probability estimates</li>
+        <li>✅ Value detection</li>
+        <li>✅ Risk assessment</li>
+      `}
+    </ul>
+    
+    <div style="text-align: center;">
+      <a href="https://${SITE_CONFIG.domain}/analyzer" style="${buttonStyle}">
+        Start Analyzing →
+      </a>
+    </div>
+    
+    <p style="color: #94a3b8; font-size: 14px; margin-top: 30px;">
+      If you have any questions, just reply to this email or contact us at ${SUPPORT_EMAIL}
+    </p>
+  `);
+
+  return sendEmail({
+    to: email,
+    subject: `Welcome to SportBot AI ${planName}! 🎉`,
+    html,
+  });
+}
+
+/**
+ * Subscription renewed successfully
+ */
+export async function sendRenewalEmail(
+  email: string,
+  planName: string,
+  nextBillingDate: Date
+): Promise<boolean> {
+  const formattedDate = nextBillingDate.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const html = emailWrapper(`
+    <h2 style="color: #10B981;">Subscription Renewed ✓</h2>
+    
+    <p>Your SportBot AI ${planName} subscription has been renewed successfully.</p>
+    
+    <div style="background: #1e293b; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0;"><strong>Plan:</strong> ${planName}</p>
+      <p style="margin: 10px 0 0 0;"><strong>Next billing date:</strong> ${formattedDate}</p>
+    </div>
+    
+    <p style="color: #94a3b8; font-size: 14px;">
+      Thank you for continuing to use SportBot AI!
+    </p>
+    
+    <div style="text-align: center;">
+      <a href="https://${SITE_CONFIG.domain}/analyzer" style="${buttonStyle}">
+        Continue Analyzing
+      </a>
+    </div>
+  `);
+
+  return sendEmail({
+    to: email,
+    subject: `Your SportBot AI subscription has been renewed`,
+    html,
+  });
+}
+
+/**
+ * Payment failed notification
+ */
+export async function sendPaymentFailedEmail(
+  email: string,
+  planName: string
+): Promise<boolean> {
+  const html = emailWrapper(`
+    <h2 style="color: #ef4444;">Payment Failed ⚠️</h2>
+    
+    <p>We were unable to process your payment for SportBot AI ${planName}.</p>
+    
+    <p>Please update your payment method to continue using ${planName} features.</p>
+    
+    <div style="background: #1e293b; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0; color: #fbbf24;">
+        <strong>What happens next:</strong>
+      </p>
+      <ul style="color: #cbd5e1; margin-top: 10px;">
+        <li>We'll retry the payment in a few days</li>
+        <li>If payment continues to fail, your subscription will be paused</li>
+        <li>Update your payment method to avoid interruption</li>
+      </ul>
+    </div>
+    
+    <div style="text-align: center;">
+      <a href="https://billing.stripe.com/p/login/test" style="${buttonStyle}">
+        Update Payment Method
+      </a>
+    </div>
+    
+    <p style="color: #94a3b8; font-size: 14px;">
+      Need help? Contact us at ${SUPPORT_EMAIL}
+    </p>
+  `);
+
+  return sendEmail({
+    to: email,
+    subject: `⚠️ Action required: Payment failed for SportBot AI`,
+    html,
+  });
+}
+
+/**
+ * Subscription cancelled confirmation
+ */
+export async function sendCancellationEmail(
+  email: string,
+  planName: string,
+  endDate: Date
+): Promise<boolean> {
+  const formattedDate = endDate.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const html = emailWrapper(`
+    <h2 style="color: #f8fafc;">Subscription Cancelled</h2>
+    
+    <p>Your SportBot AI ${planName} subscription has been cancelled.</p>
+    
+    <div style="background: #1e293b; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0;">
+        <strong>Access until:</strong> ${formattedDate}
+      </p>
+      <p style="margin: 10px 0 0 0; color: #94a3b8;">
+        You'll continue to have ${planName} access until this date.
+      </p>
+    </div>
+    
+    <p>After this date, you'll be moved to the Free plan with limited features.</p>
+    
+    <h3 style="color: #f8fafc; margin-top: 30px;">Changed your mind?</h3>
+    <p>You can resubscribe anytime to get your ${planName} features back instantly.</p>
+    
+    <div style="text-align: center;">
+      <a href="https://${SITE_CONFIG.domain}/pricing" style="${buttonStyle}">
+        View Plans
+      </a>
+    </div>
+    
+    <p style="color: #94a3b8; font-size: 14px; margin-top: 30px;">
+      We'd love to know why you cancelled. Reply to this email with your feedback—it helps us improve!
+    </p>
+  `);
+
+  return sendEmail({
+    to: email,
+    subject: `Your SportBot AI subscription has been cancelled`,
+    html,
+  });
+}
+
+/**
+ * Trial ending soon reminder (if you add trials)
+ */
+export async function sendTrialEndingEmail(
+  email: string,
+  daysLeft: number
+): Promise<boolean> {
+  const html = emailWrapper(`
+    <h2 style="color: #fbbf24;">Your trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'} ⏰</h2>
+    
+    <p>Hope you've been enjoying SportBot AI! Your free trial is coming to an end.</p>
+    
+    <p>To continue using AI-powered sports analysis, choose a plan that works for you:</p>
+    
+    <div style="text-align: center;">
+      <a href="https://${SITE_CONFIG.domain}/pricing" style="${buttonStyle}">
+        Choose Your Plan
+      </a>
+    </div>
+    
+    <p style="color: #94a3b8; font-size: 14px; margin-top: 30px;">
+      Questions? Just reply to this email!
+    </p>
+  `);
+
+  return sendEmail({
+    to: email,
+    subject: `⏰ Your SportBot AI trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
+    html,
+  });
+}

@@ -1,55 +1,58 @@
 /**
  * API Route: /api/stripe/webhook
  * 
- * Stripe Webhook handler za obradu događaja kao što su:
- * - checkout.session.completed (uspešno plaćanje)
- * - customer.subscription.updated (promena pretplate)
- * - customer.subscription.deleted (otkazana pretplata)
- * - invoice.payment_failed (neuspelo plaćanje)
+ * Stripe Webhook handler for events:
+ * - checkout.session.completed (successful payment)
+ * - customer.subscription.updated (subscription change)
+ * - customer.subscription.deleted (cancelled subscription)
+ * - invoice.payment_failed (failed payment)
  * 
- * SETUP KORACI:
- * 1. U Stripe Dashboard-u idi na Developers > Webhooks
- * 2. Klikni "Add endpoint"
- * 3. Unesi URL: https://tvoja-domena.com/api/stripe/webhook
- * 4. Izaberi događaje:
+ * SETUP STEPS:
+ * 1. In Stripe Dashboard go to Developers > Webhooks
+ * 2. Click "Add endpoint"
+ * 3. Enter URL: https://sportbotai.com/api/stripe/webhook
+ * 4. Select events:
  *    - checkout.session.completed
  *    - customer.subscription.created
  *    - customer.subscription.updated
  *    - customer.subscription.deleted
  *    - invoice.payment_failed
- * 5. Kopiraj "Signing secret" (počinje sa "whsec_...")
- * 6. Dodaj u .env.local:
+ * 5. Copy "Signing secret" (starts with "whsec_...")
+ * 6. Add to Vercel env vars:
  *    STRIPE_WEBHOOK_SECRET=whsec_...
- * 
- * TESTIRANJE LOKALNO:
- * 1. Instaliraj Stripe CLI: https://stripe.com/docs/stripe-cli
- * 2. stripe login
- * 3. stripe listen --forward-to localhost:3000/api/stripe/webhook
- * 4. Kopiraj webhook signing secret koji CLI prikaže
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { 
+  sendWelcomeEmail, 
+  sendPaymentFailedEmail, 
+  sendCancellationEmail,
+  sendRenewalEmail 
+} from '@/lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
 });
 
-// Webhook secret za verifikaciju
+// Webhook secret for verification
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+
+// Plan name mapping
+const PLAN_NAMES: Record<string, string> = {
+  [process.env.STRIPE_PRO_PRICE_ID || '']: 'Pro',
+  [process.env.STRIPE_PREMIUM_PRICE_ID || '']: 'Premium',
+};
 
 /**
  * POST /api/stripe/webhook
- * 
- * Stripe šalje POST request sa event podacima.
- * VAŽNO: Body mora biti raw (ne JSON parsed) za verifikaciju potpisa.
  */
 export async function POST(request: NextRequest) {
   try {
-    // Čitaj raw body
+    // Read raw body
     const body = await request.text();
     
-    // Dobavi Stripe potpis iz headera
+    // Get Stripe signature from header
     const signature = request.headers.get('stripe-signature');
 
     if (!signature) {
@@ -68,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verifikuj event
+    // Verify event
     let event: Stripe.Event;
     
     try {
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obradi event na osnovu tipa
+    // Handle event based on type
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -130,132 +133,137 @@ export async function POST(request: NextRequest) {
 
 // ================================================
 // EVENT HANDLERS
-// TODO: Implementiraj logiku za svaki handler
 // ================================================
 
 /**
- * Uspešno završen checkout - korisnik je platio
+ * Checkout completed - user has paid
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   console.log('Checkout completed:', session.id);
   
-  // TODO: Implementiraj logiku
-  // 
-  // 1. Izvuci podatke o korisniku
-  // const customerEmail = session.customer_email;
-  // const customerId = session.customer;
-  // const subscriptionId = session.subscription;
-  // const planName = session.metadata?.planName;
-  // 
-  // 2. Ažuriraj bazu podataka
+  const customerEmail = session.customer_email;
+  const priceId = session.metadata?.priceId || '';
+  const planName = PLAN_NAMES[priceId] || session.metadata?.planName || 'Pro';
+  
+  if (customerEmail) {
+    // Send welcome email
+    await sendWelcomeEmail(customerEmail, planName);
+    console.log(`[Webhook] Welcome email sent to ${customerEmail} for ${planName}`);
+  }
+  
+  // TODO: Update user in database
   // await prisma.user.update({
   //   where: { email: customerEmail },
   //   data: {
-  //     stripeCustomerId: customerId,
-  //     subscriptionId: subscriptionId,
+  //     stripeCustomerId: session.customer as string,
+  //     subscriptionId: session.subscription as string,
   //     subscriptionStatus: 'active',
-  //     plan: planName,
+  //     plan: planName.toLowerCase(),
   //   }
   // });
-  // 
-  // 3. Pošalji confirmation email
-  // await sendEmail({
-  //   to: customerEmail,
-  //   subject: 'Dobrodošli u BetSense AI Pro!',
-  //   template: 'subscription-confirmed',
-  // });
-  
-  console.log('TODO: Implement checkout completed handler');
 }
 
 /**
- * Nova pretplata kreirana
+ * New subscription created
  */
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   console.log('Subscription created:', subscription.id);
   
-  // TODO: Implementiraj logiku
-  // Slično kao handleCheckoutCompleted
-  
-  console.log('TODO: Implement subscription created handler');
+  // Get customer email
+  const customer = await stripe.customers.retrieve(subscription.customer as string);
+  if ('email' in customer && customer.email) {
+    const priceId = subscription.items.data[0]?.price?.id || '';
+    const planName = PLAN_NAMES[priceId] || 'Pro';
+    
+    // Welcome email is sent in handleCheckoutCompleted
+    console.log(`[Webhook] Subscription created for ${customer.email} - ${planName}`);
+  }
 }
 
 /**
- * Pretplata ažurirana (npr. promena plana, renewal)
+ * Subscription updated (e.g., plan change, renewal)
  */
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   console.log('Subscription updated:', subscription.id);
   
-  // TODO: Implementiraj logiku
-  // 
-  // const status = subscription.status; // 'active', 'past_due', 'canceled', etc.
-  // const currentPeriodEnd = subscription.current_period_end;
-  // 
+  const status = subscription.status;
+  const priceId = subscription.items.data[0]?.price?.id || '';
+  const planName = PLAN_NAMES[priceId] || 'Pro';
+  
+  // Get customer email
+  const customer = await stripe.customers.retrieve(subscription.customer as string);
+  if (!('email' in customer) || !customer.email) return;
+  
+  // If subscription was renewed (active status after being past_due or similar)
+  if (status === 'active') {
+    const nextBillingDate = new Date(subscription.current_period_end * 1000);
+    await sendRenewalEmail(customer.email, planName, nextBillingDate);
+    console.log(`[Webhook] Renewal email sent to ${customer.email}`);
+  }
+  
+  // TODO: Update subscription in database
   // await prisma.subscription.update({
   //   where: { stripeSubscriptionId: subscription.id },
   //   data: {
   //     status: status,
-  //     currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+  //     currentPeriodEnd: new Date(subscription.current_period_end * 1000),
   //   }
   // });
-  
-  console.log('TODO: Implement subscription updated handler');
 }
 
 /**
- * Pretplata otkazana
+ * Subscription cancelled
  */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log('Subscription deleted:', subscription.id);
   
-  // TODO: Implementiraj logiku
-  // 
-  // await prisma.subscription.update({
+  // Get customer email
+  const customer = await stripe.customers.retrieve(subscription.customer as string);
+  if (!('email' in customer) || !customer.email) return;
+  
+  const priceId = subscription.items.data[0]?.price?.id || '';
+  const planName = PLAN_NAMES[priceId] || 'Pro';
+  const endDate = new Date(subscription.current_period_end * 1000);
+  
+  // Send cancellation email
+  await sendCancellationEmail(customer.email, planName, endDate);
+  console.log(`[Webhook] Cancellation email sent to ${customer.email}`);
+  
+  // TODO: Update user in database
+  // await prisma.user.update({
   //   where: { stripeSubscriptionId: subscription.id },
-  //   data: {
-  //     status: 'canceled',
-  //     canceledAt: new Date(),
+  //   data: { 
+  //     plan: 'free',
+  //     subscriptionStatus: 'canceled',
   //   }
   // });
-  // 
-  // // Downgrade korisnika na Free plan
-  // await prisma.user.update({
-  //   where: { subscriptionId: subscription.id },
-  //   data: { plan: 'free' }
-  // });
-  // 
-  // // Pošalji email o otkazu
-  // await sendEmail({
-  //   to: user.email,
-  //   subject: 'Vaša pretplata je otkazana',
-  //   template: 'subscription-canceled',
-  // });
-  
-  console.log('TODO: Implement subscription deleted handler');
 }
 
 /**
- * Neuspelo plaćanje (npr. kartica istekla)
+ * Payment failed (e.g., card expired)
  */
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   console.log('Payment failed for invoice:', invoice.id);
   
-  // TODO: Implementiraj logiku
-  // 
-  // const customerEmail = invoice.customer_email;
-  // 
-  // // Pošalji email o neuspelom plaćanju
-  // await sendEmail({
-  //   to: customerEmail,
-  //   subject: 'Problem sa plaćanjem - BetSense AI',
-  //   template: 'payment-failed',
-  // });
-  // 
-  // // Opciono: Ažuriraj status u bazi
+  const customerEmail = invoice.customer_email;
+  
+  if (customerEmail) {
+    // Get plan name from subscription
+    let planName = 'Pro';
+    if (invoice.subscription) {
+      const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+      const priceId = subscription.items.data[0]?.price?.id || '';
+      planName = PLAN_NAMES[priceId] || 'Pro';
+    }
+    
+    // Send payment failed email
+    await sendPaymentFailedEmail(customerEmail, planName);
+    console.log(`[Webhook] Payment failed email sent to ${customerEmail}`);
+  }
+  
+  // TODO: Update subscription status in database
   // await prisma.subscription.update({
-  //   where: { stripeCustomerId: invoice.customer },
+  //   where: { stripeCustomerId: invoice.customer as string },
   //   data: { status: 'past_due' }
   // });
-  
-  console.log('TODO: Implement payment failed handler');
 }
