@@ -255,33 +255,55 @@ export async function getMatchContext(
   try {
     const promises: Promise<any>[] = [];
 
-    // For soccer, try to fetch injuries by searching for team IDs
+    // For soccer, try to fetch team info (ID + venue)
+    let homeTeamInfo: TeamInfo | null = null;
+    let awayTeamInfo: TeamInfo | null = null;
+    
     if (isSoccer) {
-      // Try to get team IDs from cache or API
-      const [homeId, awayId] = await Promise.all([
-        findTeamId(homeTeam),
-        findTeamId(awayTeam),
+      // Get team info (includes venue city for weather)
+      [homeTeamInfo, awayTeamInfo] = await Promise.all([
+        findTeamInfo(homeTeam),
+        findTeamInfo(awayTeam),
       ]);
       
-      if (homeId) {
+      // Fetch injuries if we have team IDs
+      if (homeTeamInfo?.id) {
         promises.push(
-          fetchSoccerInjuries(homeId, homeTeam).then(r => {
+          fetchSoccerInjuries(homeTeamInfo.id, homeTeam).then(r => {
             results.homeInjuries = r?.players || null;
           })
         );
       }
       
-      if (awayId) {
+      if (awayTeamInfo?.id) {
         promises.push(
-          fetchSoccerInjuries(awayId, awayTeam).then(r => {
+          fetchSoccerInjuries(awayTeamInfo.id, awayTeam).then(r => {
             results.awayInjuries = r?.players || null;
           })
         );
       }
-    }
-
-    // Fetch weather for outdoor sports
-    if (!isIndoor && venueCity) {
+      
+      // Fetch weather using home team's venue city
+      const weatherCity = venueCity || homeTeamInfo?.venueCity;
+      if (weatherCity) {
+        console.log(`[Weather] Fetching weather for ${weatherCity}`);
+        promises.push(
+          fetchWeather(weatherCity, false).then(r => { results.weather = r; })
+        );
+        
+        // Set venue info
+        if (homeTeamInfo?.venueName) {
+          results.venue = {
+            name: homeTeamInfo.venueName,
+            city: homeTeamInfo.venueCity || weatherCity,
+            capacity: 0,
+            surface: 'grass',
+            isNeutral: false,
+          };
+        }
+      }
+    } else if (!isIndoor && venueCity) {
+      // Non-soccer outdoor sports with provided city
       promises.push(
         fetchWeather(venueCity, false).then(r => { results.weather = r; })
       );
@@ -303,15 +325,21 @@ export async function getMatchContext(
 }
 
 /**
- * Helper to find team ID by name
+ * Helper to find team ID and venue by name
  */
-async function findTeamId(teamName: string): Promise<number | null> {
+interface TeamInfo {
+  id: number;
+  venueCity: string | null;
+  venueName: string | null;
+}
+
+async function findTeamInfo(teamName: string): Promise<TeamInfo | null> {
   const apiKey = process.env.API_FOOTBALL_KEY;
   if (!apiKey) return null;
   
   // Check cache first
-  const cacheKey = `teamid:${teamName.toLowerCase().replace(/\s+/g, '_')}`;
-  const cached = await cacheGet<number>(cacheKey);
+  const cacheKey = `teaminfo:${teamName.toLowerCase().replace(/\s+/g, '_')}`;
+  const cached = await cacheGet<TeamInfo>(cacheKey);
   if (cached) return cached;
   
   try {
@@ -327,9 +355,18 @@ async function findTeamId(teamName: string): Promise<number | null> {
     const data = await response.json();
     
     if (data.response && data.response.length > 0) {
-      const teamId = data.response[0].team.id;
-      await cacheSet(cacheKey, teamId, CACHE_TTL.TEAM_ID || 24 * 60 * 60);
-      return teamId;
+      const team = data.response[0].team;
+      const venue = data.response[0].venue;
+      
+      const teamInfo: TeamInfo = {
+        id: team.id,
+        venueCity: venue?.city || null,
+        venueName: venue?.name || null,
+      };
+      
+      await cacheSet(cacheKey, teamInfo, CACHE_TTL.TEAM_ID || 24 * 60 * 60);
+      console.log(`[TeamInfo] Found ${teamName}: ID=${teamInfo.id}, City=${teamInfo.venueCity}`);
+      return teamInfo;
     }
     
     return null;
