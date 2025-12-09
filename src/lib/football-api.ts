@@ -8,7 +8,7 @@
  * Dashboard: https://dashboard.api-football.com/
  */
 
-import { FormMatch } from '@/types';
+import { FormMatch, HeadToHeadMatch, TeamStats } from '@/types';
 
 const API_FOOTBALL_BASE = 'https://v3.football.api-sports.io';
 
@@ -28,14 +28,7 @@ interface TeamForm {
   goalsScored: number;
   goalsConceded: number;
   cleanSheets: number;
-}
-
-interface HeadToHeadMatch {
-  date: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number;
-  awayScore: number;
+  gamesPlayed: number;
 }
 
 interface HeadToHead {
@@ -66,6 +59,14 @@ export interface EnrichedMatchData {
   homeForm: FormMatch[] | null;
   awayForm: FormMatch[] | null;
   headToHead: HeadToHeadMatch[] | null;
+  h2hSummary: {
+    totalMatches: number;
+    homeWins: number;
+    awayWins: number;
+    draws: number;
+  } | null;
+  homeStats: TeamStats | null;
+  awayStats: TeamStats | null;
   homeStanding: TeamStanding | null;
   awayStanding: TeamStanding | null;
   dataSource: 'API_FOOTBALL' | 'CACHE' | 'UNAVAILABLE';
@@ -151,6 +152,7 @@ async function getTeamForm(teamId: number): Promise<TeamForm | null> {
 
   const stats = response.response;
   const formString = stats.form || '';
+  const gamesPlayed = stats.fixtures?.played?.total || 0;
   
   const form: TeamForm = {
     teamId,
@@ -160,6 +162,7 @@ async function getTeamForm(teamId: number): Promise<TeamForm | null> {
     goalsScored: stats.goals?.for?.total?.total || 0,
     goalsConceded: stats.goals?.against?.total?.total || 0,
     cleanSheets: stats.clean_sheet?.total || 0,
+    gamesPlayed,
   };
 
   setCache(cacheKey, form);
@@ -265,6 +268,22 @@ function convertToFormMatch(matches: TeamFormMatch[]): FormMatch[] {
 }
 
 /**
+ * Convert TeamForm to TeamStats for API compatibility
+ */
+function convertToTeamStats(form: TeamForm | null): TeamStats | null {
+  if (!form) return null;
+  
+  const gamesPlayed = form.gamesPlayed || 1; // Avoid division by zero
+  return {
+    goalsScored: form.goalsScored,
+    goalsConceded: form.goalsConceded,
+    cleanSheets: form.cleanSheets,
+    avgGoalsScored: Math.round((form.goalsScored / gamesPlayed) * 100) / 100,
+    avgGoalsConceded: Math.round((form.goalsConceded / gamesPlayed) * 100) / 100,
+  };
+}
+
+/**
  * Main function: Get enriched match data for analysis
  */
 export async function getEnrichedMatchData(
@@ -278,6 +297,9 @@ export async function getEnrichedMatchData(
       homeForm: null,
       awayForm: null,
       headToHead: null,
+      h2hSummary: null,
+      homeStats: null,
+      awayStats: null,
       homeStanding: null,
       awayStanding: null,
       dataSource: 'UNAVAILABLE',
@@ -297,6 +319,9 @@ export async function getEnrichedMatchData(
         homeForm: null,
         awayForm: null,
         headToHead: null,
+        h2hSummary: null,
+        homeStats: null,
+        awayStats: null,
         homeStanding: null,
         awayStanding: null,
         dataSource: 'UNAVAILABLE',
@@ -304,7 +329,9 @@ export async function getEnrichedMatchData(
     }
 
     // Fetch all data in parallel
-    const [homeFixtures, awayFixtures, h2h] = await Promise.all([
+    const [homeTeamForm, awayTeamForm, homeFixtures, awayFixtures, h2h] = await Promise.all([
+      getTeamForm(homeTeamId),
+      getTeamForm(awayTeamId),
       getTeamFixtures(homeTeamId),
       getTeamFixtures(awayTeamId),
       getHeadToHead(homeTeamId, awayTeamId),
@@ -314,13 +341,26 @@ export async function getEnrichedMatchData(
     const homeFormMatches = homeFixtures.length > 0 ? convertToFormMatch(homeFixtures) : null;
     const awayFormMatches = awayFixtures.length > 0 ? convertToFormMatch(awayFixtures) : null;
     
-    // Extract H2H match array
+    // Extract H2H match array and summary
     const h2hMatches = h2h?.lastMatches || null;
+    const h2hSummary = h2h ? {
+      totalMatches: h2h.totalMatches,
+      homeWins: h2h.homeWins,
+      awayWins: h2h.awayWins,
+      draws: h2h.draws,
+    } : null;
+    
+    // Convert team stats
+    const homeStats = convertToTeamStats(homeTeamForm);
+    const awayStats = convertToTeamStats(awayTeamForm);
 
     return {
       homeForm: homeFormMatches,
       awayForm: awayFormMatches,
       headToHead: h2hMatches,
+      h2hSummary,
+      homeStats,
+      awayStats,
       homeStanding: null, // Would need league ID for standings
       awayStanding: null,
       dataSource: (homeFormMatches || awayFormMatches) ? 'API_FOOTBALL' : 'UNAVAILABLE',
@@ -331,6 +371,9 @@ export async function getEnrichedMatchData(
       homeForm: null,
       awayForm: null,
       headToHead: null,
+      h2hSummary: null,
+      homeStats: null,
+      awayStats: null,
       homeStanding: null,
       awayStanding: null,
       dataSource: 'UNAVAILABLE',

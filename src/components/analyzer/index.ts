@@ -19,6 +19,8 @@ export { default as ExtrasSection } from './ExtrasSection';
 // Supporting components (still available for potential use)
 export { default as ListenToAnalysisButton } from './ListenToAnalysisButton';
 export { default as UsageCounter } from './UsageCounter';
+export { default as HeadToHeadSection } from './HeadToHeadSection';
+export { default as TeamStatsSection } from './TeamStatsSection';
 
 // Legacy components (kept for reference, not used in new layout)
 export { default as MatchSummaryCard } from './MatchSummaryCard';

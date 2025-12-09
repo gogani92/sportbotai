@@ -131,6 +131,28 @@ export interface FormMatch {
 }
 
 /**
+ * Head-to-head match record
+ */
+export interface HeadToHeadMatch {
+  date: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+}
+
+/**
+ * Team statistics from API-Football
+ */
+export interface TeamStats {
+  goalsScored: number;
+  goalsConceded: number;
+  cleanSheets: number;
+  avgGoalsScored?: number;
+  avgGoalsConceded?: number;
+}
+
+/**
  * Momentum and form section
  */
 export interface MomentumAndForm {
@@ -143,6 +165,17 @@ export interface MomentumAndForm {
   homeForm?: FormMatch[];
   awayForm?: FormMatch[];
   formDataSource?: 'API_FOOTBALL' | 'AI_ESTIMATE' | 'UNAVAILABLE';
+  // Head-to-head data
+  headToHead?: HeadToHeadMatch[];
+  h2hSummary?: {
+    totalMatches: number;
+    homeWins: number;
+    awayWins: number;
+    draws: number;
+  };
+  // Team statistics
+  homeStats?: TeamStats;
+  awayStats?: TeamStats;
 }
 
 /**

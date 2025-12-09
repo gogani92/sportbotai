@@ -655,6 +655,12 @@ function validateAndSanitizeResponse(
       homeForm: enrichedData?.homeForm ?? undefined,
       awayForm: enrichedData?.awayForm ?? undefined,
       formDataSource: formDataSource as 'API_FOOTBALL' | 'AI_ESTIMATE' | 'UNAVAILABLE',
+      // Head-to-head data
+      headToHead: enrichedData?.headToHead ?? undefined,
+      h2hSummary: enrichedData?.h2hSummary ?? undefined,
+      // Team statistics
+      homeStats: enrichedData?.homeStats ?? undefined,
+      awayStats: enrichedData?.awayStats ?? undefined,
     },
     
     marketStability: {
@@ -956,6 +962,12 @@ function generateFallbackAnalysis(
       homeForm: enrichedData?.homeForm ?? undefined,
       awayForm: enrichedData?.awayForm ?? undefined,
       formDataSource: formDataSource as 'API_FOOTBALL' | 'AI_ESTIMATE' | 'UNAVAILABLE',
+      // Head-to-head data
+      headToHead: enrichedData?.headToHead ?? undefined,
+      h2hSummary: enrichedData?.h2hSummary ?? undefined,
+      // Team statistics
+      homeStats: enrichedData?.homeStats ?? undefined,
+      awayStats: enrichedData?.awayStats ?? undefined,
     },
     
     marketStability: {

@@ -5,6 +5,8 @@
  * - Value Analysis (implied probabilities, market efficiency)
  * - Risk & Psychology (risk factors, cognitive biases)
  * - Form & Momentum (team trends, performance)
+ * - Head-to-Head (historical matchups)
+ * - Team Statistics (season stats)
  * - Tactics & Narrative (playing styles, match story)
  * 
  * Mobile-first design with smooth animations.
@@ -15,6 +17,8 @@
 
 import { useState } from 'react';
 import { AnalyzeResponse, ValueFlag, RiskLevel, Trend, MarketConfidence } from '@/types';
+import HeadToHeadSection from './HeadToHeadSection';
+import TeamStatsSection from './TeamStatsSection';
 
 interface AnalysisAccordionProps {
   result: AnalyzeResponse;
@@ -142,6 +146,18 @@ const FormIcon = () => (
 const TacticsIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+  </svg>
+);
+
+const H2HIcon = () => (
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+  </svg>
+);
+
+const StatsIcon = () => (
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
   </svg>
 );
 
@@ -365,6 +381,48 @@ export default function AnalysisAccordion({ result }: AnalysisAccordionProps) {
           )}
         </div>
       </AccordionSection>
+
+      {/* Section 3.5: Head-to-Head (only if data available) */}
+      {(momentumAndForm.headToHead && momentumAndForm.headToHead.length > 0) && (
+        <AccordionSection
+          title="Head-to-Head"
+          subtitle="Historical matchups"
+          icon={<H2HIcon />}
+          badge={{ text: 'Real Data', color: 'bg-success/15 text-success' }}
+          isOpen={openSections.has('h2h')}
+          onToggle={() => toggleSection('h2h')}
+        >
+          <div className="pt-4">
+            <HeadToHeadSection
+              headToHead={momentumAndForm.headToHead}
+              h2hSummary={momentumAndForm.h2hSummary}
+              homeTeam={matchInfo.homeTeam}
+              awayTeam={matchInfo.awayTeam}
+            />
+          </div>
+        </AccordionSection>
+      )}
+
+      {/* Section 3.6: Team Statistics (only if data available) */}
+      {(momentumAndForm.homeStats || momentumAndForm.awayStats) && (
+        <AccordionSection
+          title="Team Statistics"
+          subtitle="Season performance"
+          icon={<StatsIcon />}
+          badge={{ text: 'Real Data', color: 'bg-success/15 text-success' }}
+          isOpen={openSections.has('stats')}
+          onToggle={() => toggleSection('stats')}
+        >
+          <div className="pt-4">
+            <TeamStatsSection
+              homeStats={momentumAndForm.homeStats}
+              awayStats={momentumAndForm.awayStats}
+              homeTeam={matchInfo.homeTeam}
+              awayTeam={matchInfo.awayTeam}
+            />
+          </div>
+        </AccordionSection>
+      )}
 
       {/* Section 4: Tactics & Narrative */}
       <AccordionSection
