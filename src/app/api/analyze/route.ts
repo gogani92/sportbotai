@@ -13,6 +13,10 @@
  * REAL DATA INTEGRATION:
  * - Fetches real team form, H2H, and stats from API-Sports
  * - Supports: Soccer, Basketball (NBA), Hockey (NHL), and more
+ * 
+ * CACHING:
+ * - Uses Upstash Redis to cache identical analyses for 1 hour
+ * - Reduces OpenAI API costs and improves response time
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -47,6 +51,13 @@ import {
   isSportSupported,
   getDataSourceLabel 
 } from '@/lib/sports-api';
+import {
+  cacheGet,
+  cacheSet,
+  CACHE_TTL,
+  CACHE_KEYS,
+  hashOdds,
+} from '@/lib/cache';
 
 // ============================================
 // OPENAI CLIENT (LAZY INIT)
@@ -399,8 +410,48 @@ export async function POST(request: NextRequest) {
       console.log(`[API-Sports] Sport not supported for real data: ${sportInput}`);
     }
 
-    // Call OpenAI API with sport-aware prompt and enriched data
-    const analysis = await callOpenAI(openai, normalizedRequest, enrichedData);
+    // ========================================
+    // CHECK CACHE FOR EXISTING ANALYSIS
+    // ========================================
+    const oddsHash = hashOdds(normalizedRequest.matchData.odds || {});
+    const cacheKey = CACHE_KEYS.analysis(
+      normalizedRequest.matchData.homeTeam,
+      normalizedRequest.matchData.awayTeam,
+      sportInput,
+      oddsHash
+    );
+    
+    let analysis: AnalyzeResponse;
+    const cachedAnalysis = await cacheGet<AnalyzeResponse>(cacheKey);
+    
+    if (cachedAnalysis) {
+      console.log('[Cache] Using cached analysis');
+      analysis = cachedAnalysis;
+      // Update with fresh enriched data if available
+      if (enrichedData) {
+        analysis = {
+          ...analysis,
+          momentumAndForm: {
+            ...analysis.momentumAndForm,
+            homeForm: enrichedData.homeForm ?? analysis.momentumAndForm.homeForm,
+            awayForm: enrichedData.awayForm ?? analysis.momentumAndForm.awayForm,
+            headToHead: enrichedData.headToHead ?? analysis.momentumAndForm.headToHead,
+            h2hSummary: enrichedData.h2hSummary ?? analysis.momentumAndForm.h2hSummary,
+            homeStats: enrichedData.homeStats ?? analysis.momentumAndForm.homeStats,
+            awayStats: enrichedData.awayStats ?? analysis.momentumAndForm.awayStats,
+            formDataSource: enrichedData.homeForm || enrichedData.awayForm ? 'API_FOOTBALL' : analysis.momentumAndForm.formDataSource,
+          },
+        };
+      }
+    } else {
+      // Call OpenAI API with sport-aware prompt and enriched data
+      console.log('[OpenAI] Generating fresh analysis...');
+      analysis = await callOpenAI(openai, normalizedRequest, enrichedData);
+      
+      // Cache the analysis for future requests
+      await cacheSet(cacheKey, analysis, CACHE_TTL.ANALYSIS);
+      console.log('[Cache] Analysis cached for 1 hour');
+    }
     
     // ========================================
     // INCREMENT USAGE COUNT (only on success)

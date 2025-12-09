@@ -124,22 +124,34 @@ export interface MultiSportEnrichedData {
 }
 
 // ============================================
-// CACHE
+// CACHE (using Upstash Redis with memory fallback)
 // ============================================
 
-const cache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+import { 
+  cacheGet, 
+  cacheSet, 
+  cached, 
+  CACHE_TTL, 
+  CACHE_KEYS 
+} from './cache';
+
+// Legacy sync cache functions for backward compatibility
+// These now wrap the async Redis cache
+const syncCache = new Map<string, { data: any; timestamp: number }>();
+const SYNC_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for sync fallback
 
 function getCached<T>(key: string): T | null {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  const cached = syncCache.get(key);
+  if (cached && Date.now() - cached.timestamp < SYNC_CACHE_TTL) {
     return cached.data as T;
   }
   return null;
 }
 
 function setCache(key: string, data: any): void {
-  cache.set(key, { data, timestamp: Date.now() });
+  syncCache.set(key, { data, timestamp: Date.now() });
+  // Also set in Redis asynchronously (fire and forget)
+  cacheSet(key, data, CACHE_TTL.TEAM_FORM).catch(() => {});
 }
 
 // ============================================
