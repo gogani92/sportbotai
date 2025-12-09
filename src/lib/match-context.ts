@@ -154,6 +154,7 @@ async function fetchWeather(
   }
 
   const apiKey = process.env.OPENWEATHER_API_KEY;
+  console.log(`[Weather] API key present: ${!!apiKey}, length: ${apiKey?.length || 0}`);
   if (!apiKey) {
     console.log('[Weather] OPENWEATHER_API_KEY not configured');
     return null;
@@ -161,15 +162,19 @@ async function fetchWeather(
 
   const cacheKey = `weather:${city.toLowerCase().replace(/\s+/g, '_')}`;
   const cached = await cacheGet<WeatherData>(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    console.log(`[Weather] Cache hit for ${city}`);
+    return cached;
+  }
 
   try {
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`
-    );
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
+    console.log(`[Weather] Fetching from OpenWeatherMap for city: ${city}`);
+    const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`[Weather] API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[Weather] API error: ${response.status} - ${errorText}`);
       return null;
     }
 
