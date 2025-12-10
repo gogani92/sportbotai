@@ -119,12 +119,17 @@ function createImagePrompt(title: string, keyword: string, category: string): st
 async function uploadToBlob(imageUrl: string, keyword: string): Promise<string> {
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   
-  if (!blobToken) {
-    console.warn('BLOB_READ_WRITE_TOKEN not configured, returning original URL');
+  // Check if token exists and is not a placeholder
+  if (!blobToken || blobToken.includes('your_blob_token') || blobToken.length < 50) {
+    console.error('[Image Generator] BLOB_READ_WRITE_TOKEN not properly configured!');
+    console.error('[Image Generator] Please add a valid Vercel Blob token to environment variables.');
+    console.error('[Image Generator] Returning original Replicate URL (will expire!)');
     return imageUrl;
   }
 
   try {
+    console.log('[Image Generator] Downloading image from Replicate...');
+    
     // Fetch the image
     const response = await fetch(imageUrl);
     if (!response.ok) {
@@ -132,6 +137,7 @@ async function uploadToBlob(imageUrl: string, keyword: string): Promise<string> 
     }
 
     const imageBuffer = await response.arrayBuffer();
+    console.log(`[Image Generator] Downloaded ${imageBuffer.byteLength} bytes`);
     
     // Create a slug-friendly filename
     const slug = keyword
@@ -141,6 +147,7 @@ async function uploadToBlob(imageUrl: string, keyword: string): Promise<string> 
       .substring(0, 50);
     
     const filename = `blog/${slug}-${Date.now()}.webp`;
+    console.log(`[Image Generator] Uploading to Vercel Blob: ${filename}`);
 
     // Upload to Vercel Blob
     const blob = await put(filename, imageBuffer, {
@@ -148,11 +155,12 @@ async function uploadToBlob(imageUrl: string, keyword: string): Promise<string> 
       contentType: 'image/webp',
     });
 
+    console.log(`[Image Generator] ✅ Uploaded to Blob: ${blob.url}`);
     return blob.url;
 
   } catch (error) {
-    console.error('Blob upload error:', error);
-    // Return original URL as fallback
+    console.error('[Image Generator] Blob upload error:', error);
+    // Return original URL as fallback (will expire)
     return imageUrl;
   }
 }
