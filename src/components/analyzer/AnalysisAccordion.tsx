@@ -366,6 +366,7 @@ export default function AnalysisAccordion({ result }: AnalysisAccordionProps) {
               awayStats={momentumAndForm.awayStats}
               homeTeam={matchInfo.homeTeam}
               awayTeam={matchInfo.awayTeam}
+              sport={matchInfo.sport}
             />
           </div>
         </AccordionSection>

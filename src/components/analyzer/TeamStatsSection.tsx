@@ -1,10 +1,12 @@
 /**
  * Team Stats Section Component
  * 
- * Displays team statistics from API-Football:
- * - Goals scored/conceded
- * - Clean sheets
- * - Averages per game
+ * Displays team statistics from API-Sports (sport-adaptive):
+ * - Soccer: Goals scored/conceded, Clean sheets
+ * - Basketball: Points scored/allowed, PPG
+ * - Hockey: Goals scored/allowed
+ * - NFL: Points scored/allowed
+ * - MMA: Wins/Losses, Finishes
  */
 
 'use client';
@@ -16,6 +18,84 @@ interface TeamStatsSectionProps {
   awayStats?: TeamStats;
   homeTeam: string;
   awayTeam: string;
+  sport?: string;
+}
+
+// Sport-specific label mappings
+function getStatLabels(sport?: string): {
+  scored: string;
+  conceded: string;
+  cleanSheets: string;
+  avgScored: string;
+  avgConceded: string;
+  differential: string;
+} {
+  const sportLower = (sport || '').toLowerCase();
+  
+  if (sportLower.includes('basketball') || sportLower.includes('nba')) {
+    return {
+      scored: 'Points Scored',
+      conceded: 'Points Allowed',
+      cleanSheets: 'Blowouts (20+)',
+      avgScored: 'Avg. PPG',
+      avgConceded: 'Avg. Allowed',
+      differential: 'Point Diff',
+    };
+  }
+  
+  if (sportLower.includes('hockey') || sportLower.includes('nhl')) {
+    return {
+      scored: 'Goals Scored',
+      conceded: 'Goals Allowed',
+      cleanSheets: 'Shutouts',
+      avgScored: 'Avg. Goals',
+      avgConceded: 'Avg. Allowed',
+      differential: 'Goal Diff',
+    };
+  }
+  
+  if (sportLower.includes('football') || sportLower.includes('nfl')) {
+    return {
+      scored: 'Points Scored',
+      conceded: 'Points Allowed',
+      cleanSheets: 'Shutouts',
+      avgScored: 'Avg. PPG',
+      avgConceded: 'Avg. Allowed',
+      differential: 'Point Diff',
+    };
+  }
+  
+  if (sportLower.includes('mma') || sportLower.includes('ufc')) {
+    return {
+      scored: 'Wins',
+      conceded: 'Losses',
+      cleanSheets: 'Finishes',
+      avgScored: 'Win Rate',
+      avgConceded: 'Loss Rate',
+      differential: 'W-L Diff',
+    };
+  }
+  
+  if (sportLower.includes('baseball') || sportLower.includes('mlb')) {
+    return {
+      scored: 'Runs Scored',
+      conceded: 'Runs Allowed',
+      cleanSheets: 'Shutouts',
+      avgScored: 'Avg. Runs',
+      avgConceded: 'Avg. Allowed',
+      differential: 'Run Diff',
+    };
+  }
+  
+  // Default: Soccer
+  return {
+    scored: 'Goals Scored',
+    conceded: 'Goals Conceded',
+    cleanSheets: 'Clean Sheets',
+    avgScored: 'Avg. Scored',
+    avgConceded: 'Avg. Conceded',
+    differential: 'Goal Diff',
+  };
 }
 
 interface StatBarProps {
@@ -68,8 +148,12 @@ export default function TeamStatsSection({
   homeStats, 
   awayStats, 
   homeTeam, 
-  awayTeam 
+  awayTeam,
+  sport
 }: TeamStatsSectionProps) {
+  // Get sport-specific labels
+  const labels = getStatLabels(sport);
+  
   // If no stats available
   if (!homeStats && !awayStats) {
     return (
@@ -133,19 +217,19 @@ export default function TeamStatsSection({
         <StatBar 
           homeValue={home.goalsScored} 
           awayValue={away.goalsScored} 
-          label="Goals Scored"
+          label={labels.scored}
           higherIsBetter={true}
         />
         <StatBar 
           homeValue={home.goalsConceded} 
           awayValue={away.goalsConceded} 
-          label="Goals Conceded"
+          label={labels.conceded}
           higherIsBetter={false}
         />
         <StatBar 
           homeValue={home.cleanSheets} 
           awayValue={away.cleanSheets} 
-          label="Clean Sheets"
+          label={labels.cleanSheets}
           higherIsBetter={true}
         />
         
@@ -160,14 +244,14 @@ export default function TeamStatsSection({
             <StatBar 
               homeValue={home.avgGoalsScored || 0} 
               awayValue={away.avgGoalsScored || 0} 
-              label="Avg. Scored"
+              label={labels.avgScored}
               format="decimal"
               higherIsBetter={true}
             />
             <StatBar 
               homeValue={home.avgGoalsConceded || 0} 
               awayValue={away.avgGoalsConceded || 0} 
-              label="Avg. Conceded"
+              label={labels.avgConceded}
               format="decimal"
               higherIsBetter={false}
             />
@@ -177,16 +261,16 @@ export default function TeamStatsSection({
 
       {/* Quick Insights */}
       <div className="grid grid-cols-2 gap-2">
-        {/* Goal Difference */}
+        {/* Differential */}
         <div className="bg-bg-card rounded-lg p-3 border border-divider text-center">
-          <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Goal Diff</p>
+          <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">{labels.differential}</p>
           <p className={`text-lg font-bold ${(home.goalsScored - home.goalsConceded) >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             {home.goalsScored - home.goalsConceded >= 0 ? '+' : ''}{home.goalsScored - home.goalsConceded}
           </p>
           <p className="text-[10px] text-text-muted">{homeTeam.split(' ')[0]}</p>
         </div>
         <div className="bg-bg-card rounded-lg p-3 border border-divider text-center">
-          <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Goal Diff</p>
+          <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">{labels.differential}</p>
           <p className={`text-lg font-bold ${(away.goalsScored - away.goalsConceded) >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
             {away.goalsScored - away.goalsConceded >= 0 ? '+' : ''}{away.goalsScored - away.goalsConceded}
           </p>

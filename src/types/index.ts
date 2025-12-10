@@ -142,14 +142,27 @@ export interface HeadToHeadMatch {
 }
 
 /**
- * Team statistics from API-Football
+ * Team statistics from API-Sports
+ * Field names are sport-agnostic but can represent:
+ * - Soccer: goals scored/conceded
+ * - Basketball: points scored/allowed
+ * - Hockey: goals scored/allowed
+ * - NFL: points scored/allowed
+ * - MMA: wins/losses
  */
 export interface TeamStats {
-  goalsScored: number;
-  goalsConceded: number;
-  cleanSheets: number;
-  avgGoalsScored?: number;
+  // Generic scoring stats (points/goals/wins depending on sport)
+  goalsScored: number;      // Points for (basketball), Goals (soccer/hockey), Wins (MMA)
+  goalsConceded: number;    // Points against, Goals against, Losses (MMA)
+  cleanSheets: number;      // Shutouts (hockey), Finishes (MMA), Clean sheets (soccer)
+  avgGoalsScored?: number;  // PPG (basketball), Avg goals (soccer), Win % (MMA)
   avgGoalsConceded?: number;
+  // Sport-specific stats (optional)
+  wins?: number;
+  losses?: number;
+  winPercentage?: number;
+  pointsPerGame?: number;
+  pointsAllowedPerGame?: number;
 }
 
 /**
