@@ -563,19 +563,27 @@ async function findBasketballTeam(teamName: string, baseUrl: string): Promise<nu
   const cached = getCached<number>(cacheKey);
   if (cached) return cached;
 
-  // Try normalized name first, then original
-  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}`);
+  // Try with NBA league ID (12) first, then without
+  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=12`);
   
+  // If not found in NBA, try EuroLeague (120)
+  if (!response?.response?.length) {
+    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=120`);
+  }
+  
+  // Fallback: search without league filter
   if (!response?.response?.length && normalizedName !== teamName) {
     response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
   }
   
   if (response?.response?.length > 0) {
     const teamId = response.response[0].id;
+    console.log(`[Basketball] Found team "${teamName}" -> ID ${teamId}`);
     setCache(cacheKey, teamId);
     return teamId;
   }
   
+  console.warn(`[Basketball] Team not found: "${teamName}" (normalized: "${normalizedName}")`);
   return null;
 }
 
@@ -744,19 +752,22 @@ async function findHockeyTeam(teamName: string, baseUrl: string): Promise<number
   const cached = getCached<number>(cacheKey);
   if (cached) return cached;
 
-  // Try normalized name first, then original
-  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}`);
+  // Try with NHL league ID (57) first
+  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=57`);
   
+  // Fallback: search without league filter
   if (!response?.response?.length && normalizedName !== teamName) {
     response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
   }
   
   if (response?.response?.length > 0) {
     const teamId = response.response[0].id;
+    console.log(`[Hockey] Found team "${teamName}" -> ID ${teamId}`);
     setCache(cacheKey, teamId);
     return teamId;
   }
   
+  console.warn(`[Hockey] Team not found: "${teamName}" (normalized: "${normalizedName}")`);
   return null;
 }
 
@@ -923,19 +934,22 @@ async function findNFLTeam(teamName: string, baseUrl: string): Promise<number | 
   const cached = getCached<number>(cacheKey);
   if (cached) return cached;
 
-  // Try normalized name first, then original
-  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}`);
+  // Try with NFL league ID (1) first
+  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=1`);
   
+  // Fallback: search without league filter
   if (!response?.response?.length && normalizedName !== teamName) {
     response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
   }
   
   if (response?.response?.length > 0) {
     const teamId = response.response[0].id;
+    console.log(`[NFL] Found team "${teamName}" -> ID ${teamId}`);
     setCache(cacheKey, teamId);
     return teamId;
   }
   
+  console.warn(`[NFL] Team not found: "${teamName}" (normalized: "${normalizedName}")`);
   return null;
 }
 
