@@ -430,24 +430,89 @@ async function getSoccerTeamFixtures(teamId: number, baseUrl: string): Promise<G
   return matches;
 }
 
+// Soccer league IDs for API-Football
+const SOCCER_LEAGUE_IDS: Record<string, number> = {
+  // England
+  'premier_league': 39,
+  'epl': 39,
+  'english_premier_league': 39,
+  // Spain
+  'la_liga': 140,
+  'laliga': 140,
+  'spain_la_liga': 140,
+  // Germany
+  'bundesliga': 78,
+  'germany_bundesliga': 78,
+  // Italy
+  'serie_a': 135,
+  'italy_serie_a': 135,
+  // France
+  'ligue_1': 61,
+  'ligue_one': 61,
+  'france_ligue_one': 61,
+  // UEFA
+  'champions_league': 2,
+  'ucl': 2,
+  'europa_league': 3,
+  'uel': 3,
+  // Portugal
+  'primeira_liga': 94,
+  // Netherlands
+  'eredivisie': 88,
+  // Belgium
+  'jupiler_pro': 144,
+};
+
+/**
+ * Detect soccer league ID from team's league or try multiple leagues
+ */
+async function detectSoccerLeagueForTeam(teamId: number, baseUrl: string): Promise<number | null> {
+  // Try to get team info to find their league
+  const teamResponse = await apiRequest<any>(baseUrl, `/teams?id=${teamId}`);
+  
+  if (teamResponse?.response?.[0]?.team) {
+    // The team endpoint doesn't directly give league, so we'll try common leagues
+    const commonLeagues = [39, 140, 78, 135, 61, 2, 3]; // EPL, La Liga, Bundesliga, Serie A, Ligue 1, UCL, UEL
+    
+    for (const leagueId of commonLeagues) {
+      const testResponse = await apiRequest<any>(baseUrl, `/teams/statistics?team=${teamId}&season=${getCurrentSoccerSeason()}&league=${leagueId}`);
+      if (testResponse?.response?.fixtures?.played?.total > 0) {
+        console.log(`[Soccer] Found team ${teamId} in league ${leagueId}`);
+        return leagueId;
+      }
+    }
+  }
+  
+  return null;
+}
+
 async function getSoccerTeamStats(teamId: number, baseUrl: string): Promise<TeamSeasonStats | null> {
   const cacheKey = `soccer:stats:${teamId}`;
   const cached = getCached<TeamSeasonStats>(cacheKey);
   if (cached) return cached;
 
-  // Get current season year (Premier League season spans Aug-May, so use year of August)
-  const now = new Date();
-  const currentSeason = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  const currentSeason = getCurrentSoccerSeason();
   
-  // Need to specify league (39 = Premier League) for statistics
-  const response = await apiRequest<any>(baseUrl, `/teams/statistics?team=${teamId}&season=${currentSeason}&league=39`);
+  // Try common leagues to find the team's stats
+  const leaguesToTry = [39, 140, 78, 135, 61, 2, 3, 94, 88]; // EPL, La Liga, Bundesliga, Serie A, Ligue 1, UCL, UEL, Primeira, Eredivisie
   
-  if (!response?.response) {
+  let response = null;
+  let foundLeague = null;
+  
+  for (const leagueId of leaguesToTry) {
+    response = await apiRequest<any>(baseUrl, `/teams/statistics?team=${teamId}&season=${currentSeason}&league=${leagueId}`);
+    if (response?.response?.fixtures?.played?.total > 0) {
+      foundLeague = leagueId;
+      break;
+    }
+  }
+  
+  if (!response?.response || !foundLeague) {
     console.log(`[Soccer] No stats found for team ${teamId} in season ${currentSeason}`);
     return null;
   }
 
-  console.log(`[Soccer] Found stats for team ${teamId} in season ${currentSeason}`);
+  console.log(`[Soccer] Found stats for team ${teamId} in league ${foundLeague} season ${currentSeason}`);
   
   const stats = response.response;
   const result: TeamSeasonStats = {
@@ -1075,6 +1140,22 @@ async function getNFLH2H(homeTeamId: number, awayTeamId: number, baseUrl: string
 // MLB (BASEBALL) FUNCTIONS
 // ============================================
 
+/**
+ * Get current MLB season year
+ * MLB season: April to October
+ */
+function getCurrentMLBSeason(): number {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  // If before April, it's the previous year's season data we want
+  // But during offseason (Nov-Mar), use the just-completed season
+  if (month < 4) {
+    return year - 1;
+  }
+  return year;
+}
+
 async function findMLBTeam(teamName: string, baseUrl: string): Promise<number | null> {
   const cacheKey = `mlb:team:${teamName}`;
   const cached = getCached<number>(cacheKey);
@@ -1096,8 +1177,8 @@ async function getMLBTeamGames(teamId: number, baseUrl: string): Promise<GameRes
   const cached = getCached<GameResult[]>(cacheKey);
   if (cached) return cached;
 
-  // MLB season 2024
-  const response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=2024&last=5`);
+  const season = getCurrentMLBSeason();
+  const response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=${season}&last=5`);
   
   if (!response?.response) return [];
 
@@ -1127,7 +1208,8 @@ async function getMLBTeamStats(teamId: number, baseUrl: string): Promise<TeamSea
   const cached = getCached<TeamSeasonStats>(cacheKey);
   if (cached) return cached;
 
-  const response = await apiRequest<any>(baseUrl, `/teams/statistics?id=${teamId}&season=2024`);
+  const season = getCurrentMLBSeason();
+  const response = await apiRequest<any>(baseUrl, `/teams/statistics?id=${teamId}&season=${season}`);
   
   if (!response?.response) return null;
 
