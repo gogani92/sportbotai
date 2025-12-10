@@ -645,3 +645,121 @@ a {
     color: black;
   }
 }
+
+/* ========================================
+   BLOG CONTENT STYLING
+   Custom prose overrides for dark theme
+   ======================================== */
+
+/* Blog article container */
+.blog-content {
+  @apply text-gray-300 leading-relaxed;
+}
+
+/* Blog headings */
+.blog-content h1 {
+  @apply text-3xl md:text-4xl font-bold text-white mt-12 mb-6;
+}
+
+.blog-content h2 {
+  @apply text-2xl md:text-3xl font-bold text-white mt-10 mb-5 pb-3 border-b border-divider;
+}
+
+.blog-content h3 {
+  @apply text-xl md:text-2xl font-semibold text-white mt-8 mb-4;
+}
+
+.blog-content h4 {
+  @apply text-lg md:text-xl font-semibold text-gray-100 mt-6 mb-3;
+}
+
+/* Blog paragraphs */
+.blog-content p {
+  @apply text-gray-300 text-base md:text-lg leading-relaxed mb-6;
+}
+
+/* Blog links */
+.blog-content a {
+  @apply text-accent hover:text-accent-green underline underline-offset-4 transition-colors;
+}
+
+/* Blog lists */
+.blog-content ul {
+  @apply list-disc list-outside pl-6 mb-6 space-y-2;
+}
+
+.blog-content ol {
+  @apply list-decimal list-outside pl-6 mb-6 space-y-2;
+}
+
+.blog-content li {
+  @apply text-gray-300 text-base md:text-lg leading-relaxed pl-2;
+}
+
+.blog-content li::marker {
+  @apply text-accent;
+}
+
+/* Blog blockquotes */
+.blog-content blockquote {
+  @apply border-l-4 border-accent bg-surface-card/50 pl-6 py-4 pr-4 my-8 italic text-gray-200 rounded-r-lg;
+}
+
+.blog-content blockquote p {
+  @apply mb-0;
+}
+
+/* Blog code blocks */
+.blog-content pre {
+  @apply bg-primary-950 border border-divider rounded-xl p-4 my-6 overflow-x-auto;
+}
+
+.blog-content code {
+  @apply bg-surface-card text-accent px-2 py-1 rounded text-sm font-mono;
+}
+
+.blog-content pre code {
+  @apply bg-transparent p-0 text-gray-300;
+}
+
+/* Blog images */
+.blog-content img {
+  @apply rounded-xl my-8;
+}
+
+/* Blog horizontal rule */
+.blog-content hr {
+  @apply border-divider my-10;
+}
+
+/* Blog strong/bold */
+.blog-content strong {
+  @apply text-white font-semibold;
+}
+
+/* Blog emphasis */
+.blog-content em {
+  @apply text-gray-200 italic;
+}
+
+/* Blog table */
+.blog-content table {
+  @apply w-full my-8 border-collapse;
+}
+
+.blog-content th {
+  @apply bg-surface-card text-white font-semibold text-left p-3 border-b border-divider;
+}
+
+.blog-content td {
+  @apply text-gray-300 p-3 border-b border-divider/50;
+}
+
+.blog-content tr:hover td {
+  @apply bg-surface-card/30;
+}
+
+/* First paragraph styling - larger text */
+.blog-content > p:first-of-type {
+  @apply text-lg md:text-xl text-gray-200 leading-relaxed;
+}
