@@ -151,47 +151,65 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                 {posts.map((post) => (
                   <article
                     key={post.id}
-                    className="bg-slate-800/50 rounded-xl overflow-hidden border border-slate-700 hover:border-emerald-500/50 transition-all hover:transform hover:scale-[1.02]"
+                    className="group bg-slate-800/50 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/10 hover:transform hover:scale-[1.02]"
                   >
                     <Link href={`/blog/${post.slug}`}>
-                      <div className="aspect-video relative bg-slate-700">
+                      {/* Image Container */}
+                      <div className="aspect-video relative bg-gradient-to-br from-slate-700 to-slate-800 overflow-hidden">
                         {post.featuredImage ? (
                           <Image
                             src={post.featuredImage}
                             alt={post.imageAlt || post.title}
                             fill
-                            className="object-cover"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-4xl">📊</span>
+                            <span className="text-5xl opacity-50">📊</span>
                           </div>
                         )}
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
+                      
+                      {/* Content */}
                       <div className="p-6">
+                        {/* Category Badge */}
                         {post.category && (
-                          <span className="text-emerald-400 text-sm font-medium">
+                          <span className="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold rounded-full mb-3">
                             {post.category}
                           </span>
                         )}
-                        <h2 className="text-xl font-semibold text-white mt-2 mb-3 line-clamp-2">
+                        
+                        {/* Title */}
+                        <h2 className="text-xl font-bold text-white mb-3 line-clamp-2 group-hover:text-emerald-300 transition-colors leading-tight">
                           {post.title}
                         </h2>
-                        <p className="text-slate-400 text-sm line-clamp-3">
+                        
+                        {/* Excerpt */}
+                        <p className="text-slate-400 text-sm line-clamp-3 leading-relaxed mb-4">
                           {post.excerpt}
                         </p>
-                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-700">
-                          <span className="text-slate-500 text-sm">
+                        
+                        {/* Meta Footer */}
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                          <span className="text-slate-500 text-sm flex items-center gap-1.5">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
                             {post.publishedAt
                               ? new Date(post.publishedAt).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
-                                  year: 'numeric',
                                 })
                               : 'Draft'}
                           </span>
-                          <span className="text-slate-500 text-sm">
-                            {post.views} views
+                          <span className="text-slate-500 text-sm flex items-center gap-1.5">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            {post.views}
                           </span>
                         </div>
                       </div>

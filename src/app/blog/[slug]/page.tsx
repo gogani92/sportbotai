@@ -220,23 +220,55 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <section className="pb-16">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
-              {/* Article Content */}
+              {/* Article Content - Enhanced Typography */}
               <div 
-                className="prose prose-lg prose-invert prose-emerald max-w-none
-                  prose-headings:text-white prose-headings:font-bold
-                  prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-6
-                  prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4
-                  prose-p:text-slate-300 prose-p:leading-relaxed
-                  prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
-                  prose-strong:text-white
-                  prose-ul:text-slate-300 prose-ol:text-slate-300
-                  prose-li:marker:text-emerald-400
-                  prose-blockquote:border-emerald-500 prose-blockquote:text-slate-400
-                  prose-code:text-emerald-300 prose-code:bg-slate-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-                  prose-pre:bg-slate-800/80 prose-pre:border prose-pre:border-slate-700
-                  prose-table:border-slate-700
-                  prose-th:bg-slate-800 prose-th:text-white prose-th:border-slate-700
-                  prose-td:border-slate-700"
+                className="
+                  prose prose-lg prose-invert prose-emerald max-w-none
+                  
+                  /* Headings - Better hierarchy and spacing */
+                  prose-headings:text-white prose-headings:font-bold prose-headings:tracking-tight
+                  prose-h1:text-4xl prose-h1:mt-16 prose-h1:mb-8 prose-h1:leading-tight
+                  prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-6 prose-h2:pb-4 prose-h2:border-b prose-h2:border-slate-700/50
+                  prose-h3:text-2xl prose-h3:mt-12 prose-h3:mb-5 prose-h3:text-slate-100
+                  prose-h4:text-xl prose-h4:mt-10 prose-h4:mb-4 prose-h4:text-slate-200
+                  
+                  /* Paragraphs - Better readability */
+                  prose-p:text-slate-300 prose-p:leading-[1.8] prose-p:mb-6 prose-p:text-[17px]
+                  
+                  /* Links */
+                  prose-a:text-emerald-400 prose-a:font-medium prose-a:no-underline prose-a:border-b prose-a:border-emerald-400/30 hover:prose-a:border-emerald-400
+                  
+                  /* Strong/Bold */
+                  prose-strong:text-white prose-strong:font-semibold
+                  
+                  /* Lists - Better spacing */
+                  prose-ul:text-slate-300 prose-ul:my-8 prose-ul:space-y-3
+                  prose-ol:text-slate-300 prose-ol:my-8 prose-ol:space-y-3
+                  prose-li:text-[17px] prose-li:leading-[1.7] prose-li:pl-2
+                  prose-li:marker:text-emerald-400 prose-li:marker:font-bold
+                  
+                  /* Blockquotes - Standout style */
+                  prose-blockquote:border-l-4 prose-blockquote:border-emerald-500 
+                  prose-blockquote:bg-slate-800/50 prose-blockquote:rounded-r-lg
+                  prose-blockquote:text-slate-300 prose-blockquote:italic
+                  prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:my-8
+                  prose-blockquote:not-italic prose-blockquote:text-[17px]
+                  
+                  /* Code */
+                  prose-code:text-emerald-300 prose-code:bg-slate-800 prose-code:px-2 prose-code:py-1 prose-code:rounded-md prose-code:text-sm prose-code:font-mono
+                  prose-pre:bg-slate-800/80 prose-pre:border prose-pre:border-slate-700 prose-pre:rounded-xl prose-pre:my-8
+                  
+                  /* Tables */
+                  prose-table:border-slate-700 prose-table:my-8
+                  prose-th:bg-slate-800 prose-th:text-white prose-th:border-slate-700 prose-th:px-4 prose-th:py-3
+                  prose-td:border-slate-700 prose-td:px-4 prose-td:py-3
+                  
+                  /* Images */
+                  prose-img:rounded-xl prose-img:my-10 prose-img:shadow-lg
+                  
+                  /* Horizontal rules */
+                  prose-hr:border-slate-700 prose-hr:my-12
+                "
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
 
