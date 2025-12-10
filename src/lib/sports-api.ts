@@ -159,36 +159,28 @@ function setCache(key: string, data: any): void {
 // ============================================
 
 async function apiRequest<T>(baseUrl: string, endpoint: string): Promise<T | null> {
-  const apiKey = process.env.API_FOOTBALL_KEY; // Same key works for all sports
+  const apiKey = process.env.API_FOOTBALL_KEY;
   
   if (!apiKey) {
-    console.error('[API-Sports] ❌ API_FOOTBALL_KEY not configured in environment variables!');
+    console.warn('[API-Sports] API_FOOTBALL_KEY not configured');
     return null;
   }
 
-  const fullUrl = `${baseUrl}${endpoint}`;
-  console.log(`[API-Sports] 🔗 Requesting: ${fullUrl}`);
-
   try {
-    const response = await fetch(fullUrl, {
+    const response = await fetch(`${baseUrl}${endpoint}`, {
       headers: {
         'x-apisports-key': apiKey,
       },
     });
 
-    console.log(`[API-Sports] Response status: ${response.status}`);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[API-Sports] ❌ Error ${response.status}: ${errorText}`);
+      console.error(`[API-Sports] Error: ${response.status}`);
       return null;
     }
 
-    const data = await response.json();
-    console.log(`[API-Sports] ✅ Data received, results: ${data?.results || 0}`);
-    return data;
+    return await response.json();
   } catch (error) {
-    console.error('[API-Sports] ❌ Request failed:', error);
+    console.error('[API-Sports] Request failed:', error);
     return null;
   }
 }
@@ -902,12 +894,6 @@ export async function getMultiSportEnrichedData(
   sport: string,
   league?: string
 ): Promise<MultiSportEnrichedData> {
-  console.log('[API-Sports] ========================================');
-  console.log('[API-Sports] 🚀 getMultiSportEnrichedData called');
-  console.log(`[API-Sports] Teams: "${homeTeam}" vs "${awayTeam}"`);
-  console.log(`[API-Sports] Sport: "${sport}", League: "${league}"`);
-  console.log(`[API-Sports] API_FOOTBALL_KEY configured: ${process.env.API_FOOTBALL_KEY ? '✅ YES' : '❌ NO'}`);
-  
   const emptyResult: MultiSportEnrichedData = {
     sport,
     homeForm: null,
@@ -921,20 +907,16 @@ export async function getMultiSportEnrichedData(
 
   // Check if API is configured
   if (!process.env.API_FOOTBALL_KEY) {
-    console.error('[API-Sports] ❌ API_FOOTBALL_KEY is not set! Returning empty result.');
     return emptyResult;
   }
 
   // Determine sport type
   const sportKey = getSportKey(sport);
-  console.log(`[API-Sports] Sport key resolved: "${sportKey}"`);
   if (!sportKey) {
-    console.log(`[API-Sports] ⚠️ Sport not supported: ${sport}`);
     return emptyResult;
   }
 
   const baseUrl = getApiBase(sportKey);
-  console.log(`[API-Sports] Base URL: ${baseUrl}`);
   if (!baseUrl) {
     return emptyResult;
   }
