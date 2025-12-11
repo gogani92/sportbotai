@@ -99,7 +99,7 @@ export default function MarketStabilitySection({ marketStability }: MarketStabil
         <MarketCard marketKey="btts" market={marketStability.markets.btts} />
       </div>
 
-      {/* Safest Market Recommendation */}
+      {/* Most Stable Market */}
       <div className="border-t border-gray-100 pt-4">
         <div className={`p-4 rounded-lg ${
           marketStability.safestMarketType !== 'NONE' 

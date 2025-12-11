@@ -136,11 +136,11 @@ export default function Hero() {
                   </div>
                 </div>
 
-                {/* Value & Risk Badges */}
+                {/* Analysis Badges */}
                 <div className="mt-6 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="badge badge-success">Value Found</span>
-                    <span className="badge badge-warning">Medium Risk</span>
+                    <span className="badge badge-success">Odds Gap Found</span>
+                    <span className="badge badge-warning">Medium Volatility</span>
                   </div>
                   <div className="flex items-center gap-1 text-gray-400 text-sm">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

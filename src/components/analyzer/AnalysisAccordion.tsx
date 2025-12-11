@@ -255,13 +255,13 @@ export default function AnalysisAccordion({ result }: AnalysisAccordionProps) {
               })}
             </div>
             
-            {/* Safest Market */}
+            {/* Most Stable Market */}
             <div className="mt-3 p-3 bg-success/10 border border-success/20 rounded-btn">
               <div className="flex items-center gap-2">
                 <span className="text-success">✓</span>
-                <span className="text-xs font-medium text-text-secondary">Safest Market:</span>
+                <span className="text-xs font-medium text-text-secondary">Most Stable:</span>
                 <span className="text-xs font-bold text-success">
-                  {marketStability.safestMarketType === 'NONE' ? 'None recommended' : marketStability.safestMarketType}
+                  {marketStability.safestMarketType === 'NONE' ? 'Insufficient data' : marketStability.safestMarketType}
                 </span>
               </div>
               <p className="text-[10px] sm:text-xs text-text-muted mt-1 ml-6">{marketStability.safestMarketExplanation}</p>

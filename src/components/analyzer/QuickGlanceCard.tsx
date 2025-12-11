@@ -27,12 +27,13 @@ const riskConfig: Record<RiskLevel, { label: string; color: string; bgClass: str
   HIGH: { label: 'High Risk', color: 'text-danger', bgClass: 'bg-danger/10 border-danger/20', icon: '⚠' },
 };
 
-// Configuration for value flag display - Design System v2.0
+// Configuration for odds discrepancy display - Design System v2.0
+// Shows difference between bookmaker odds and AI probability estimate
 const valueConfig: Record<ValueFlag, { label: string; color: string; bgClass: string; description: string }> = {
-  NONE: { label: 'No Value', color: 'text-text-muted', bgClass: 'bg-bg-hover border-divider', description: 'Odds reflect fair probability' },
-  LOW: { label: 'Low Value', color: 'text-info', bgClass: 'bg-info/10 border-info/20', description: 'Minor edge detected' },
-  MEDIUM: { label: 'Value Found', color: 'text-accent', bgClass: 'bg-accent/10 border-accent/20', description: 'Good opportunity' },
-  HIGH: { label: 'High Value', color: 'text-success', bgClass: 'bg-success/10 border-success/20', description: 'Strong edge detected' },
+  NONE: { label: 'Odds Aligned', color: 'text-text-muted', bgClass: 'bg-bg-hover border-divider', description: 'Odds reflect estimated probability' },
+  LOW: { label: 'Minor Gap', color: 'text-info', bgClass: 'bg-info/10 border-info/20', description: 'Small odds discrepancy' },
+  MEDIUM: { label: 'Odds Gap', color: 'text-accent', bgClass: 'bg-accent/10 border-accent/20', description: 'Notable probability difference' },
+  HIGH: { label: 'Large Gap', color: 'text-success', bgClass: 'bg-success/10 border-success/20', description: 'Significant odds discrepancy' },
 };
 
 export default function QuickGlanceCard({ result }: QuickGlanceCardProps) {

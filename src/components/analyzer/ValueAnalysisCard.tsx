@@ -145,16 +145,16 @@ function KellyDisplay({ kelly, bestSide }: KellyDisplayProps) {
           <span className="text-sm font-semibold text-text-secondary">Kelly Criterion</span>
         </div>
         <p className="text-xs text-text-muted">
-          No positive edge detected. Kelly suggests no stake.
+          No significant probability difference detected.
         </p>
       </div>
     );
   }
   
   const fractions = [
-    { key: 'quarter' as const, label: '¼ Kelly', value: kelly.quarterKelly, desc: 'Very Safe' },
-    { key: 'half' as const, label: '½ Kelly', value: kelly.halfKelly, desc: 'Recommended' },
-    { key: 'full' as const, label: 'Full Kelly', value: kelly.fullKelly, desc: 'Aggressive' },
+    { key: 'quarter' as const, label: '¼ Kelly', value: kelly.quarterKelly, desc: 'Conservative' },
+    { key: 'half' as const, label: '½ Kelly', value: kelly.halfKelly, desc: 'Standard' },
+    { key: 'full' as const, label: 'Full Kelly', value: kelly.fullKelly, desc: 'Maximum' },
   ];
   
   const confidenceColors = {
@@ -175,10 +175,10 @@ function KellyDisplay({ kelly, bestSide }: KellyDisplayProps) {
         </span>
       </div>
       
-      {/* Edge indicator */}
+      {/* Probability difference indicator */}
       <div className="mb-3 px-3 py-2 bg-bg-card rounded-lg border border-divider">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-text-muted">Expected Edge</span>
+          <span className="text-xs text-text-muted">Probability Difference</span>
           <span className={`text-sm font-bold ${kelly.edge > 5 ? 'text-accent-green' : kelly.edge > 2 ? 'text-accent-lime' : 'text-blue-600'}`}>
             +{kelly.edge.toFixed(1)}%
           </span>
@@ -236,7 +236,7 @@ export default function ValueAnalysisCard({ valueAnalysis }: ValueAnalysisCardPr
         <div className="flex items-center gap-2">
           <span className="text-lg">{bestValueConfig.icon}</span>
           <div>
-            <h4 className="text-sm font-semibold text-white">Best Value</h4>
+            <h4 className="text-sm font-semibold text-white">Largest Discrepancy</h4>
             <p className={`text-xs font-medium ${bestValueConfig.color}`}>
               {bestValueConfig.label}
             </p>
@@ -244,7 +244,7 @@ export default function ValueAnalysisCard({ valueAnalysis }: ValueAnalysisCardPr
         </div>
         {valueAnalysis.bestValueSide !== 'NONE' && (
           <div className="px-3 py-1.5 bg-accent-green/10 rounded-full">
-            <span className="text-xs font-semibold text-accent-green">Edge Detected</span>
+            <span className="text-xs font-semibold text-accent-green">Gap Detected</span>
           </div>
         )}
       </div>
