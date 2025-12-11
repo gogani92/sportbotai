@@ -1,27 +1,30 @@
 /**
- * Analysis Results Component
+ * Analysis Results Component - Premium 3-Tier Hierarchy
  * 
- * Desktop-optimized 6-layer layout for analysis results.
- * Uses 2-3 column grids on desktop for efficient space use,
- * falls back to single column on mobile.
+ * Tier 1 (Core Summary): Visually loud, essential information
+ * - Core Verdict Card (hero)
+ * - Match Story (AI narrative)
  * 
- * Layout Structure:
- * - Layer 1: Quick Glance (full width - hero section)
- * - Layer 1.5: Quick Stats + Key Factors (2-col)
- * - Layer 1.75: H2H + Injury Impact (2-col on desktop)
- * - Layer 2: League Context + Team Radar (2-col)
- * - Layer 2.25: Rest Schedule + Match Context (2-col)
- * - Layer 3: Confidence + Sport Insights (2-col)
- * - Layer 4: Analysis Accordion (full width)
- * - Layer 5: Extras (full width)
+ * Tier 2 (Key Insights): Grouped, lighter background
+ * - Momentum + Confidence
+ * - Quick Stats + Key Factors  
+ * - Injury Impact (if available)
  * 
- * Mobile-first, scales beautifully to desktop with efficient layout.
+ * Tier 3 (Deep Dive): Collapsible, secondary
+ * - H2H, League Context, Radar
+ * - Rest Schedule, Match Context
+ * - Full Accordion
+ * 
+ * iOS 17 + Tesla UI inspired design with proper contrast.
  */
 
 'use client';
 
+import { useState } from 'react';
 import { AnalyzeResponse } from '@/types';
-import QuickGlanceCard from './QuickGlanceCard';
+import CoreVerdictCard from './CoreVerdictCard';
+import MatchStoryCard from './MatchStoryCard';
+import SectionDivider from './SectionDivider';
 import QuickStatsCard from './QuickStatsCard';
 import KeyFactorsCard from './KeyFactorsCard';
 import ConfidenceMeter from './ConfidenceMeter';
@@ -40,10 +43,12 @@ interface AnalysisResultsProps {
 }
 
 export default function AnalysisResults({ result }: AnalysisResultsProps) {
+  const [showDeepDive, setShowDeepDive] = useState(false);
+  
   // Error state
   if (!result.success && result.error) {
     return (
-      <div className="bg-bg-card rounded-2xl border border-danger/30 shadow-card p-6 sm:p-8 max-w-2xl mx-auto">
+      <div className="bg-[#0F1114] rounded-2xl border border-danger/30 shadow-card p-6 sm:p-8 max-w-2xl mx-auto">
         <div className="flex flex-col sm:flex-row items-start gap-4">
           <div className="flex-shrink-0 w-14 h-14 bg-danger/15 rounded-xl flex items-center justify-center">
             <svg className="w-7 h-7 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -67,149 +72,145 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
   );
 
   return (
-    <div className="space-y-6 lg:space-y-8 max-w-7xl mx-auto">
-      {/* ================================ */}
-      {/* LAYER 1: HERO - Quick Glance    */}
-      {/* Full width on all screens       */}
-      {/* ================================ */}
-      <section>
-        <QuickGlanceCard result={result} />
+    <div className="max-w-6xl mx-auto">
+      
+      {/* ============================================ */}
+      {/* TIER 1: CORE SUMMARY                        */}
+      {/* Visually loud, essential information        */}
+      {/* ============================================ */}
+      
+      <section className="space-y-6">
+        {/* Hero: Core Verdict */}
+        <CoreVerdictCard result={result} />
+        
+        {/* Match Story - AI Narrative */}
+        <MatchStoryCard result={result} />
       </section>
 
-      {/* ================================ */}
-      {/* LAYER 1.5: Quick Stats + Factors*/}
-      {/* 2-col on tablet+                */}
-      {/* ================================ */}
-      <section>
+      {/* ============================================ */}
+      {/* TIER 2: KEY INSIGHTS                        */}
+      {/* Grouped insights, lighter card background   */}
+      {/* ============================================ */}
+      
+      <SectionDivider label="Key Insights" icon="📊" variant="primary" />
+      
+      <section className="space-y-4 lg:space-y-6">
+        {/* Row 1: Confidence + Sport Insights */}
         <div className="grid md:grid-cols-2 gap-4 lg:gap-6">
-          <QuickStatsCard result={result} />
-          <KeyFactorsCard result={result} />
+          <div className="bg-[#0A0D10] rounded-2xl p-1">
+            <ConfidenceMeter result={result} />
+          </div>
+          <div className="bg-[#0A0D10] rounded-2xl p-1">
+            <SportInsightsCard result={result} />
+          </div>
         </div>
+        
+        {/* Row 2: Quick Stats + Key Factors */}
+        <div className="grid md:grid-cols-2 gap-4 lg:gap-6">
+          <div className="bg-[#0A0D10] rounded-2xl p-1">
+            <QuickStatsCard result={result} />
+          </div>
+          <div className="bg-[#0A0D10] rounded-2xl p-1">
+            <KeyFactorsCard result={result} />
+          </div>
+        </div>
+        
+        {/* Injury Impact (if available) - Full width in Tier 2 */}
+        {hasInjuryData && (
+          <div className="bg-[#0A0D10] rounded-2xl p-1">
+            <InjuryImpactCard
+              injuryContext={result.injuryContext!}
+              homeTeam={result.matchInfo.homeTeam}
+              awayTeam={result.matchInfo.awayTeam}
+            />
+          </div>
+        )}
       </section>
 
-      {/* ================================ */}
-      {/* LAYER 1.75: H2H + Injuries      */}
-      {/* 2-col on large desktop          */}
-      {/* ================================ */}
-      {(hasH2HData || hasInjuryData) && (
-        <section>
-          <div className="flex items-center justify-between mb-3 lg:mb-4 px-1">
-            <h2 className="text-xs sm:text-sm font-semibold text-text-muted uppercase tracking-wider">
-              Head-to-Head & Squad Status
-            </h2>
-            <span className="text-[10px] sm:text-xs text-accent">
-              📊 Historical Data
-            </span>
-          </div>
+      {/* ============================================ */}
+      {/* TIER 3: DEEP DIVE                           */}
+      {/* Collapsible, secondary details              */}
+      {/* ============================================ */}
+      
+      <SectionDivider label="Deep Analysis" icon="🔬" variant="secondary" />
+      
+      {/* Expand/Collapse Toggle */}
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={() => setShowDeepDive(!showDeepDive)}
+          className="group flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all duration-200"
+        >
+          <span className="text-sm text-text-secondary group-hover:text-white transition-colors">
+            {showDeepDive ? 'Hide' : 'Show'} Detailed Stats
+          </span>
+          <svg 
+            className={`w-4 h-4 text-text-muted group-hover:text-accent transition-all duration-200 ${showDeepDive ? 'rotate-180' : ''}`}
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+      
+      {/* Collapsible Deep Dive Content */}
+      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${showDeepDive ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <section className="space-y-4 lg:space-y-6 pb-6">
           
-          {/* If both available: side by side on desktop */}
-          {hasH2HData && hasInjuryData ? (
-            <div className="grid xl:grid-cols-2 gap-4 lg:gap-6">
+          {/* H2H Stats (if available) */}
+          {hasH2HData && (
+            <div className="bg-[#080A0D] rounded-xl border border-white/5 p-1">
               <H2HStatsCard
                 homeTeam={result.matchInfo.homeTeam}
                 awayTeam={result.matchInfo.awayTeam}
                 h2hMatches={result.momentumAndForm.headToHead}
                 h2hSummary={result.momentumAndForm.h2hSummary}
               />
-              <InjuryImpactCard
-                injuryContext={result.injuryContext!}
-                homeTeam={result.matchInfo.homeTeam}
-                awayTeam={result.matchInfo.awayTeam}
-              />
             </div>
-          ) : hasH2HData ? (
-            <H2HStatsCard
-              homeTeam={result.matchInfo.homeTeam}
-              awayTeam={result.matchInfo.awayTeam}
-              h2hMatches={result.momentumAndForm.headToHead}
-              h2hSummary={result.momentumAndForm.h2hSummary}
-            />
-          ) : hasInjuryData ? (
-            <InjuryImpactCard
-              injuryContext={result.injuryContext!}
-              homeTeam={result.matchInfo.homeTeam}
-              awayTeam={result.matchInfo.awayTeam}
-            />
-          ) : null}
-        </section>
-      )}
-
-      {/* ================================ */}
-      {/* LAYER 2: Team Analytics         */}
-      {/* League Context + Radar Chart    */}
-      {/* 2-col on tablet+                */}
-      {/* ================================ */}
-      <section>
-        <div className="flex items-center justify-between mb-3 lg:mb-4 px-1">
-          <h2 className="text-xs sm:text-sm font-semibold text-text-muted uppercase tracking-wider">
-            Team Analytics
-          </h2>
-          <span className="text-[10px] sm:text-xs text-accent">
-            📊 Advanced Stats
-          </span>
-        </div>
-        <div className="grid md:grid-cols-2 gap-4 lg:gap-6">
-          <LeagueContextCard result={result} />
-          <TeamComparisonRadar result={result} />
-        </div>
-      </section>
-
-      {/* ================================ */}
-      {/* LAYER 2.25: Rest + Context      */}
-      {/* Rest Schedule + Match Indicators*/}
-      {/* 2-col on large desktop          */}
-      {/* ================================ */}
-      <section>
-        <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
-          <RestScheduleCard result={result} />
-          <div className="lg:flex lg:flex-col lg:justify-center">
-            <MatchContextIndicators result={result} />
+          )}
+          
+          {/* League Context + Team Radar */}
+          <div className="grid md:grid-cols-2 gap-4 lg:gap-6">
+            <div className="bg-[#080A0D] rounded-xl border border-white/5 p-1">
+              <LeagueContextCard result={result} />
+            </div>
+            <div className="bg-[#080A0D] rounded-xl border border-white/5 p-1">
+              <TeamComparisonRadar result={result} />
+            </div>
           </div>
+          
+          {/* Rest Schedule + Match Context */}
+          <div className="grid md:grid-cols-2 gap-4 lg:gap-6">
+            <div className="bg-[#080A0D] rounded-xl border border-white/5 p-1">
+              <RestScheduleCard result={result} />
+            </div>
+            <div className="bg-[#080A0D] rounded-xl border border-white/5 p-1">
+              <MatchContextIndicators result={result} />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* ============================================ */}
+      {/* TIER 3B: DETAILED ACCORDION                 */}
+      {/* Full technical breakdown                    */}
+      {/* ============================================ */}
+      
+      <section className="mt-2">
+        <div className="bg-[#080A0D] rounded-xl border border-white/5 p-1">
+          <AnalysisAccordion result={result} />
         </div>
       </section>
 
-      {/* ================================ */}
-      {/* LAYER 3: Confidence & Insights  */}
-      {/* 2-col on tablet+                */}
-      {/* ================================ */}
+      {/* ============================================ */}
+      {/* FOOTER: EXTRAS                              */}
+      {/* Audio, Notes, Disclaimer                    */}
+      {/* ============================================ */}
+      
+      <SectionDivider label="More" icon="⚙️" variant="subtle" className="mt-8" />
+      
       <section>
-        <div className="flex items-center justify-between mb-3 lg:mb-4 px-1">
-          <h2 className="text-xs sm:text-sm font-semibold text-text-muted uppercase tracking-wider">
-            Analysis Confidence
-          </h2>
-        </div>
-        <div className="grid md:grid-cols-2 gap-4 lg:gap-6">
-          <ConfidenceMeter result={result} />
-          <SportInsightsCard result={result} />
-        </div>
-      </section>
-
-      {/* ================================ */}
-      {/* LAYER 4: Detailed Accordion     */}
-      {/* Full width, collapsible         */}
-      {/* ================================ */}
-      <section>
-        <div className="flex items-center justify-between mb-3 lg:mb-4 px-1">
-          <h2 className="text-xs sm:text-sm font-semibold text-text-muted uppercase tracking-wider">
-            Detailed Analysis
-          </h2>
-          <span className="text-[10px] sm:text-xs text-text-muted">
-            Tap to expand
-          </span>
-        </div>
-        <AnalysisAccordion result={result} />
-      </section>
-
-      {/* ================================ */}
-      {/* LAYER 5: Extras & Options       */}
-      {/* Audio, Notes, Disclaimer        */}
-      {/* ================================ */}
-      <section>
-        <div className="mb-3 lg:mb-4 px-1">
-          <h2 className="text-xs sm:text-sm font-semibold text-text-muted uppercase tracking-wider">
-            More Options
-          </h2>
-        </div>
         <ExtrasSection result={result} />
       </section>
     </div>

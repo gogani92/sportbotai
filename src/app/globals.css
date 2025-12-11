@@ -20,9 +20,10 @@
   --color-accent-dark: #1EC77E;
   --color-accent-light: #D6FFEC;
   
-  /* Background Colors */
-  --color-bg: #0B0E11;
-  --color-bg-card: #14181D;
+  /* Background Colors - iOS 17 + Tesla UI inspired */
+  --color-bg: #050607;           /* Page background - darkest */
+  --color-bg-card: #0F1114;      /* Card background - slightly lighter */
+  --color-bg-card-elevated: #141820; /* Elevated card - tier 2 */
   --color-bg-hover: #1C2229;
   --color-bg-light: #F8FAFC;
   
@@ -38,7 +39,7 @@
   --color-info: #38BDF8;
   
   /* Borders & Dividers */
-  --color-divider: #2A3036;
+  --color-divider: #1E2328;
   
   /* Spacing */
   --space-xs: 4px;

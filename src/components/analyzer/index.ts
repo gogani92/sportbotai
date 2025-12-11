@@ -59,3 +59,8 @@ export { default as TeamComparisonRadar } from './TeamComparisonRadar';
 export { default as MatchContextIndicators } from './MatchContextIndicators';
 export { default as RestScheduleCard } from './RestScheduleCard';
 export { default as InjuryImpactCard } from './InjuryImpactCard';
+
+// NEW: Premium Tier System Components
+export { default as SectionDivider } from './SectionDivider';
+export { default as MatchStoryCard } from './MatchStoryCard';
+export { default as CoreVerdictCard } from './CoreVerdictCard';
