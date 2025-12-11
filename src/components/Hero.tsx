@@ -35,7 +35,7 @@ export default function Hero() {
 
             {/* Subheadline */}
             <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-6 sm:mb-8 max-w-xl mx-auto lg:mx-0">
-              Real-time probability models, value detection, and risk insights for Soccer, NBA, NFL, Tennis & more. 
+              Real-time probability models, value detection, and risk insights for Soccer, NBA, NFL, NHL, UFC & more. 
               <strong className="text-gray-300"> Not betting tips—pure sports intelligence.</strong>
             </p>
 

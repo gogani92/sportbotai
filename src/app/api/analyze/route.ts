@@ -4,7 +4,7 @@
  * AI-powered multi-sport match analysis endpoint.
  * Returns analysis strictly following the FINAL JSON schema.
  * 
- * Supports: Soccer, NBA, NFL, Tennis, NHL, MMA, MLB, and more.
+ * Supports: Soccer, NBA, NFL, NHL, MMA/UFC.
  * 
  * AUTHENTICATION & LIMITS:
  * - Requires authenticated user session

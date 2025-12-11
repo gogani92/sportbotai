@@ -6,7 +6,7 @@
  * - API-Basketball (NBA, EuroLeague, etc.)
  * - API-American-Football (NFL)
  * - API-Hockey (NHL)
- * - API-Baseball (MLB)
+ * - API-MMA (UFC, Bellator)
  * 
  * All use the same API key from api-sports.io
  * Free tier: 100 requests/day (shared across all sports)
@@ -26,7 +26,6 @@ const API_BASES: Record<string, string> = {
   basketball: 'https://v1.basketball.api-sports.io',  // EuroLeague, NCAAB, etc.
   american_football: 'https://v1.american-football.api-sports.io',
   hockey: 'https://v1.hockey.api-sports.io',
-  baseball: 'https://v1.baseball.api-sports.io',
   mma: 'https://v1.mma.api-sports.io',  // UFC, Bellator, etc.
 };
 
@@ -133,11 +132,6 @@ const SPORT_MAPPING: Record<string, string> = {
   'icehockey': 'hockey',
   'icehockey_nhl': 'hockey',
   'nhl': 'hockey',
-  
-  // Baseball
-  'baseball': 'baseball',
-  'baseball_mlb': 'baseball',
-  'mlb': 'baseball',
   
   // MMA / UFC
   'mma': 'mma',
@@ -1139,147 +1133,6 @@ async function getNFLH2H(homeTeamId: number, awayTeamId: number, baseUrl: string
 // ============================================
 // MLB (BASEBALL) FUNCTIONS
 // ============================================
-
-/**
- * Get current MLB season year
- * MLB season: April to October
- */
-function getCurrentMLBSeason(): number {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  // If before April, it's the previous year's season data we want
-  // But during offseason (Nov-Mar), use the just-completed season
-  if (month < 4) {
-    return year - 1;
-  }
-  return year;
-}
-
-async function findMLBTeam(teamName: string, baseUrl: string): Promise<number | null> {
-  const cacheKey = `mlb:team:${teamName}`;
-  const cached = getCached<number>(cacheKey);
-  if (cached) return cached;
-
-  const response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
-  
-  if (response?.response?.length > 0) {
-    const teamId = response.response[0].id;
-    setCache(cacheKey, teamId);
-    return teamId;
-  }
-  
-  return null;
-}
-
-async function getMLBTeamGames(teamId: number, baseUrl: string): Promise<GameResult[]> {
-  const cacheKey = `mlb:games:${teamId}`;
-  const cached = getCached<GameResult[]>(cacheKey);
-  if (cached) return cached;
-
-  const season = getCurrentMLBSeason();
-  const response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=${season}&last=5`);
-  
-  if (!response?.response) return [];
-
-  const games: GameResult[] = response.response.map((game: any) => {
-    const isHome = game.teams.home.id === teamId;
-    const teamScore = isHome ? game.scores.home.total : game.scores.away.total;
-    const oppScore = isHome ? game.scores.away.total : game.scores.home.total;
-    
-    // Baseball has no ties
-    const result: 'W' | 'L' = teamScore > oppScore ? 'W' : 'L';
-
-    return {
-      result,
-      score: `${game.scores.home.total}-${game.scores.away.total}`,
-      opponent: isHome ? game.teams.away.name : game.teams.home.name,
-      date: game.date,
-      home: isHome,
-    };
-  });
-
-  setCache(cacheKey, games);
-  return games;
-}
-
-async function getMLBTeamStats(teamId: number, baseUrl: string): Promise<TeamSeasonStats | null> {
-  const cacheKey = `mlb:stats:${teamId}`;
-  const cached = getCached<TeamSeasonStats>(cacheKey);
-  if (cached) return cached;
-
-  const season = getCurrentMLBSeason();
-  const response = await apiRequest<any>(baseUrl, `/teams/statistics?id=${teamId}&season=${season}`);
-  
-  if (!response?.response) return null;
-
-  const stats = response.response;
-  const gamesPlayed = (stats.games?.played || 0);
-  const wins = stats.games?.wins?.total || 0;
-  const losses = stats.games?.loses?.total || 0;
-  
-  const result: TeamSeasonStats = {
-    gamesPlayed,
-    wins,
-    losses,
-    pointsFor: stats.runs?.for?.total || 0,
-    pointsAgainst: stats.runs?.against?.total || 0,
-    winPercentage: gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0,
-  };
-
-  setCache(cacheKey, result);
-  return result;
-}
-
-async function getMLBH2H(homeTeamId: number, awayTeamId: number, baseUrl: string): Promise<{ matches: H2HMatch[], summary: any } | null> {
-  const cacheKey = `mlb:h2h:${homeTeamId}:${awayTeamId}`;
-  const cached = getCached<{ matches: H2HMatch[], summary: any }>(cacheKey);
-  if (cached) return cached;
-
-  const response = await apiRequest<any>(baseUrl, `/games?h2h=${homeTeamId}-${awayTeamId}&last=10`);
-  
-  if (!response?.response || response.response.length === 0) return null;
-
-  const games = response.response;
-  let homeWins = 0, awayWins = 0;
-
-  const matches: H2HMatch[] = games.slice(0, 5).map((g: any) => {
-    const homeScore = g.scores.home.total;
-    const awayScore = g.scores.away.total;
-    
-    const isHomeTeamHome = g.teams.home.id === homeTeamId;
-    if (isHomeTeamHome) {
-      if (homeScore > awayScore) homeWins++;
-      else awayWins++;
-    } else {
-      if (awayScore > homeScore) homeWins++;
-      else awayWins++;
-    }
-
-    return {
-      date: g.date,
-      homeTeam: g.teams.home.name,
-      awayTeam: g.teams.away.name,
-      homeScore,
-      awayScore,
-    };
-  });
-
-  const result = {
-    matches,
-    summary: {
-      totalMatches: games.length,
-      homeWins,
-      awayWins,
-      draws: 0, // No ties in baseball
-    }
-  };
-
-  setCache(cacheKey, result);
-  return result;
-}
-
-// ============================================
 // MAIN EXPORT FUNCTION
 // ============================================
 
@@ -1337,9 +1190,6 @@ export async function getMultiSportEnrichedData(
       
       case 'american_football':
         return await fetchNFLData(homeTeam, awayTeam, baseUrl);
-      
-      case 'baseball':
-        return await fetchMLBData(homeTeam, awayTeam, baseUrl);
       
       case 'mma':
         return await fetchMMAData(homeTeam, awayTeam, baseUrl);
@@ -1906,87 +1756,6 @@ async function fetchNFLData(homeTeam: string, awayTeam: string, baseUrl: string)
 
   return {
     sport: 'american_football',
-    homeForm,
-    awayForm,
-    headToHead: h2hData?.matches || null,
-    h2hSummary: h2hData?.summary || null,
-    homeStats,
-    awayStats,
-    dataSource: (homeForm || awayForm) ? 'API_SPORTS' : 'UNAVAILABLE',
-  };
-}
-
-async function fetchMLBData(homeTeam: string, awayTeam: string, baseUrl: string): Promise<MultiSportEnrichedData> {
-  const [homeTeamId, awayTeamId] = await Promise.all([
-    findMLBTeam(homeTeam, baseUrl),
-    findMLBTeam(awayTeam, baseUrl),
-  ]);
-
-  if (!homeTeamId || !awayTeamId) {
-    console.warn(`[API-Sports] Could not find MLB teams: ${homeTeam} or ${awayTeam}`);
-    return {
-      sport: 'baseball',
-      homeForm: null,
-      awayForm: null,
-      headToHead: null,
-      h2hSummary: null,
-      homeStats: null,
-      awayStats: null,
-      dataSource: 'UNAVAILABLE',
-    };
-  }
-
-  const [homeGames, awayGames, homeSeasonStats, awaySeasonStats, h2hData] = await Promise.all([
-    getMLBTeamGames(homeTeamId, baseUrl),
-    getMLBTeamGames(awayTeamId, baseUrl),
-    getMLBTeamStats(homeTeamId, baseUrl),
-    getMLBTeamStats(awayTeamId, baseUrl),
-    getMLBH2H(homeTeamId, awayTeamId, baseUrl),
-  ]);
-
-  const homeForm = homeGames.length > 0 ? homeGames.map(g => ({
-    result: g.result as 'W' | 'D' | 'L',
-    score: g.score,
-    opponent: g.opponent,
-    date: g.date,
-    home: g.home,
-  })) : null;
-
-  const awayForm = awayGames.length > 0 ? awayGames.map(g => ({
-    result: g.result as 'W' | 'D' | 'L',
-    score: g.score,
-    opponent: g.opponent,
-    date: g.date,
-    home: g.home,
-  })) : null;
-
-  // For MLB, use runs
-  const homeStats: TeamStats | null = homeSeasonStats ? {
-    goalsScored: homeSeasonStats.pointsFor, // Runs scored
-    goalsConceded: homeSeasonStats.pointsAgainst, // Runs allowed
-    cleanSheets: 0, // Shutouts would need separate tracking
-    avgGoalsScored: homeSeasonStats.gamesPlayed > 0 
-      ? Math.round((homeSeasonStats.pointsFor / homeSeasonStats.gamesPlayed) * 10) / 10 
-      : 0,
-    avgGoalsConceded: homeSeasonStats.gamesPlayed > 0 
-      ? Math.round((homeSeasonStats.pointsAgainst / homeSeasonStats.gamesPlayed) * 10) / 10 
-      : 0,
-  } : null;
-
-  const awayStats: TeamStats | null = awaySeasonStats ? {
-    goalsScored: awaySeasonStats.pointsFor,
-    goalsConceded: awaySeasonStats.pointsAgainst,
-    cleanSheets: 0,
-    avgGoalsScored: awaySeasonStats.gamesPlayed > 0 
-      ? Math.round((awaySeasonStats.pointsFor / awaySeasonStats.gamesPlayed) * 10) / 10 
-      : 0,
-    avgGoalsConceded: awaySeasonStats.gamesPlayed > 0 
-      ? Math.round((awaySeasonStats.pointsAgainst / awaySeasonStats.gamesPlayed) * 10) / 10 
-      : 0,
-  } : null;
-
-  return {
-    sport: 'baseball',
     homeForm,
     awayForm,
     headToHead: h2hData?.matches || null,

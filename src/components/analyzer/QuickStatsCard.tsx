@@ -85,14 +85,6 @@ const SPORT_STATS_CONFIG: Record<string, {
     formLabel: 'Fight History',
     scoringUnit: 'fights',
   },
-  tennis: {
-    primaryStats: [
-      { key: 'goalsScored', label: 'Wins', icon: '🎾' },
-      { key: 'avgGoalsScored', label: 'Win %', icon: '📈' },
-    ],
-    formLabel: 'Recent Matches',
-    scoringUnit: 'sets',
-  },
   default: {
     primaryStats: [
       { key: 'goalsScored', label: 'Scored', icon: '✓' },

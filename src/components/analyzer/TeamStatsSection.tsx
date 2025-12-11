@@ -76,17 +76,6 @@ function getStatLabels(sport?: string): {
     };
   }
   
-  if (sportLower.includes('baseball') || sportLower.includes('mlb')) {
-    return {
-      scored: 'Runs Scored',
-      conceded: 'Runs Allowed',
-      cleanSheets: 'Shutouts',
-      avgScored: 'Avg. Runs',
-      avgConceded: 'Avg. Allowed',
-      differential: 'Run Diff',
-    };
-  }
-  
   // Default: Soccer
   return {
     scored: 'Goals Scored',

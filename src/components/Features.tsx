@@ -8,7 +8,7 @@ export default function Features() {
   const features = [
     {
       title: 'Multi-Sport Coverage',
-      description: 'Soccer, NBA, NFL, Tennis, NHL, MMA, and more—all in one platform.',
+      description: 'Soccer, NBA, NFL, NHL, MMA/UFC—all in one platform with real-time data.',
       icon: '🌍',
       badge: '17+ Sports',
     },
