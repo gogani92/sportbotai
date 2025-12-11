@@ -3,13 +3,16 @@
  * 
  * Main page for AI-powered multi-sport match analysis.
  * Clean 3-step flow: Select Sport → Select League → Select Match
+ * 
+ * Uses Apple-style premium redesign for results display.
  */
 
 'use client';
 
 import { useState, useCallback } from 'react';
 import { MatchSelector } from '@/components/match-selector';
-import { AnalysisResults, UsageCounter } from '@/components/analyzer';
+import { UsageCounter } from '@/components/analyzer';
+import { AnalysisResultsRedesign } from '@/components/analyzer/redesign';
 import { AnalyzeResponse } from '@/types';
 
 type ViewState = 'form' | 'loading' | 'results' | 'error';
@@ -134,17 +137,17 @@ export default function AnalyzerPage() {
             <div className="mb-6">
               <button
                 onClick={handleReset}
-                className="inline-flex items-center gap-2 text-text-secondary hover:text-white font-medium transition-colors"
+                className="inline-flex items-center gap-2 text-white/50 hover:text-white font-medium transition-colors group"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 Analyze Another Match
               </button>
             </div>
 
-            {/* Analysis Results */}
-            <AnalysisResults result={result} />
+            {/* Analysis Results - Premium Redesign */}
+            <AnalysisResultsRedesign result={result} />
           </div>
         )}
       </section>
