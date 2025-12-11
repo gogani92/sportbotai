@@ -3,12 +3,14 @@
  * 
  * Displays team logos with automatic fallback to generated initials.
  * Uses ESPN, API-Sports, or fallback SVG based on sport/team.
+ * For MMA/UFC (individual sports), shows fighter's country flag instead.
  */
 
 'use client';
 
 import { useState } from 'react';
 import { getTeamLogo } from '@/lib/logos';
+import FighterFlag from './FighterFlag';
 
 interface TeamLogoProps {
   teamName: string;
@@ -25,6 +27,21 @@ const sizeClasses = {
   xl: 'w-12 h-12',
 };
 
+/**
+ * Check if sport is an individual combat sport (MMA/UFC/Boxing)
+ */
+function isIndividualSport(sport: string): boolean {
+  const normalized = sport.toLowerCase();
+  return (
+    normalized.includes('mma') ||
+    normalized.includes('ufc') ||
+    normalized.includes('bellator') ||
+    normalized.includes('pfl') ||
+    normalized.includes('boxing') ||
+    normalized.includes('mixed_martial_arts')
+  );
+}
+
 export default function TeamLogo({ 
   teamName, 
   sport, 
@@ -33,6 +50,12 @@ export default function TeamLogo({
   className = '' 
 }: TeamLogoProps) {
   const [hasError, setHasError] = useState(false);
+  
+  // For MMA/UFC/Boxing - show fighter's country flag instead of team logo
+  if (isIndividualSport(sport)) {
+    return <FighterFlag fighterName={teamName} size={size} className={className} />;
+  }
+  
   const logoUrl = getTeamLogo(teamName, sport, league);
   const isFallback = logoUrl.startsWith('data:');
 
