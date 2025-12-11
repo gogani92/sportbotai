@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { MatchData } from '@/types';
-import { LeagueGroup, getSportIcon } from './utils';
+import { LeagueGroup, getSportIcon, getLeagueCountryFlag } from './utils';
 import MatchList from './MatchList';
 import LeagueLogo from '@/components/ui/LeagueLogo';
 
@@ -102,12 +102,13 @@ export default function LeagueAccordion({
         const isExpanded = expandedLeagues.has(league.leagueKey);
         const matchCount = league.matches.length;
         const hasSelectedMatch = league.matches.some(m => m.matchId === selectedMatchId);
+        const countryFlag = getLeagueCountryFlag(league.leagueName);
 
         return (
           <div
             key={league.leagueKey}
             className={`
-              rounded-card overflow-hidden transition-all duration-200 border
+              rounded-card overflow-hidden transition-all duration-200 border relative
               ${hasSelectedMatch 
                 ? 'border-primary/30 bg-primary/5' 
                 : 'border-divider bg-bg-card'
@@ -115,13 +116,20 @@ export default function LeagueAccordion({
               ${isExpanded ? 'shadow-card' : ''}
             `}
           >
+            {/* Country Flag Background */}
+            {countryFlag && (
+              <div className="absolute right-12 top-1/2 -translate-y-1/2 text-4xl sm:text-5xl opacity-10 pointer-events-none select-none">
+                {countryFlag}
+              </div>
+            )}
+            
             {/* League Header */}
             <button
               onClick={() => toggleLeague(league.leagueKey)}
               className={`
                 w-full flex items-center justify-between p-4 sm:p-4 text-left
                 transition-colors duration-200 group touch-manipulation min-h-[64px]
-                active:bg-bg-elevated/70
+                active:bg-bg-elevated/70 relative z-10
                 ${isExpanded ? 'bg-bg-elevated/50' : 'hover:bg-bg-elevated/50'}
               `}
             >

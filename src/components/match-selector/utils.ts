@@ -160,6 +160,87 @@ export function getSportIcon(category: string): string {
 }
 
 /**
+ * Get country flag emoji for a league
+ * Uses league name patterns to identify country/region
+ */
+export function getLeagueCountryFlag(leagueName: string): string | null {
+  const name = leagueName.toLowerCase();
+  
+  // Soccer leagues
+  if (name.includes('premier league') || name.includes('epl') || name.includes('fa cup') || name.includes('league cup') || name.includes('championship')) return '🇬🇧';
+  if (name.includes('la liga') || name.includes('copa del rey') || name.includes('spanish')) return '🇪🇸';
+  if (name.includes('bundesliga') || name.includes('dfb')) return '🇩🇪';
+  if (name.includes('serie a') || name.includes('coppa italia') || name.includes('italian')) return '🇮🇹';
+  if (name.includes('ligue 1') || name.includes('coupe de france') || name.includes('french')) return '🇫🇷';
+  if (name.includes('eredivisie') || name.includes('knvb') || name.includes('dutch')) return '🇳🇱';
+  if (name.includes('primeira liga') || name.includes('portuguese')) return '🇵🇹';
+  if (name.includes('super lig') || name.includes('turkish')) return '🇹🇷';
+  if (name.includes('scottish')) return '🏴󠁧󠁢󠁳󠁣󠁴󠁿';
+  if (name.includes('mls') || name.includes('major league soccer')) return '🇺🇸';
+  if (name.includes('liga mx') || name.includes('mexican')) return '🇲🇽';
+  if (name.includes('j1 league') || name.includes('j-league') || name.includes('japanese')) return '🇯🇵';
+  if (name.includes('a-league') || name.includes('australian')) return '🇦🇺';
+  if (name.includes('brasileiro') || name.includes('brazilian')) return '🇧🇷';
+  if (name.includes('argentina') || name.includes('superliga')) return '🇦🇷';
+  if (name.includes('champions league') || name.includes('europa league') || name.includes('uefa') || name.includes('euro 20')) return '🇪🇺';
+  if (name.includes('world cup') || name.includes('fifa') || name.includes('international')) return '🌍';
+  
+  // Basketball leagues
+  if (name.includes('nba') || name.includes('ncaa') || name.includes('wnba')) return '🇺🇸';
+  if (name.includes('euroleague') || name.includes('eurocup')) return '🇪🇺';
+  if (name.includes('acb') || name.includes('spanish basketball')) return '🇪🇸';
+  if (name.includes('bbl') || name.includes('british basketball')) return '🇬🇧';
+  
+  // American Football
+  if (name.includes('nfl') || name.includes('ncaaf') || name.includes('super bowl') || name.includes('college football')) return '🇺🇸';
+  if (name.includes('cfl') || name.includes('canadian football')) return '🇨🇦';
+  
+  // Ice Hockey
+  if (name.includes('nhl')) return '🇺🇸';
+  if (name.includes('khl')) return '🇷🇺';
+  if (name.includes('shl') || name.includes('swedish hockey')) return '🇸🇪';
+  if (name.includes('liiga') || name.includes('finnish')) return '🇫🇮';
+  
+  // Baseball
+  if (name.includes('mlb') || name.includes('major league baseball')) return '🇺🇸';
+  if (name.includes('npb') || name.includes('japanese baseball')) return '🇯🇵';
+  if (name.includes('kbo') || name.includes('korean baseball')) return '🇰🇷';
+  
+  // Tennis
+  if (name.includes('wimbledon')) return '🇬🇧';
+  if (name.includes('french open') || name.includes('roland garros')) return '🇫🇷';
+  if (name.includes('us open')) return '🇺🇸';
+  if (name.includes('australian open')) return '🇦🇺';
+  if (name.includes('atp') || name.includes('wta')) return '🌍';
+  
+  // MMA
+  if (name.includes('ufc') || name.includes('bellator') || name.includes('pfl')) return '🇺🇸';
+  if (name.includes('one championship') || name.includes('one fc')) return '🌏';
+  
+  // Rugby
+  if (name.includes('six nations')) return '🇪🇺';
+  if (name.includes('rugby world cup')) return '🌍';
+  if (name.includes('super rugby')) return '🌏';
+  if (name.includes('premiership rugby') || name.includes('english rugby')) return '🇬🇧';
+  if (name.includes('top 14') || name.includes('french rugby')) return '🇫🇷';
+  
+  // Cricket
+  if (name.includes('ipl')) return '🇮🇳';
+  if (name.includes('bbl') || name.includes('big bash')) return '🇦🇺';
+  if (name.includes('psl') || name.includes('pakistan super')) return '🇵🇰';
+  if (name.includes('county championship') || name.includes('the hundred')) return '🇬🇧';
+  if (name.includes('cricket world cup') || name.includes('icc')) return '🌍';
+  
+  // Golf
+  if (name.includes('pga') || name.includes('masters') || name.includes('us pga')) return '🇺🇸';
+  if (name.includes('the open') || name.includes('british open')) return '🇬🇧';
+  if (name.includes('ryder cup')) return '🌍';
+  if (name.includes('lpga')) return '🇺🇸';
+  
+  return null;
+}
+
+/**
  * Get category display info
  */
 export interface CategoryDisplay {
@@ -172,11 +253,11 @@ export interface CategoryDisplay {
 export function getCategoryDisplayInfo(category: string): CategoryDisplay {
   const info: Record<string, CategoryDisplay> = {
     'Soccer': { id: 'soccer', name: 'Soccer', icon: '⚽', shortName: 'Soccer' },
-    'Basketball': { id: 'basketball', name: 'Basketball', icon: '🏀', shortName: 'NBA' },
-    'American Football': { id: 'american-football', name: 'American Football', icon: '🏈', shortName: 'NFL' },
+    'Basketball': { id: 'basketball', name: 'Basketball', icon: '🏀', shortName: 'Basketball' },
+    'American Football': { id: 'american-football', name: 'American Football', icon: '🏈', shortName: 'Football' },
     'Tennis': { id: 'tennis', name: 'Tennis', icon: '🎾', shortName: 'Tennis' },
-    'Ice Hockey': { id: 'ice-hockey', name: 'Ice Hockey', icon: '🏒', shortName: 'NHL' },
-    'MMA': { id: 'mma', name: 'MMA', icon: '🥊', shortName: 'UFC' },
+    'Ice Hockey': { id: 'ice-hockey', name: 'Ice Hockey', icon: '🏒', shortName: 'Hockey' },
+    'MMA': { id: 'mma', name: 'MMA', icon: '🥊', shortName: 'MMA' },
   };
   
   return info[category] || { 
