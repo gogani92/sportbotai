@@ -52,3 +52,8 @@ export { default as TacticalAnalysisSection } from './TacticalAnalysisSection';
 export { default as UserContextBox } from './UserContextBox';
 export { default as ResponsibleGamblingSection } from './ResponsibleGamblingSection';
 export { default as WarningsSection } from './WarningsSection';
+
+// NEW: High-Level Analytics Components
+export { default as LeagueContextCard } from './LeagueContextCard';
+export { default as TeamComparisonRadar } from './TeamComparisonRadar';
+export { default as MatchContextIndicators } from './MatchContextIndicators';

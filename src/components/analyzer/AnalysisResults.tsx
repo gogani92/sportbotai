@@ -1,13 +1,15 @@
 /**
  * Analysis Results Component
  * 
- * Premium 4-layer layout for analysis results:
+ * Premium 5-layer layout for analysis results:
  * - Layer 1: Quick Glance Card (summary with key metrics + donut chart)
  * - Layer 1.5: Quick Stats + Key Factors (side by side on desktop)
  * - Layer 1.75: H2H Stats Card (enhanced head-to-head visualization)
- * - Layer 2: Confidence Meter + Sport Insights (side by side)
- * - Layer 3: Analysis Accordion (detailed sections, collapsed by default)
- * - Layer 4: Extras Section (audio, notes, disclaimer)
+ * - Layer 2: League Context + Team Comparison (NEW: standings & radar chart)
+ * - Layer 2.5: Match Context Indicators (NEW: rest, rivalry, situational factors)
+ * - Layer 3: Confidence Meter + Sport Insights (side by side)
+ * - Layer 4: Analysis Accordion (detailed sections, collapsed by default)
+ * - Layer 5: Extras Section (audio, notes, disclaimer)
  * 
  * Mobile-first, clean, scannable design with premium visualizations.
  */
@@ -23,6 +25,9 @@ import SportInsightsCard from './SportInsightsCard';
 import AnalysisAccordion from './AnalysisAccordion';
 import ExtrasSection from './ExtrasSection';
 import H2HStatsCard from './H2HStatsCard';
+import LeagueContextCard from './LeagueContextCard';
+import TeamComparisonRadar from './TeamComparisonRadar';
+import MatchContextIndicators from './MatchContextIndicators';
 
 interface AnalysisResultsProps {
   result: AnalyzeResponse;
@@ -78,7 +83,28 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
         </section>
       )}
 
-      {/* Layer 2: Confidence Meter + Sport Insights */}
+      {/* Layer 2: League Context + Team Comparison Radar (NEW) */}
+      <section>
+        <div className="flex items-center justify-between mb-3 sm:mb-4 px-1">
+          <h2 className="text-xs sm:text-sm font-semibold text-text-muted uppercase tracking-wider">
+            Team Analytics
+          </h2>
+          <span className="text-[10px] sm:text-xs text-accent">
+            📊 Advanced Stats
+          </span>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+          <LeagueContextCard result={result} />
+          <TeamComparisonRadar result={result} />
+        </div>
+      </section>
+
+      {/* Layer 2.5: Match Context Indicators (NEW) */}
+      <section>
+        <MatchContextIndicators result={result} />
+      </section>
+
+      {/* Layer 3: Confidence Meter + Sport Insights */}
       <section>
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
           <ConfidenceMeter result={result} />
@@ -86,7 +112,7 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
         </div>
       </section>
 
-      {/* Layer 3: Detailed Analysis Accordion */}
+      {/* Layer 4: Detailed Analysis Accordion */}
       <section>
         <div className="flex items-center justify-between mb-3 sm:mb-4 px-1">
           <h2 className="text-xs sm:text-sm font-semibold text-text-muted uppercase tracking-wider">
@@ -99,7 +125,7 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
         <AnalysisAccordion result={result} />
       </section>
 
-      {/* Layer 4: Extras - Audio, Notes, Disclaimer */}
+      {/* Layer 5: Extras - Audio, Notes, Disclaimer */}
       <section>
         <div className="mb-3 sm:mb-4 px-1">
           <h2 className="text-xs sm:text-sm font-semibold text-text-muted uppercase tracking-wider">
