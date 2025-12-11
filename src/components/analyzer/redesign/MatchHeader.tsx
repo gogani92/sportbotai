@@ -3,6 +3,7 @@
  * 
  * Apple-style hero section with elegant match presentation.
  * Features:
+ * - Team logos with fallback avatars
  * - Large team names with subtle animations
  * - League badge and countdown
  * - Subtle gradient background with depth
@@ -11,6 +12,7 @@
 'use client';
 
 import { AnalyzeResponse } from '@/types';
+import { TeamLogo, LeagueLogo } from '@/components/ui';
 
 interface MatchHeaderProps {
   matchInfo: AnalyzeResponse['matchInfo'];
@@ -64,9 +66,10 @@ export default function MatchHeader({ matchInfo }: MatchHeaderProps) {
       <div className="relative px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
         {/* League & Time */}
         <div className="flex items-center justify-center gap-3 mb-6 sm:mb-8">
-          <span className="px-3 py-1.5 bg-white/5 backdrop-blur-sm rounded-full text-xs font-medium text-white/70 border border-white/10">
-            {matchInfo.sport}
-          </span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 backdrop-blur-sm rounded-full border border-white/10">
+            <LeagueLogo leagueName={matchInfo.leagueName} sport={matchInfo.sport} size="sm" />
+            <span className="text-xs font-medium text-white/70">{matchInfo.sport}</span>
+          </div>
           <span className="text-white/40">•</span>
           <span className="text-sm text-white/60">{matchInfo.leagueName}</span>
         </div>
@@ -74,8 +77,15 @@ export default function MatchHeader({ matchInfo }: MatchHeaderProps) {
         {/* Teams */}
         <div className="flex items-center justify-center gap-4 sm:gap-8 lg:gap-12">
           {/* Home Team */}
-          <div className="flex-1 text-right">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-white tracking-tight">
+          <div className="flex-1 flex flex-col items-end">
+            <TeamLogo 
+              teamName={matchInfo.homeTeam} 
+              sport={matchInfo.sport} 
+              league={matchInfo.leagueName}
+              size="xl"
+              className="mb-3"
+            />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-white tracking-tight text-right">
               {matchInfo.homeTeam}
             </h1>
             <p className="text-xs sm:text-sm text-white/40 mt-1 uppercase tracking-widest">Home</p>
@@ -89,8 +99,15 @@ export default function MatchHeader({ matchInfo }: MatchHeaderProps) {
           </div>
 
           {/* Away Team */}
-          <div className="flex-1 text-left">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-white tracking-tight">
+          <div className="flex-1 flex flex-col items-start">
+            <TeamLogo 
+              teamName={matchInfo.awayTeam} 
+              sport={matchInfo.sport} 
+              league={matchInfo.leagueName}
+              size="xl"
+              className="mb-3"
+            />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-white tracking-tight text-left">
               {matchInfo.awayTeam}
             </h1>
             <p className="text-xs sm:text-sm text-white/40 mt-1 uppercase tracking-widest">Away</p>

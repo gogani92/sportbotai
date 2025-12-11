@@ -2,12 +2,13 @@
  * Probability Bars Component
  * 
  * Clean, Apple-style horizontal probability visualization.
- * Shows home/draw/away with animated bars and clear labels.
+ * Shows home/draw/away with animated bars, team logos, and clear labels.
  */
 
 'use client';
 
 import { AnalyzeResponse } from '@/types';
+import { TeamLogo } from '@/components/ui';
 
 interface ProbabilityBarsProps {
   result: AnalyzeResponse;
@@ -30,7 +31,8 @@ export default function ProbabilityBars({ result }: ProbabilityBarsProps) {
       bgColor: 'bg-blue-500/10',
       textColor: home === max ? 'text-blue-400' : 'text-white/60',
       isMax: home === max,
-      sublabel: 'Home'
+      sublabel: 'Home',
+      showLogo: true
     },
     ...(draw !== null ? [{
       label: 'Draw',
@@ -39,7 +41,8 @@ export default function ProbabilityBars({ result }: ProbabilityBarsProps) {
       bgColor: 'bg-white/5',
       textColor: draw === max ? 'text-white' : 'text-white/50',
       isMax: draw === max,
-      sublabel: null
+      sublabel: null,
+      showLogo: false
     }] : []),
     {
       label: matchInfo.awayTeam,
@@ -48,7 +51,8 @@ export default function ProbabilityBars({ result }: ProbabilityBarsProps) {
       bgColor: 'bg-rose-500/10',
       textColor: away === max ? 'text-rose-400' : 'text-white/60',
       isMax: away === max,
-      sublabel: 'Away'
+      sublabel: 'Away',
+      showLogo: true
     }
   ];
 
@@ -69,9 +73,17 @@ export default function ProbabilityBars({ result }: ProbabilityBarsProps) {
           {bars.map((bar, index) => (
             <div key={index} className="group">
               {/* Label Row */}
-              <div className="flex items-baseline justify-between mb-2">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${bar.textColor} truncate max-w-[140px] sm:max-w-[200px]`}>
+                  {bar.showLogo && (
+                    <TeamLogo 
+                      teamName={bar.label} 
+                      sport={matchInfo.sport} 
+                      league={matchInfo.leagueName}
+                      size="sm"
+                    />
+                  )}
+                  <span className={`text-sm font-medium ${bar.textColor} truncate max-w-[120px] sm:max-w-[180px]`}>
                     {bar.label}
                   </span>
                   {bar.sublabel && (

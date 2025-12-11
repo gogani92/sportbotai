@@ -3,11 +3,13 @@
  * 
  * Modular insight cards in Apple-style grid.
  * Each card tells one part of the story with clear hierarchy.
+ * Includes team logos for visual recognition.
  */
 
 'use client';
 
 import { AnalyzeResponse, FormMatch } from '@/types';
+import { TeamLogo } from '@/components/ui';
 
 interface InsightCardsProps {
   result: AnalyzeResponse;
@@ -40,8 +42,18 @@ function InsightCard({ title, icon, children, accentColor = 'from-white/10 to-wh
   );
 }
 
-// Form indicator component - handles FormMatch[] type
-function FormIndicator({ form, teamName }: { form?: FormMatch[]; teamName: string }) {
+// Form indicator component - handles FormMatch[] type with team logo
+function FormIndicator({ 
+  form, 
+  teamName,
+  sport,
+  league 
+}: { 
+  form?: FormMatch[]; 
+  teamName: string;
+  sport: string;
+  league: string;
+}) {
   const formColors: Record<string, string> = {
     'W': 'bg-emerald-500',
     'D': 'bg-white/40',
@@ -51,16 +63,22 @@ function FormIndicator({ form, teamName }: { form?: FormMatch[]; teamName: strin
   if (!form || form.length === 0) {
     return (
       <div className="mb-3">
-        <p className="text-xs text-white/40 mb-2 truncate">{teamName}</p>
-        <p className="text-xs text-white/30">No form data available</p>
+        <div className="flex items-center gap-2 mb-2">
+          <TeamLogo teamName={teamName} sport={sport} league={league} size="sm" />
+          <p className="text-xs text-white/40 truncate">{teamName}</p>
+        </div>
+        <p className="text-xs text-white/30 pl-8">No form data available</p>
       </div>
     );
   }
 
   return (
     <div className="mb-3">
-      <p className="text-xs text-white/40 mb-2 truncate">{teamName}</p>
-      <div className="flex gap-1.5">
+      <div className="flex items-center gap-2 mb-2">
+        <TeamLogo teamName={teamName} sport={sport} league={league} size="sm" />
+        <p className="text-xs text-white/40 truncate">{teamName}</p>
+      </div>
+      <div className="flex gap-1.5 pl-8">
         {form.slice(0, 5).map((match, idx) => (
           <div
             key={idx}
@@ -102,11 +120,15 @@ export default function InsightCards({ result }: InsightCardsProps) {
         <div className="space-y-4">
           <FormIndicator 
             form={momentumAndForm.homeForm} 
-            teamName={matchInfo.homeTeam} 
+            teamName={matchInfo.homeTeam}
+            sport={matchInfo.sport}
+            league={matchInfo.leagueName}
           />
           <FormIndicator 
             form={momentumAndForm.awayForm} 
-            teamName={matchInfo.awayTeam} 
+            teamName={matchInfo.awayTeam}
+            sport={matchInfo.sport}
+            league={matchInfo.leagueName}
           />
           
           {/* Trends */}
