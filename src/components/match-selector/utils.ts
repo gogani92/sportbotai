@@ -162,28 +162,123 @@ export function getSportIcon(category: string): string {
 /**
  * Get country flag emoji for a league
  * Uses league name patterns to identify country/region
+ * Covers Odds API league names and common variations
  */
 export function getLeagueCountryFlag(leagueName: string): string | null {
   const name = leagueName.toLowerCase();
   
-  // Soccer leagues
-  if (name.includes('premier league') || name.includes('epl') || name.includes('fa cup') || name.includes('league cup') || name.includes('championship')) return '🇬🇧';
-  if (name.includes('la liga') || name.includes('copa del rey') || name.includes('spanish')) return '🇪🇸';
-  if (name.includes('bundesliga') || name.includes('dfb')) return '🇩🇪';
-  if (name.includes('serie a') || name.includes('coppa italia') || name.includes('italian')) return '🇮🇹';
-  if (name.includes('ligue 1') || name.includes('coupe de france') || name.includes('french')) return '🇫🇷';
-  if (name.includes('eredivisie') || name.includes('knvb') || name.includes('dutch')) return '🇳🇱';
-  if (name.includes('primeira liga') || name.includes('portuguese')) return '🇵🇹';
-  if (name.includes('super lig') || name.includes('turkish')) return '🇹🇷';
-  if (name.includes('scottish')) return '🏴󠁧󠁢󠁳󠁣󠁴󠁿';
-  if (name.includes('mls') || name.includes('major league soccer')) return '🇺🇸';
-  if (name.includes('liga mx') || name.includes('mexican')) return '🇲🇽';
-  if (name.includes('j1 league') || name.includes('j-league') || name.includes('japanese')) return '🇯🇵';
-  if (name.includes('a-league') || name.includes('australian')) return '🇦🇺';
-  if (name.includes('brasileiro') || name.includes('brazilian')) return '🇧🇷';
-  if (name.includes('argentina') || name.includes('superliga')) return '🇦🇷';
-  if (name.includes('champions league') || name.includes('europa league') || name.includes('uefa') || name.includes('euro 20')) return '🇪🇺';
-  if (name.includes('world cup') || name.includes('fifa') || name.includes('international')) return '🌍';
+  // ============================================
+  // SOCCER / FOOTBALL
+  // ============================================
+  
+  // England
+  if (name.includes('premier league') || name.includes('epl') || name.includes('england') || 
+      name.includes('fa cup') || name.includes('league cup') || name.includes('championship') ||
+      name.includes('efl') || name.includes('english') || name.includes('carabao')) return '🇬🇧';
+  
+  // Spain  
+  if (name.includes('la liga') || name.includes('laliga') || name.includes('spain') ||
+      name.includes('copa del rey') || name.includes('spanish') || name.includes('primera')) return '🇪🇸';
+  
+  // Germany
+  if (name.includes('bundesliga') || name.includes('germany') || name.includes('german') ||
+      name.includes('dfb') || name.includes('2. bundesliga')) return '🇩🇪';
+  
+  // Italy
+  if (name.includes('serie a') || name.includes('italy') || name.includes('italian') ||
+      name.includes('coppa italia') || name.includes('serie b')) return '🇮🇹';
+  
+  // France
+  if (name.includes('ligue 1') || name.includes('ligue 2') || name.includes('france') ||
+      name.includes('coupe de france') || name.includes('french')) return '🇫🇷';
+  
+  // Netherlands
+  if (name.includes('eredivisie') || name.includes('netherlands') || name.includes('dutch') ||
+      name.includes('knvb') || name.includes('holland')) return '🇳🇱';
+  
+  // Portugal
+  if (name.includes('primeira liga') || name.includes('portugal') || name.includes('portuguese') ||
+      name.includes('liga portugal')) return '🇵🇹';
+  
+  // Turkey
+  if (name.includes('super lig') || name.includes('turkey') || name.includes('turkish') ||
+      name.includes('süper lig')) return '🇹🇷';
+  
+  // Scotland
+  if (name.includes('scottish') || name.includes('scotland') || name.includes('spfl')) return '🏴󠁧󠁢󠁳󠁣󠁴󠁿';
+  
+  // Belgium
+  if (name.includes('belgium') || name.includes('belgian') || name.includes('jupiler')) return '🇧🇪';
+  
+  // Greece
+  if (name.includes('greece') || name.includes('greek') || name.includes('super league greece')) return '🇬🇷';
+  
+  // Austria
+  if (name.includes('austria') || name.includes('austrian') || name.includes('bundesliga austria')) return '🇦🇹';
+  
+  // Switzerland
+  if (name.includes('switzerland') || name.includes('swiss') || name.includes('super league switzerland')) return '🇨🇭';
+  
+  // USA Soccer
+  if (name.includes('mls') || name.includes('major league soccer') || name.includes('usa') ||
+      name.includes('usl') || name.includes('nwsl')) return '🇺🇸';
+  
+  // Mexico
+  if (name.includes('liga mx') || name.includes('mexico') || name.includes('mexican')) return '🇲🇽';
+  
+  // Brazil
+  if (name.includes('brasileiro') || name.includes('brazil') || name.includes('serie a brazil')) return '🇧🇷';
+  
+  // Argentina
+  if (name.includes('argentina') || name.includes('superliga') || name.includes('liga profesional')) return '🇦🇷';
+  
+  // Japan
+  if (name.includes('j1 league') || name.includes('j-league') || name.includes('japan') ||
+      name.includes('j league') || name.includes('japanese')) return '🇯🇵';
+  
+  // Australia
+  if (name.includes('a-league') || name.includes('australia') || name.includes('australian')) return '🇦🇺';
+  
+  // South Korea
+  if (name.includes('k league') || name.includes('korea') || name.includes('korean')) return '🇰🇷';
+  
+  // China
+  if (name.includes('china') || name.includes('chinese') || name.includes('super league china')) return '🇨🇳';
+  
+  // Russia
+  if (name.includes('russia') || name.includes('russian') || name.includes('premier league russia')) return '🇷🇺';
+  
+  // Ukraine
+  if (name.includes('ukraine') || name.includes('ukrainian')) return '🇺🇦';
+  
+  // Poland
+  if (name.includes('poland') || name.includes('polish') || name.includes('ekstraklasa')) return '🇵🇱';
+  
+  // Czech Republic
+  if (name.includes('czech') || name.includes('czechia')) return '🇨🇿';
+  
+  // Denmark
+  if (name.includes('denmark') || name.includes('danish') || name.includes('superliga denmark')) return '🇩🇰';
+  
+  // Sweden
+  if (name.includes('sweden') || name.includes('swedish') || name.includes('allsvenskan')) return '🇸🇪';
+  
+  // Norway
+  if (name.includes('norway') || name.includes('norwegian') || name.includes('eliteserien')) return '🇳🇴';
+  
+  // Finland
+  if (name.includes('finland') || name.includes('finnish') || name.includes('veikkausliiga')) return '🇫🇮';
+  
+  // Ireland
+  if (name.includes('ireland') || name.includes('irish') || name.includes('league of ireland')) return '🇮🇪';
+  
+  // UEFA / Europe
+  if (name.includes('champions league') || name.includes('europa league') || name.includes('uefa') || 
+      name.includes('euro 20') || name.includes('conference league') || name.includes('european')) return '🇪🇺';
+  
+  // World
+  if (name.includes('world cup') || name.includes('fifa') || name.includes('international') ||
+      name.includes('friendlies') || name.includes('friendly')) return '🌍';
   
   // Basketball leagues
   if (name.includes('nba') || name.includes('ncaa') || name.includes('wnba')) return '🇺🇸';

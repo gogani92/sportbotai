@@ -118,7 +118,7 @@ export default function LeagueAccordion({
           >
             {/* Country Flag Background */}
             {countryFlag && (
-              <div className="absolute right-12 top-1/2 -translate-y-1/2 text-4xl sm:text-5xl opacity-10 pointer-events-none select-none">
+              <div className="absolute right-14 top-1/2 -translate-y-1/2 text-5xl sm:text-6xl opacity-20 pointer-events-none select-none">
                 {countryFlag}
               </div>
             )}
