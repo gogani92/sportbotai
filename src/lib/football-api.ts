@@ -794,7 +794,7 @@ export interface TopPlayerStats {
 
 /**
  * Get top scorer for a team
- * Uses squad endpoint for accuracy (guaranteed current players only)
+ * Prioritizes league top scorers (most accurate), then falls back to team stats
  */
 export async function getTeamTopScorer(teamId: number, leagueId?: number): Promise<TopPlayerStats | null> {
   const cacheKey = `topscorer:${teamId}:${leagueId || 'all'}`;
@@ -803,7 +803,38 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
 
   const season = getCurrentSeason();
   
-  // First: Get the current squad to ensure we only consider CURRENT players
+  // PRIORITY 1: League top scorers (most accurate data)
+  // This endpoint shows players with correct goal totals
+  if (leagueId) {
+    const topScorersResponse = await apiRequest<any>(`/players/topscorers?league=${leagueId}&season=${season}`);
+    if (topScorersResponse?.response) {
+      // Find a player from our team - ensure stats are for THIS team specifically
+      const teamPlayer = topScorersResponse.response.find((p: any) => {
+        const teamStats = p.statistics?.find((s: any) => s.team?.id === teamId);
+        return teamStats && teamStats.goals?.total > 0;
+      });
+      
+      if (teamPlayer) {
+        const stats = teamPlayer.statistics?.find((s: any) => s.team?.id === teamId);
+        if (stats) {
+          const player: TopPlayerStats = {
+            name: teamPlayer.player?.name || 'Unknown',
+            position: stats?.games?.position || 'Forward',
+            photo: teamPlayer.player?.photo,
+            goals: stats?.goals?.total || 0,
+            assists: stats?.goals?.assists || 0,
+            rating: stats?.games?.rating ? parseFloat(stats.games.rating) : undefined,
+            minutesPlayed: stats?.games?.minutes || 0,
+          };
+          setCache(cacheKey, player);
+          return player;
+        }
+      }
+    }
+  }
+  
+  // PRIORITY 2: Team players endpoint with squad filtering
+  // Get current squad to ensure we only consider CURRENT players
   const squadResponse = await apiRequest<any>(`/players/squads?team=${teamId}`);
   const currentSquadIds = new Set<number>();
   
@@ -863,36 +894,7 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
     }
   }
   
-  // Second approach: League top scorers (only if direct team search failed)
-  if (leagueId) {
-    const topScorersResponse = await apiRequest<any>(`/players/topscorers?league=${leagueId}&season=${season}`);
-    if (topScorersResponse?.response) {
-      // Find a player from our team - ensure stats are for THIS team specifically
-      const teamPlayer = topScorersResponse.response.find((p: any) => {
-        const teamStats = p.statistics?.find((s: any) => s.team?.id === teamId);
-        return teamStats && teamStats.goals?.total > 0;
-      });
-      
-      if (teamPlayer) {
-        const stats = teamPlayer.statistics?.find((s: any) => s.team?.id === teamId);
-        if (stats) {
-          const player: TopPlayerStats = {
-            name: teamPlayer.player?.name || 'Unknown',
-            position: stats?.games?.position || 'Forward',
-            photo: teamPlayer.player?.photo,
-            goals: stats?.goals?.total || 0,
-            assists: stats?.goals?.assists || 0,
-            rating: stats?.games?.rating ? parseFloat(stats.games.rating) : undefined,
-            minutesPlayed: stats?.games?.minutes || 0,
-          };
-          setCache(cacheKey, player);
-          return player;
-        }
-      }
-    }
-  }
-  
-  // Final fallback: use squad data we already fetched (no stats)
+  // PRIORITY 3: Final fallback - use squad data (no stats)
   if (squadResponse?.response?.[0]?.players) {
     const players = squadResponse.response[0].players;
     // Prioritize attackers and midfielders

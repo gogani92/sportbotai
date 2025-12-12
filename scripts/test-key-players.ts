@@ -41,7 +41,7 @@ const KNOWN_PLAYERS: Record<number, string[]> = {
   // La Liga
   541: ['Mbappe', 'Vinicius', 'Bellingham', 'Rodrygo', 'Endrick'], // Real Madrid
   529: ['Lewandowski', 'Raphinha', 'Yamal', 'Pedri', 'Ferran'], // Barcelona
-  530: ['Griezmann', 'Alvarez', 'Sorloth', 'Correa', 'Morata'], // Atletico
+  530: ['Griezmann', 'Alvarez', 'Sorloth', 'Sørloth', 'Correa', 'Morata'], // Atletico
   536: ['Lukebakio', 'Isaac', 'En-Nesyri', 'Ocampos', 'Suso'], // Sevilla
   // Serie A
   496: ['Vlahovic', 'Yildiz', 'Koopmeiners', 'Conceicao', 'Weah'], // Juventus
@@ -59,6 +59,11 @@ const KNOWN_PLAYERS: Record<number, string[]> = {
   80: ['Lacazette', 'Cherki', 'Fofana', 'Mikautadze', 'Benrahma'], // Lyon
   91: ['Embolo', 'Ben Seghir', 'Minamino', 'Golovin', 'Akliouche'], // Monaco
 };
+
+// Normalize string by removing accents
+function normalizeString(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
 
 async function testKeyPlayers() {
   console.log('🔍 Testing Key Player Lookup for All Teams\n');
@@ -93,15 +98,19 @@ async function testKeyPlayers() {
       const knownHomePlayers = KNOWN_PLAYERS[matchup.homeId] || [];
       const knownAwayPlayers = KNOWN_PLAYERS[matchup.awayId] || [];
       
-      const homeValid = !homePlayer || knownHomePlayers.length === 0 || knownHomePlayers.some(known => 
-        homePlayer.name?.toLowerCase().includes(known.toLowerCase()) ||
-        known.toLowerCase().includes(homePlayer.name?.toLowerCase().split(' ').pop() || '')
-      );
+      const homeValid = !homePlayer || knownHomePlayers.length === 0 || knownHomePlayers.some(known => {
+        const normalizedKnown = normalizeString(known);
+        const normalizedName = normalizeString(homePlayer.name || '');
+        const lastName = normalizedName.split(' ').pop() || '';
+        return normalizedName.includes(normalizedKnown) || normalizedKnown.includes(lastName);
+      });
       
-      const awayValid = !awayPlayer || knownAwayPlayers.length === 0 || knownAwayPlayers.some(known => 
-        awayPlayer.name?.toLowerCase().includes(known.toLowerCase()) ||
-        known.toLowerCase().includes(awayPlayer.name?.toLowerCase().split(' ').pop() || '')
-      );
+      const awayValid = !awayPlayer || knownAwayPlayers.length === 0 || knownAwayPlayers.some(known => {
+        const normalizedKnown = normalizeString(known);
+        const normalizedName = normalizeString(awayPlayer.name || '');
+        const lastName = normalizedName.split(' ').pop() || '';
+        return normalizedName.includes(normalizedKnown) || normalizedKnown.includes(lastName);
+      });
       
       results.push({
         matchup: `${matchup.home} vs ${matchup.away}`,
