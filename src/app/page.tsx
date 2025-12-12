@@ -6,6 +6,7 @@
  */
 
 import Hero from '@/components/Hero';
+import TrendingSection from '@/components/TrendingSection';
 import HowItWorks from '@/components/HowItWorks';
 import WhyNotTipster from '@/components/WhyNotTipster';
 import Features from '@/components/Features';
@@ -17,6 +18,9 @@ export default function HomePage() {
     <>
       {/* Hero section - main visual component */}
       <Hero />
+
+      {/* Trending matches - daily habit driver */}
+      <TrendingSection maxMatches={6} />
 
       {/* How it works - 3 steps */}
       <HowItWorks />
