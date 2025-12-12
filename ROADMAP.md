@@ -33,10 +33,10 @@
 ### Phase 1: Core Experience (Week 1-2) 🔨
 *Goal: Make the single analysis AMAZING*
 
-- [ ] **60-Second AI Briefing** - One-tap summary button on any match
-- [ ] **Audio Briefing** - Listen to analysis (TTS)
-- [ ] **Rebrand to SportBot AI** - Update all references
-- [ ] **Home Page Improvements** - Show trending matches, not empty state
+- [x] **60-Second AI Briefing** - One-tap summary button on any match ✅
+- [x] **Audio Briefing** - Listen to analysis (TTS) ✅
+- [x] **Rebrand to SportBot AI** - Update all references ✅
+- [x] **Home Page Improvements** - Show trending matches, not empty state ✅
 
 ### Phase 2: Personalization (Week 3-4) 👤
 *Goal: Give users reasons to return*
@@ -89,13 +89,14 @@
 - Stripe payments infrastructure
 - Analysis history
 - Responsive UI
+- **60-Second AI Briefing** (NEW)
+- **Trending Matches Homepage** (NEW)
+- **Audio Briefings via TTS** (NEW)
 
 ### 🔧 Needs Work
-- Home page is empty/static
 - No favorites system
 - No share functionality
-- No AI briefing/summary mode
-- Still has "BetSense" references
+- Remove debug logging in production
 
 ---
 
