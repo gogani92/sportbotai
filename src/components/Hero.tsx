@@ -23,20 +23,20 @@ export default function Hero() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full text-xs sm:text-sm font-medium text-gray-300 mb-4 sm:mb-6 backdrop-blur-sm border border-white/10">
               <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-              AI-Powered Sports Analytics
+              Understand any match in 60 seconds
             </div>
 
             {/* Headline - H1 for SEO */}
             <h1 className="text-3xl xs:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-4 sm:mb-6">
-              AI-Powered Sports Analytics
+              AI Sports Analysis
               <br className="hidden xs:block" />
-              <span className="text-accent">& Match Intelligence</span>
+              <span className="text-accent">in 60 Seconds</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-6 sm:mb-8 max-w-xl mx-auto lg:mx-0">
-              Real-time probability models, value detection, and risk insights for Soccer, NBA, NFL, NHL, UFC & more. 
-              <strong className="text-gray-300"> Not betting tips—pure sports intelligence.</strong>
+              Quick briefings, live odds, team form & value detection for Soccer, NBA, NFL, NHL, UFC & more.
+              <strong className="text-gray-300"> Listen, share, or read—your choice.</strong>
             </p>
 
             {/* CTA Buttons - Stack on mobile */}
@@ -59,22 +59,20 @@ export default function Hero() {
             <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-white/10">
               <div className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-6 text-xs sm:text-sm text-gray-400">
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Multi-Sport</span>
+                  <span className="text-lg">🎙️</span>
+                  <span>Audio Briefings</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Risk Analysis</span>
+                  <span className="text-lg">📊</span>
+                  <span>17+ Sports</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Responsible</span>
+                  <span className="text-lg">⚡</span>
+                  <span>Live Data</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📤</span>
+                  <span>Share Cards</span>
                 </div>
               </div>
             </div>
@@ -96,10 +94,10 @@ export default function Hero() {
                     </div>
                     <div>
                       <p className="text-white font-semibold">Premier League</p>
-                      <p className="text-gray-500 text-sm">Dec 15, 2024 • 15:00</p>
+                      <p className="text-gray-500 text-sm">Today • 15:00</p>
                     </div>
                   </div>
-                  <span className="badge badge-info">Live Odds</span>
+                  <span className="badge badge-success">60s Briefing</span>
                 </div>
 
                 {/* Teams */}
@@ -152,8 +150,12 @@ export default function Hero() {
 
                 {/* Mock Analysis Preview */}
                 <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-primary font-medium text-sm">🎙️ Quick Briefing</span>
+                    <span className="text-xs text-gray-500">• 45 sec listen</span>
+                  </div>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    <span className="text-primary font-medium">AI Insight:</span> Arsenal&apos;s strong home form and recent momentum suggest favorable conditions. However, Chelsea&apos;s defensive resilience warrants caution...
+                    Arsenal&apos;s strong home form (WWWDW) and +12% momentum edge. Chelsea missing key midfielder. Value detected on home win at current odds...
                   </p>
                 </div>
               </div>

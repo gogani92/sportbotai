@@ -7,39 +7,39 @@
 export default function Features() {
   const features = [
     {
+      title: '60-Second Briefings',
+      description: 'Get the complete picture in under a minute. Listen to audio summaries while commuting.',
+      icon: '🎙️',
+      badge: 'Core Feature',
+    },
+    {
       title: 'Multi-Sport Coverage',
       description: 'Soccer, NBA, NFL, NHL, MMA/UFC—all in one platform with real-time data.',
       icon: '🌍',
       badge: '17+ Sports',
     },
     {
-      title: 'Value Index',
-      description: 'Compare AI probabilities with bookmaker odds to spot potential value.',
+      title: 'Team Intelligence',
+      description: 'Deep team profiles with form trends, injury reports, and historical performance.',
       icon: '📊',
-      badge: 'Smart Detection',
+      badge: 'Pro',
     },
     {
-      title: 'Momentum Scoring',
-      description: 'Track team form and momentum trends with visual indicators.',
-      icon: '📈',
-      badge: 'Live Trends',
-    },
-    {
-      title: 'Upset Potential',
-      description: 'AI identifies matches where underdogs have higher-than-expected chances.',
+      title: 'Value Detection',
+      description: 'Compare AI probabilities with bookmaker odds to spot potential discrepancies.',
       icon: '⚡',
       badge: 'AI Powered',
     },
     {
-      title: 'Risk Assessment',
-      description: 'Clear risk levels (Low/Medium/High) with bankroll impact insights.',
-      icon: '🛡️',
-      badge: 'Transparent',
+      title: 'My Teams',
+      description: 'Save your favorite teams and get instant updates when they play.',
+      icon: '⭐',
+      badge: 'Pro',
     },
     {
-      title: 'Audio Analysis',
-      description: 'Listen to AI-generated match analysis with ElevenLabs voice technology.',
-      icon: '🎧',
+      title: 'Share Cards',
+      description: 'Generate beautiful share cards for social media or copy insights with one click.',
+      icon: '📤',
       badge: 'New',
     },
   ];
