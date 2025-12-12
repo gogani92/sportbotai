@@ -1,15 +1,15 @@
 /**
  * Match Browser Component
  * 
- * Browse matches by league/sport with filters.
+ * Browse matches organized by Sport → League.
+ * Sports: Soccer, Basketball, American Football, Hockey
  * Links to Match Preview pages.
  */
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { MatchData } from '@/types';
-import { SPORTS_CONFIG, getSportsGroupedByCategory } from '@/lib/config/sportsConfig';
 import MatchCard from '@/components/MatchCard';
 import LeagueLogo from '@/components/ui/LeagueLogo';
 
@@ -18,26 +18,73 @@ interface MatchBrowserProps {
   maxMatches?: number;
 }
 
-// Popular leagues to show by default
-const POPULAR_LEAGUES = [
-  { key: 'soccer_epl', name: 'Premier League', sport: 'soccer' },
-  { key: 'soccer_spain_la_liga', name: 'La Liga', sport: 'soccer' },
-  { key: 'soccer_germany_bundesliga', name: 'Bundesliga', sport: 'soccer' },
-  { key: 'soccer_italy_serie_a', name: 'Serie A', sport: 'soccer' },
-  { key: 'soccer_uefa_champs_league', name: 'Champions League', sport: 'soccer' },
-  { key: 'basketball_nba', name: 'NBA', sport: 'basketball' },
-  { key: 'americanfootball_nfl', name: 'NFL', sport: 'americanfootball' },
-  { key: 'icehockey_nhl', name: 'NHL', sport: 'hockey' },
+// Sports with their leagues organized
+const SPORTS = [
+  {
+    id: 'soccer',
+    name: 'Soccer',
+    icon: '⚽',
+    leagues: [
+      { key: 'soccer_epl', name: 'Premier League' },
+      { key: 'soccer_spain_la_liga', name: 'La Liga' },
+      { key: 'soccer_germany_bundesliga', name: 'Bundesliga' },
+      { key: 'soccer_italy_serie_a', name: 'Serie A' },
+      { key: 'soccer_france_ligue_one', name: 'Ligue 1' },
+      { key: 'soccer_uefa_champs_league', name: 'Champions League' },
+      { key: 'soccer_uefa_europa_league', name: 'Europa League' },
+      { key: 'soccer_brazil_campeonato', name: 'Brasileirão' },
+      { key: 'soccer_mexico_ligamx', name: 'Liga MX' },
+      { key: 'soccer_usa_mls', name: 'MLS' },
+    ],
+  },
+  {
+    id: 'basketball',
+    name: 'Basketball',
+    icon: '🏀',
+    leagues: [
+      { key: 'basketball_nba', name: 'NBA' },
+      { key: 'basketball_euroleague', name: 'EuroLeague' },
+      { key: 'basketball_ncaab', name: 'NCAA Basketball' },
+    ],
+  },
+  {
+    id: 'americanfootball',
+    name: 'American Football',
+    icon: '🏈',
+    leagues: [
+      { key: 'americanfootball_nfl', name: 'NFL' },
+      { key: 'americanfootball_ncaaf', name: 'NCAA Football' },
+    ],
+  },
+  {
+    id: 'hockey',
+    name: 'Hockey',
+    icon: '🏒',
+    leagues: [
+      { key: 'icehockey_nhl', name: 'NHL' },
+      { key: 'icehockey_sweden_allsvenskan', name: 'SHL' },
+    ],
+  },
 ];
 
-export default function MatchBrowser({ initialSport, maxMatches = 12 }: MatchBrowserProps) {
-  const [selectedLeague, setSelectedLeague] = useState<string>(initialSport || 'soccer_epl');
+export default function MatchBrowser({ initialSport = 'soccer', maxMatches = 12 }: MatchBrowserProps) {
+  const [selectedSport, setSelectedSport] = useState<string>(initialSport);
+  const [selectedLeague, setSelectedLeague] = useState<string>('soccer_epl');
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAllLeagues, setShowAllLeagues] = useState(false);
 
-  const groupedSports = useMemo(() => getSportsGroupedByCategory(), []);
+  // Get current sport config
+  const currentSport = SPORTS.find(s => s.id === selectedSport) || SPORTS[0];
+  const currentLeague = currentSport.leagues.find(l => l.key === selectedLeague) || currentSport.leagues[0];
+
+  // When sport changes, select first league of that sport
+  useEffect(() => {
+    const sport = SPORTS.find(s => s.id === selectedSport);
+    if (sport && sport.leagues.length > 0) {
+      setSelectedLeague(sport.leagues[0].key);
+    }
+  }, [selectedSport]);
 
   // Fetch matches for selected league
   useEffect(() => {
@@ -66,101 +113,60 @@ export default function MatchBrowser({ initialSport, maxMatches = 12 }: MatchBro
     fetchMatches();
   }, [selectedLeague]);
 
-  // Get current league info
-  const currentLeague = POPULAR_LEAGUES.find(l => l.key === selectedLeague) || {
-    key: selectedLeague,
-    name: SPORTS_CONFIG[selectedLeague]?.displayName || selectedLeague,
-    sport: selectedLeague.split('_')[0],
-  };
-
-  // Get all leagues for expanded view
-  const allLeagues = useMemo(() => {
-    const leagues: Array<{ key: string; name: string; category: string }> = [];
-    Object.entries(groupedSports).forEach(([category, sports]) => {
-      sports.forEach(sport => {
-        leagues.push({
-          key: sport.oddsApiSportKey,
-          name: sport.displayName,
-          category,
-        });
-      });
-    });
-    return leagues;
-  }, [groupedSports]);
-
   return (
     <section className="py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* League Selection Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-white">Select a League</h2>
-          <button
-            onClick={() => setShowAllLeagues(!showAllLeagues)}
-            className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
-          >
-            {showAllLeagues ? 'Show less' : 'All leagues'}
-            <svg className={`w-4 h-4 transition-transform ${showAllLeagues ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-
-        {/* League Pills - Popular */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {POPULAR_LEAGUES.map((league) => (
+        
+        {/* Sport Tabs */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+          {SPORTS.map((sport) => (
             <button
-              key={league.key}
-              onClick={() => setSelectedLeague(league.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedLeague === league.key
-                  ? 'bg-primary text-white'
+              key={sport.id}
+              onClick={() => setSelectedSport(sport.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                selectedSport === sport.id
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
                   : 'bg-white/5 text-gray-300 hover:bg-white/10'
               }`}
             >
-              <LeagueLogo leagueName={league.name} sport={league.key} size="xs" />
-              <span>{league.name}</span>
+              <span className="text-lg">{sport.icon}</span>
+              <span>{sport.name}</span>
             </button>
           ))}
         </div>
 
-        {/* All Leagues Expanded */}
-        {showAllLeagues && (
-          <div className="mb-8 p-4 bg-white/5 rounded-xl">
-            {Object.entries(groupedSports).map(([category, sports]) => (
-              <div key={category} className="mb-4 last:mb-0">
-                <h4 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">
-                  {category}
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {sports.map((sport) => (
-                    <button
-                      key={sport.oddsApiSportKey}
-                      onClick={() => {
-                        setSelectedLeague(sport.oddsApiSportKey);
-                        setShowAllLeagues(false);
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        selectedLeague === sport.oddsApiSportKey
-                          ? 'bg-primary text-white'
-                          : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
-                      }`}
-                    >
-                      {sport.displayName}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        {/* League Pills */}
+        <div className="mb-6">
+          <p className="text-xs text-text-muted uppercase tracking-wider mb-3">
+            {currentSport.name} Leagues
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {currentSport.leagues.map((league) => (
+              <button
+                key={league.key}
+                onClick={() => setSelectedLeague(league.key)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedLeague === league.key
+                    ? 'bg-white/20 text-white border border-white/20'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
+                }`}
+              >
+                <LeagueLogo leagueName={league.name} sport={league.key} size="xs" />
+                <span>{league.name}</span>
+              </button>
             ))}
           </div>
-        )}
+        </div>
 
         {/* Current League Header */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 py-3 border-t border-divider">
           <LeagueLogo leagueName={currentLeague.name} sport={selectedLeague} size="md" />
-          <h3 className="text-lg font-semibold text-white">{currentLeague.name}</h3>
-          <span className="text-sm text-text-muted">
-            {isLoading ? 'Loading...' : `${matches.length} matches`}
-          </span>
+          <div>
+            <h3 className="text-lg font-semibold text-white">{currentLeague.name}</h3>
+            <p className="text-sm text-text-muted">
+              {isLoading ? 'Loading matches...' : `${matches.length} upcoming matches`}
+            </p>
+          </div>
         </div>
 
         {/* Loading State */}
@@ -204,7 +210,8 @@ export default function MatchBrowser({ initialSport, maxMatches = 12 }: MatchBro
 
         {/* Empty State */}
         {!isLoading && !error && matches.length === 0 && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-white/5 rounded-xl">
+            <span className="text-4xl mb-4 block">📭</span>
             <p className="text-gray-400 mb-2">No upcoming matches in {currentLeague.name}</p>
             <p className="text-sm text-text-muted">Try selecting a different league</p>
           </div>
@@ -213,12 +220,9 @@ export default function MatchBrowser({ initialSport, maxMatches = 12 }: MatchBro
         {/* Show More */}
         {!isLoading && matches.length > maxMatches && (
           <div className="text-center mt-6">
-            <button 
-              onClick={() => {/* Could expand or link to full page */}}
-              className="btn-secondary"
-            >
-              View all {matches.length} matches
-            </button>
+            <p className="text-sm text-text-muted">
+              Showing {maxMatches} of {matches.length} matches
+            </p>
           </div>
         )}
       </div>
