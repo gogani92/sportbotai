@@ -9,6 +9,7 @@ export { default as AnalysisResults } from './AnalysisResults';
 
 // Layer 1: Quick Glance
 export { default as QuickGlanceCard } from './QuickGlanceCard';
+export { default as QuickBriefingCard } from './QuickBriefingCard';
 
 // Layer 1.5: Stats & Factors
 export { default as QuickStatsCard } from './QuickStatsCard';

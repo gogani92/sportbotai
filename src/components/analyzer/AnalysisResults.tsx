@@ -37,6 +37,7 @@ import TeamComparisonRadar from './TeamComparisonRadar';
 import MatchContextIndicators from './MatchContextIndicators';
 import RestScheduleCard from './RestScheduleCard';
 import InjuryImpactCard from './InjuryImpactCard';
+import QuickBriefingCard from './QuickBriefingCard';
 
 interface AnalysisResultsProps {
   result: AnalyzeResponse;
@@ -44,6 +45,7 @@ interface AnalysisResultsProps {
 
 export default function AnalysisResults({ result }: AnalysisResultsProps) {
   const [showDeepDive, setShowDeepDive] = useState(false);
+  const [showQuickBriefing, setShowQuickBriefing] = useState(true);
   
   // Error state
   if (!result.success && result.error) {
@@ -74,6 +76,20 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
   return (
     <div className="max-w-6xl mx-auto">
       
+      {/* ============================================ */}
+      {/* 60-SECOND BRIEFING (Always visible first)   */}
+      {/* Quick summary with audio option             */}
+      {/* ============================================ */}
+      
+      {showQuickBriefing && (
+        <section className="mb-8">
+          <QuickBriefingCard 
+            result={result} 
+            onExpandToFull={() => setShowQuickBriefing(false)}
+          />
+        </section>
+      )}
+
       {/* ============================================ */}
       {/* TIER 1: CORE SUMMARY                        */}
       {/* Visually loud, essential information        */}
