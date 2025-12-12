@@ -502,7 +502,9 @@ IMPORTANT:
 - Your narrative should JUSTIFY your verdict
 - Headlines should be screenshot-worthy facts
 - No betting advice, just analysis
-- Be confident but acknowledge uncertainty`;
+- Be confident but acknowledge uncertainty
+- Use standard ASCII apostrophes (') not fancy quotes
+- Use standard ASCII characters only in text`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -515,7 +517,15 @@ IMPORTANT:
     const content = completion.choices[0].message.content;
     if (!content) throw new Error('No content');
     
-    return JSON.parse(content);
+    // Normalize unicode characters
+    const normalizedContent = content
+      .replace(/[\u2018\u2019]/g, "'")  // Fancy single quotes to straight
+      .replace(/[\u201C\u201D]/g, '"')  // Fancy double quotes to straight
+      .replace(/\u2013/g, '-')          // En-dash to hyphen
+      .replace(/\u2014/g, '--')         // Em-dash to double hyphen
+      .replace(/\u2026/g, '...');       // Ellipsis to dots
+    
+    return JSON.parse(normalizedContent);
   } catch (error) {
     console.error('AI generation failed:', error);
     

@@ -795,74 +795,101 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
 
   const season = getCurrentSeason();
   
-  // Try league-specific top scorers first if we have a league ID
-  let response = null;
+  // First try: Get team's top scorer from players/topscorers endpoint
+  // This endpoint needs league parameter to work properly
   if (leagueId) {
-    response = await apiRequest<any>(`/players/topscorers?league=${leagueId}&season=${season}`);
-    // Filter for our team
-    if (response?.response) {
-      const teamPlayer = response.response.find((p: any) => 
+    const topScorersResponse = await apiRequest<any>(`/players/topscorers?league=${leagueId}&season=${season}`);
+    if (topScorersResponse?.response) {
+      // Find a player from our team in the league's top scorers
+      const teamPlayer = topScorersResponse.response.find((p: any) => 
         p.statistics?.some((s: any) => s.team?.id === teamId)
       );
       if (teamPlayer) {
-        response = { response: [teamPlayer] };
-      } else {
-        response = null;
-      }
-    }
-  }
-  
-  // Fallback to team-specific top scorers
-  if (!response?.response?.[0]) {
-    response = await apiRequest<any>(`/players/topscorers?team=${teamId}&season=${season}`);
-  }
-  
-  if (!response?.response?.[0]) {
-    // Fallback: try squad endpoint and find an attacker or midfielder
-    const squadResponse = await apiRequest<any>(`/players/squads?team=${teamId}`);
-    if (squadResponse?.response?.[0]?.players) {
-      const players = squadResponse.response[0].players;
-      // Prioritize attackers and midfielders
-      const priorityPositions = ['Attacker', 'Forward', 'Midfielder'];
-      let bestPlayer = null;
-      
-      for (const pos of priorityPositions) {
-        bestPlayer = players.find((p: any) => p.position === pos);
-        if (bestPlayer) break;
-      }
-      
-      // Fallback to first non-goalkeeper
-      if (!bestPlayer) {
-        bestPlayer = players.find((p: any) => p.position !== 'Goalkeeper') || players[0];
-      }
-      
-      if (bestPlayer) {
-        return {
-          name: bestPlayer.name || 'Unknown',
-          position: bestPlayer.position || 'Forward',
-          photo: bestPlayer.photo,
-          goals: 0,
-          assists: 0,
-          minutesPlayed: 0,
+        const stats = teamPlayer.statistics?.find((s: any) => s.team?.id === teamId) || teamPlayer.statistics?.[0];
+        const player: TopPlayerStats = {
+          name: teamPlayer.player?.name || 'Unknown',
+          position: stats?.games?.position || 'Forward',
+          photo: teamPlayer.player?.photo,
+          goals: stats?.goals?.total || 0,
+          assists: stats?.goals?.assists || 0,
+          rating: stats?.games?.rating ? parseFloat(stats.games.rating) : undefined,
+          minutesPlayed: stats?.games?.minutes || 0,
         };
+        setCache(cacheKey, player);
+        return player;
       }
     }
-    return null;
   }
-
-  const topPlayer = response.response[0];
-  const player: TopPlayerStats = {
-    name: topPlayer.player?.name || 'Unknown',
-    position: topPlayer.statistics?.[0]?.games?.position || 'Forward',
-    photo: topPlayer.player?.photo,
-    goals: topPlayer.statistics?.[0]?.goals?.total || 0,
-    assists: topPlayer.statistics?.[0]?.goals?.assists || 0,
-    rating: topPlayer.statistics?.[0]?.games?.rating ? parseFloat(topPlayer.statistics[0].games.rating) : undefined,
-    minutesPlayed: topPlayer.statistics?.[0]?.games?.minutes || 0,
-  };
-
-  setCache(cacheKey, player);
-  return player;
+  
+  // Second try: Get team statistics which may include top scorer
+  if (leagueId) {
+    const teamStatsResponse = await apiRequest<any>(`/teams/statistics?team=${teamId}&season=${season}&league=${leagueId}`);
+    if (teamStatsResponse?.response?.lineups?.[0]) {
+      // Get most used formation's players - but this doesn't give individual stats
+      // Fall through to player search
+    }
+  }
+  
+  // Third try: Search for players by team and get their stats
+  const playersResponse = await apiRequest<any>(`/players?team=${teamId}&season=${season}&page=1`);
+  if (playersResponse?.response?.length > 0) {
+    // Sort by goals scored
+    const sortedPlayers = playersResponse.response
+      .filter((p: any) => p.statistics?.[0]?.games?.position !== 'Goalkeeper')
+      .sort((a: any, b: any) => {
+        const aGoals = a.statistics?.[0]?.goals?.total || 0;
+        const bGoals = b.statistics?.[0]?.goals?.total || 0;
+        return bGoals - aGoals;
+      });
+    
+    if (sortedPlayers.length > 0) {
+      const topPlayer = sortedPlayers[0];
+      const stats = topPlayer.statistics?.[0];
+      const player: TopPlayerStats = {
+        name: topPlayer.player?.name || 'Unknown',
+        position: stats?.games?.position || 'Forward',
+        photo: topPlayer.player?.photo,
+        goals: stats?.goals?.total || 0,
+        assists: stats?.goals?.assists || 0,
+        rating: stats?.games?.rating ? parseFloat(stats.games.rating) : undefined,
+        minutesPlayed: stats?.games?.minutes || 0,
+      };
+      setCache(cacheKey, player);
+      return player;
+    }
+  }
+  
+  // Final fallback: squad endpoint for player names (no stats)
+  const squadResponse = await apiRequest<any>(`/players/squads?team=${teamId}`);
+  if (squadResponse?.response?.[0]?.players) {
+    const players = squadResponse.response[0].players;
+    // Prioritize attackers and midfielders
+    const priorityPositions = ['Attacker', 'Forward', 'Midfielder'];
+    let bestPlayer = null;
+    
+    for (const pos of priorityPositions) {
+      bestPlayer = players.find((p: any) => p.position === pos);
+      if (bestPlayer) break;
+    }
+    
+    // Fallback to first non-goalkeeper
+    if (!bestPlayer) {
+      bestPlayer = players.find((p: any) => p.position !== 'Goalkeeper') || players[0];
+    }
+    
+    if (bestPlayer) {
+      return {
+        name: bestPlayer.name || 'Unknown',
+        position: bestPlayer.position || 'Forward',
+        photo: bestPlayer.photo,
+        goals: 0,
+        assists: 0,
+        minutesPlayed: 0,
+      };
+    }
+  }
+  
+  return null;
 }
 
 /**
