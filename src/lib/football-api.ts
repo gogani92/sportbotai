@@ -803,15 +803,29 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
 
   const season = getCurrentSeason();
   
-  // PRIORITY 1: League top scorers (most accurate data)
-  // This endpoint shows players with correct goal totals
+  // First get the current squad to validate any player we find
+  const squadResponse = await apiRequest<any>(`/players/squads?team=${teamId}`);
+  const currentSquadIds = new Set<number>();
+  
+  if (squadResponse?.response?.[0]?.players) {
+    squadResponse.response[0].players.forEach((p: any) => {
+      if (p.id) currentSquadIds.add(p.id);
+    });
+  }
+  
+  // PRIORITY 1: League top scorers (most accurate goal data)
+  // But verify the player is actually in the squad (API can have wrong data)
   if (leagueId) {
     const topScorersResponse = await apiRequest<any>(`/players/topscorers?league=${leagueId}&season=${season}`);
     if (topScorersResponse?.response) {
-      // Find a player from our team - ensure stats are for THIS team specifically
+      // Find a player from our team who is ALSO in the current squad
       const teamPlayer = topScorersResponse.response.find((p: any) => {
         const teamStats = p.statistics?.find((s: any) => s.team?.id === teamId);
-        return teamStats && teamStats.goals?.total > 0;
+        const playerId = p.player?.id;
+        // Player must have goals for this team AND be in current squad
+        const hasGoals = teamStats && teamStats.goals?.total > 0;
+        const inSquad = currentSquadIds.size === 0 || currentSquadIds.has(playerId);
+        return hasGoals && inSquad;
       });
       
       if (teamPlayer) {
@@ -834,16 +848,6 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
   }
   
   // PRIORITY 2: Team players endpoint with squad filtering
-  // Get current squad to ensure we only consider CURRENT players
-  const squadResponse = await apiRequest<any>(`/players/squads?team=${teamId}`);
-  const currentSquadIds = new Set<number>();
-  
-  if (squadResponse?.response?.[0]?.players) {
-    squadResponse.response[0].players.forEach((p: any) => {
-      if (p.id) currentSquadIds.add(p.id);
-    });
-  }
-  
   // Now get player stats, but ONLY for players in current squad
   const playersResponse = await apiRequest<any>(`/players?team=${teamId}&season=${season}&page=1`);
   
