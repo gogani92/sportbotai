@@ -1297,8 +1297,10 @@ const LEAGUE_LOGOS: Record<string, string> = {
   'K League 1': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/47/K_League_1_logo.svg/200px-K_League_1_logo.svg.png',
   'Korea - K League 1': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/47/K_League_1_logo.svg/200px-K_League_1_logo.svg.png',
   
-  // Brasileirao - Brazil
+  // Brasileirao - Brazil (with and without accent)
   'Brasileirao': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/42/Campeonato_Brasileiro_S%C3%A9rie_A_logo.png/200px-Campeonato_Brasileiro_S%C3%A9rie_A_logo.png',
+  'Brasileirão': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/42/Campeonato_Brasileiro_S%C3%A9rie_A_logo.png/200px-Campeonato_Brasileiro_S%C3%A9rie_A_logo.png',
+  'soccer_brazil_campeonato': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/42/Campeonato_Brasileiro_S%C3%A9rie_A_logo.png/200px-Campeonato_Brasileiro_S%C3%A9rie_A_logo.png',
   'Serie A Brazil': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/42/Campeonato_Brasileiro_S%C3%A9rie_A_logo.png/200px-Campeonato_Brasileiro_S%C3%A9rie_A_logo.png',
   'Brazil - Serie A': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/42/Campeonato_Brasileiro_S%C3%A9rie_A_logo.png/200px-Campeonato_Brasileiro_S%C3%A9rie_A_logo.png',
   

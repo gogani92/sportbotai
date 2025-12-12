@@ -58,11 +58,15 @@ export const metadata: Metadata = {
   // PWA Manifest
   manifest: '/manifest.json',
   
-  // Apple specific
+  // PWA / Mobile App specific
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'SportBot AI',
+  },
+  // Modern mobile-web-app-capable (non-Apple)
+  other: {
+    'mobile-web-app-capable': 'yes',
   },
   
   // Canonical & Base
