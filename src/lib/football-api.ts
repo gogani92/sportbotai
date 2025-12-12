@@ -133,97 +133,116 @@ async function apiRequest<T>(endpoint: string): Promise<T | null> {
 
 /**
  * Team name mappings for API-Football
- * Maps common team names to their API-Football IDs or preferred search terms
+ * Maps common team names to their API-Football IDs and league IDs
  */
-const TEAM_NAME_MAPPINGS: Record<string, { id?: number; searchName?: string }> = {
-  // Premier League
-  'Arsenal': { id: 42 },
-  'Aston Villa': { id: 66 },
-  'Bournemouth': { id: 35 },
-  'Brentford': { id: 55 },
-  'Brighton': { id: 51 },
-  'Brighton and Hove Albion': { id: 51 },
-  'Burnley': { id: 44 },
-  'Chelsea': { id: 49 },
-  'Crystal Palace': { id: 52 },
-  'Everton': { id: 45 },
-  'Fulham': { id: 36 },
-  'Leeds United': { id: 63 },
-  'Leicester City': { id: 46 },
-  'Liverpool': { id: 40 },
-  'Manchester City': { id: 50 },
-  'Manchester United': { id: 33 },
-  'Newcastle United': { id: 34 },
-  'Newcastle': { id: 34 },
-  'Nottingham Forest': { id: 65 },
-  'Sheffield United': { id: 62 },
-  'Southampton': { id: 41 },
-  'Sunderland': { id: 71 },
-  'Tottenham Hotspur': { id: 47 },
-  'Tottenham': { id: 47 },
-  'West Ham United': { id: 48 },
-  'West Ham': { id: 48 },
-  'Wolverhampton Wanderers': { id: 39 },
-  'Wolves': { id: 39 },
-  // La Liga
-  'Real Madrid': { id: 541 },
-  'Barcelona': { id: 529 },
-  'Atletico Madrid': { id: 530 },
-  'Atlético Madrid': { id: 530 },
-  'Sevilla': { id: 536 },
-  'Valencia': { id: 532 },
-  'Villarreal': { id: 533 },
-  'Real Betis': { id: 543 },
-  'Athletic Bilbao': { id: 531 },
-  'Real Sociedad': { id: 548 },
-  'Celta Vigo': { id: 538 },
-  'Getafe': { id: 546 },
-  'Osasuna': { id: 727 },
-  'CA Osasuna': { id: 727 },
-  'Mallorca': { id: 798 },
-  'Girona': { id: 547 },
-  'Rayo Vallecano': { id: 728 },
-  'Almeria': { id: 723 },
-  'Cadiz': { id: 724 },
-  'Alaves': { id: 542 },
-  'Alavés': { id: 542 },
-  'Espanyol': { id: 540 },
-  'Levante': { id: 539 },
-  // Serie A
-  'Juventus': { id: 496 },
-  'Inter': { id: 505 },
-  'Inter Milan': { id: 505 },
-  'AC Milan': { id: 489 },
-  'Milan': { id: 489 },
-  'Napoli': { id: 492 },
-  'Roma': { id: 497 },
-  'AS Roma': { id: 497 },
-  'Lazio': { id: 487 },
-  'Atalanta': { id: 499 },
-  'Fiorentina': { id: 502 },
-  'Torino': { id: 503 },
-  'Bologna': { id: 500 },
-  // Bundesliga
-  'Bayern Munich': { id: 157 },
-  'Bayern München': { id: 157 },
-  'Borussia Dortmund': { id: 165 },
-  'Dortmund': { id: 165 },
-  'RB Leipzig': { id: 173 },
-  'Bayer Leverkusen': { id: 168 },
-  'Leverkusen': { id: 168 },
-  'Eintracht Frankfurt': { id: 169 },
-  'Frankfurt': { id: 169 },
-  'Wolfsburg': { id: 161 },
-  'Borussia Monchengladbach': { id: 163 },
-  // Ligue 1
-  'Paris Saint Germain': { id: 85 },
-  'PSG': { id: 85 },
-  'Paris Saint-Germain': { id: 85 },
-  'Marseille': { id: 81 },
-  'Lyon': { id: 80 },
-  'Monaco': { id: 91 },
-  'Lille': { id: 79 },
+const TEAM_NAME_MAPPINGS: Record<string, { id?: number; leagueId?: number; searchName?: string }> = {
+  // Premier League (league 39)
+  'Arsenal': { id: 42, leagueId: 39 },
+  'Aston Villa': { id: 66, leagueId: 39 },
+  'Bournemouth': { id: 35, leagueId: 39 },
+  'Brentford': { id: 55, leagueId: 39 },
+  'Brighton': { id: 51, leagueId: 39 },
+  'Brighton and Hove Albion': { id: 51, leagueId: 39 },
+  'Burnley': { id: 44, leagueId: 39 },
+  'Chelsea': { id: 49, leagueId: 39 },
+  'Crystal Palace': { id: 52, leagueId: 39 },
+  'Everton': { id: 45, leagueId: 39 },
+  'Fulham': { id: 36, leagueId: 39 },
+  'Leeds United': { id: 63, leagueId: 39 },
+  'Leicester City': { id: 46, leagueId: 39 },
+  'Liverpool': { id: 40, leagueId: 39 },
+  'Manchester City': { id: 50, leagueId: 39 },
+  'Manchester United': { id: 33, leagueId: 39 },
+  'Newcastle United': { id: 34, leagueId: 39 },
+  'Newcastle': { id: 34, leagueId: 39 },
+  'Nottingham Forest': { id: 65, leagueId: 39 },
+  'Sheffield United': { id: 62, leagueId: 39 },
+  'Southampton': { id: 41, leagueId: 39 },
+  'Sunderland': { id: 71, leagueId: 39 },
+  'Tottenham Hotspur': { id: 47, leagueId: 39 },
+  'Tottenham': { id: 47, leagueId: 39 },
+  'West Ham United': { id: 48, leagueId: 39 },
+  'West Ham': { id: 48, leagueId: 39 },
+  'Wolverhampton Wanderers': { id: 39, leagueId: 39 },
+  'Wolves': { id: 39, leagueId: 39 },
+  'Ipswich Town': { id: 57, leagueId: 39 },
+  'Ipswich': { id: 57, leagueId: 39 },
+  // La Liga (league 140)
+  'Real Madrid': { id: 541, leagueId: 140 },
+  'Barcelona': { id: 529, leagueId: 140 },
+  'Atletico Madrid': { id: 530, leagueId: 140 },
+  'Atlético Madrid': { id: 530, leagueId: 140 },
+  'Sevilla': { id: 536, leagueId: 140 },
+  'Valencia': { id: 532, leagueId: 140 },
+  'Villarreal': { id: 533, leagueId: 140 },
+  'Real Betis': { id: 543, leagueId: 140 },
+  'Athletic Bilbao': { id: 531, leagueId: 140 },
+  'Real Sociedad': { id: 548, leagueId: 140 },
+  'Celta Vigo': { id: 538, leagueId: 140 },
+  'Getafe': { id: 546, leagueId: 140 },
+  'Osasuna': { id: 727, leagueId: 140 },
+  'CA Osasuna': { id: 727, leagueId: 140 },
+  'Mallorca': { id: 798, leagueId: 140 },
+  'Girona': { id: 547, leagueId: 140 },
+  'Rayo Vallecano': { id: 728, leagueId: 140 },
+  'Almeria': { id: 723, leagueId: 140 },
+  'Cadiz': { id: 724, leagueId: 140 },
+  'Alaves': { id: 542, leagueId: 140 },
+  'Alavés': { id: 542, leagueId: 140 },
+  'Espanyol': { id: 540, leagueId: 140 },
+  'Levante': { id: 539, leagueId: 140 },
+  // Serie A (league 135)
+  'Juventus': { id: 496, leagueId: 135 },
+  'Inter': { id: 505, leagueId: 135 },
+  'Inter Milan': { id: 505, leagueId: 135 },
+  'AC Milan': { id: 489, leagueId: 135 },
+  'Milan': { id: 489, leagueId: 135 },
+  'Napoli': { id: 492, leagueId: 135 },
+  'Roma': { id: 497, leagueId: 135 },
+  'AS Roma': { id: 497, leagueId: 135 },
+  'Lazio': { id: 487, leagueId: 135 },
+  'Atalanta': { id: 499, leagueId: 135 },
+  'Fiorentina': { id: 502, leagueId: 135 },
+  'Torino': { id: 503, leagueId: 135 },
+  'Bologna': { id: 500, leagueId: 135 },
+  // Bundesliga (league 78)
+  'Bayern Munich': { id: 157, leagueId: 78 },
+  'Bayern München': { id: 157, leagueId: 78 },
+  'Borussia Dortmund': { id: 165, leagueId: 78 },
+  'Dortmund': { id: 165, leagueId: 78 },
+  'RB Leipzig': { id: 173, leagueId: 78 },
+  'Bayer Leverkusen': { id: 168, leagueId: 78 },
+  'Leverkusen': { id: 168, leagueId: 78 },
+  'Eintracht Frankfurt': { id: 169, leagueId: 78 },
+  'Frankfurt': { id: 169, leagueId: 78 },
+  'Wolfsburg': { id: 161, leagueId: 78 },
+  'Borussia Monchengladbach': { id: 163, leagueId: 78 },
+  // Ligue 1 (league 61)
+  'Paris Saint Germain': { id: 85, leagueId: 61 },
+  'PSG': { id: 85, leagueId: 61 },
+  'Paris Saint-Germain': { id: 85, leagueId: 61 },
+  'Marseille': { id: 81, leagueId: 61 },
+  'Lyon': { id: 80, leagueId: 61 },
+  'Monaco': { id: 91, leagueId: 61 },
+  'Lille': { id: 79, leagueId: 61 },
 };
+
+/**
+ * Get league ID for a team from mapping
+ */
+function getTeamLeagueId(teamName: string): number | null {
+  const mapping = TEAM_NAME_MAPPINGS[teamName];
+  if (mapping?.leagueId) return mapping.leagueId;
+  
+  // Try normalized lookup
+  const normalized = normalizeTeamName(teamName);
+  for (const [key, value] of Object.entries(TEAM_NAME_MAPPINGS)) {
+    if (normalizeTeamName(key) === normalized && value.leagueId) {
+      return value.leagueId;
+    }
+  }
+  return null;
+}
 
 /**
  * Normalize team name for better matching
@@ -235,7 +254,6 @@ function normalizeTeamName(name: string): string {
     .replace(/\s+/g, ' ')        // Normalize spaces
     .trim();
 }
-
 /**
  * Search for team by name with improved matching
  */
@@ -610,21 +628,42 @@ interface GoalTimingData {
 /**
  * Get team goal timing statistics from fixtures
  */
-export async function getTeamGoalTiming(teamId: number): Promise<GoalTimingData> {
-  const cacheKey = `goaltiming:${teamId}`;
+export async function getTeamGoalTiming(teamId: number, leagueId?: number): Promise<GoalTimingData> {
+  const cacheKey = `goaltiming:${teamId}:${leagueId || 'all'}`;
   const cached = getCached<GoalTimingData>(cacheKey);
   if (cached) return cached;
 
-  // Get team statistics which includes goals by minute
-  const season = getCurrentSeason();
-  const response = await apiRequest<any>(`/teams/statistics?team=${teamId}&season=${season}`);
-  
   const defaultTiming: GoalTimingData = {
     scoring: { '0-15': 0, '16-30': 0, '31-45': 0, '46-60': 0, '61-75': 0, '76-90': 0 },
     conceding: { '0-15': 0, '16-30': 0, '31-45': 0, '46-60': 0, '61-75': 0, '76-90': 0 },
     totalGoals: 0,
   };
 
+  // Get team statistics which includes goals by minute
+  // Note: /teams/statistics requires league parameter
+  const season = getCurrentSeason();
+  
+  // If no league provided, try to find it from team info
+  if (!leagueId) {
+    const teamInfo = await apiRequest<any>(`/teams?id=${teamId}`);
+    // Try common league searches for the team's country
+    const country = teamInfo?.response?.[0]?.team?.country;
+    if (country) {
+      const leagueMap: Record<string, number> = {
+        'England': 39,
+        'Spain': 140,
+        'Italy': 135,
+        'Germany': 78,
+        'France': 61,
+      };
+      leagueId = leagueMap[country];
+    }
+  }
+  
+  if (!leagueId) return defaultTiming;
+  
+  const response = await apiRequest<any>(`/teams/statistics?team=${teamId}&season=${season}&league=${leagueId}`);
+  
   if (!response?.response?.goals) return defaultTiming;
 
   const goalsFor = response.response.goals?.for?.minute || {};
@@ -633,7 +672,7 @@ export async function getTeamGoalTiming(teamId: number): Promise<GoalTimingData>
   const extractMinutes = (data: any): GoalTimingData['scoring'] => ({
     '0-15': (data['0-15']?.total || 0),
     '16-30': (data['16-30']?.total || 0),
-    '31-45': (data['31-45']?.total || 0) + (data['46-60']?.total || 0) * 0, // 31-45 only
+    '31-45': (data['31-45']?.total || 0),
     '46-60': (data['46-60']?.total || 0),
     '61-75': (data['61-75']?.total || 0),
     '76-90': (data['76-90']?.total || 0) + (data['91-105']?.total || 0), // Include extra time
@@ -697,9 +736,13 @@ export async function getMatchGoalTiming(
     return { home: defaultTiming, away: defaultTiming };
   }
 
+  // Get league IDs from team mappings for better data
+  const homeLeagueId = getTeamLeagueId(homeTeam);
+  const awayLeagueId = getTeamLeagueId(awayTeam);
+
   const [homeTiming, awayTiming] = await Promise.all([
-    getTeamGoalTiming(homeTeamId),
-    getTeamGoalTiming(awayTeamId),
+    getTeamGoalTiming(homeTeamId, homeLeagueId || undefined),
+    getTeamGoalTiming(awayTeamId, awayLeagueId || undefined),
   ]);
 
   return { home: homeTiming, away: awayTiming };
