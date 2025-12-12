@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getEnrichedMatchData, getMatchInjuries, getMatchGoalTiming, getMatchKeyPlayers, getFixtureReferee } from '@/lib/football-api';
+import { getEnrichedMatchData, getMatchInjuries, getMatchGoalTiming, getMatchKeyPlayers, getFixtureReferee, getMatchFixtureInfo } from '@/lib/football-api';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Fetch enriched data from API-Football
-    const [enrichedData, injuries, goalTimingData, keyPlayers, referee] = await Promise.all([
+    const [enrichedData, injuries, goalTimingData, keyPlayers, referee, fixtureInfo] = await Promise.all([
       getEnrichedMatchData(
         matchInfo.homeTeam,
         matchInfo.awayTeam,
@@ -63,7 +63,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         matchInfo.awayTeam,
         matchInfo.league
       ),
+      getMatchFixtureInfo(
+        matchInfo.homeTeam,
+        matchInfo.awayTeam,
+        matchInfo.league
+      ),
     ]);
+
+    // Use venue from fixture info if available, fallback to matchInfo
+    const venue = fixtureInfo.venue || matchInfo.venue;
 
     // Build form strings
     const homeFormStr = enrichedData.homeForm?.map(m => m.result).join('') || 'DDDDD';
@@ -236,7 +244,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         league: matchInfo.league,
         sport: 'soccer',
         kickoff: matchInfo.kickoff,
-        venue: matchInfo.venue,
+        venue: venue, // Use venue from fixture info
       },
       story: {
         ...aiAnalysis.story,
