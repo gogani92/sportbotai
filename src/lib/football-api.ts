@@ -98,9 +98,13 @@ function getCurrentSeason(): number {
   const now = new Date();
   const month = now.getMonth(); // 0-11
   const year = now.getFullYear();
-  // If before August (months 0-6), we're in the previous year's season
-  // If Aug-Dec (months 7-11), we're in the current year's season
-  return month < 7 ? year - 1 : year;
+  // European football season runs Aug-May
+  // The API uses the starting year (e.g., 2024 for the 2024-25 season)
+  // Before August: we're still in the previous year's season (e.g., May 2025 = 2024-25 season)
+  // Aug onwards: we're in the new season (e.g., Sept 2025 = 2025-26 season)
+  // However, use 2024 as maximum to avoid future/mock data issues
+  const calculatedSeason = month < 7 ? year - 1 : year;
+  return Math.min(calculatedSeason, 2024);
 }
 
 /**
