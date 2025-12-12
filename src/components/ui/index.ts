@@ -19,3 +19,6 @@ export {
 
 // Skeleton primitives
 export { Skeleton, SkeletonText, SkeletonCard, SkeletonMatchCard } from './Skeleton';
+
+// Toast notifications
+export { ToastProvider, useToast, SimpleToast } from './Toast';

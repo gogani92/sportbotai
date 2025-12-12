@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { AnalyzeResponse } from '@/types'
 import { Copy, Check } from 'lucide-react'
+import { useToast } from '@/components/ui'
 
 interface CopyInsightsButtonProps {
   result: AnalyzeResponse
@@ -16,6 +17,7 @@ export default function CopyInsightsButton({
   className = '' 
 }: CopyInsightsButtonProps) {
   const [copied, setCopied] = useState(false)
+  const { showToast } = useToast()
 
   const { matchInfo, probabilities, valueAnalysis, riskAnalysis, momentumAndForm, tacticalAnalysis } = result
 
@@ -101,9 +103,11 @@ export default function CopyInsightsButton({
     try {
       await navigator.clipboard.writeText(generateInsightsText())
       setCopied(true)
+      showToast('Analysis copied to clipboard!', 'success')
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error('Failed to copy:', err)
+      showToast('Failed to copy. Please try again.', 'error')
     }
   }
 

@@ -122,7 +122,8 @@ a {
     @apply bg-accent text-primary-900 px-6 py-3 font-semibold 
            hover:bg-accent-green transition-all duration-200
            focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-primary-900
-           shadow-card hover:shadow-glow-accent;
+           shadow-card hover:shadow-glow-accent
+           active:scale-[0.98] active:shadow-none;
     border-radius: var(--radius-btn);
   }
 
@@ -130,15 +131,32 @@ a {
   .btn-secondary {
     @apply bg-transparent text-white border-2 border-divider px-6 py-3 font-semibold 
            hover:bg-surface-card hover:border-gray-500 transition-all duration-200
-           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-primary-900;
+           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-primary-900
+           active:scale-[0.98];
     border-radius: var(--radius-btn);
   }
 
   /* Ghost Button */
   .btn-ghost {
     @apply bg-transparent text-gray-400 px-4 py-2 font-medium
-           hover:bg-surface-card hover:text-white transition-all duration-200;
+           hover:bg-surface-card hover:text-white transition-all duration-200
+           active:scale-[0.97];
     border-radius: var(--radius-btn);
+  }
+
+  /* Icon Button - Circular */
+  .btn-icon {
+    @apply w-10 h-10 flex items-center justify-center rounded-full
+           bg-white/5 text-white/60 border border-white/10
+           hover:bg-white/10 hover:text-white hover:border-white/20
+           active:scale-95 transition-all duration-200;
+  }
+
+  .btn-icon-sm {
+    @apply w-8 h-8 flex items-center justify-center rounded-full
+           bg-white/5 text-white/60 border border-white/10
+           hover:bg-white/10 hover:text-white
+           active:scale-95 transition-all duration-150;
   }
 
   /* ---- CARDS ---- */
@@ -458,6 +476,88 @@ a {
 .stagger-item:nth-child(4) { animation-delay: 0.2s; }
 .stagger-item:nth-child(5) { animation-delay: 0.25s; }
 .stagger-item:nth-child(6) { animation-delay: 0.3s; }
+
+/* Slide in from right (for toasts) */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Slide in from bottom */
+@keyframes slideInBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-bottom {
+  animation: slideInBottom 0.3s ease-out;
+}
+
+/* Gentle wiggle for attention */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+/* Number count animation */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-count {
+  animation: countUp 0.4s ease-out;
+}
+
+/* Success checkmark */
+@keyframes checkmark {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.animate-checkmark {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: checkmark 0.5s ease-out forwards;
+}
+
+/* Skeleton loading */
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-hover) 0%,
+    var(--color-divider) 50%,
+    var(--color-bg-hover) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
 
 /* ========================================
    UTILITY CLASSES
