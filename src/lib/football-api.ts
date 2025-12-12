@@ -794,7 +794,8 @@ export interface TopPlayerStats {
 
 /**
  * Get top scorer for a team
- * Prioritizes league top scorers (most accurate), then falls back to team stats
+ * Uses league top scorers (most accurate goal data), falls back to team stats
+ * Note: Some API data quality issues exist, we handle them as best we can
  */
 export async function getTeamTopScorer(teamId: number, leagueId?: number): Promise<TopPlayerStats | null> {
   const cacheKey = `topscorer:${teamId}:${leagueId || 'all'}`;
@@ -803,34 +804,27 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
 
   const season = getCurrentSeason();
   
-  // First get the current squad to validate any player we find
-  const squadResponse = await apiRequest<any>(`/players/squads?team=${teamId}`);
-  const currentSquadIds = new Set<number>();
-  
-  if (squadResponse?.response?.[0]?.players) {
-    squadResponse.response[0].players.forEach((p: any) => {
-      if (p.id) currentSquadIds.add(p.id);
-    });
-  }
-  
   // PRIORITY 1: League top scorers (most accurate goal data)
-  // But verify the player is actually in the squad (API can have wrong data)
+  // Trust this data as it shows actual season statistics
   if (leagueId) {
     const topScorersResponse = await apiRequest<any>(`/players/topscorers?league=${leagueId}&season=${season}`);
     if (topScorersResponse?.response) {
-      // Find a player from our team who is ALSO in the current squad
+      // Find a player whose ONLY/PRIMARY team is our team (avoid loan/transfer confusion)
       const teamPlayer = topScorersResponse.response.find((p: any) => {
-        const teamStats = p.statistics?.find((s: any) => s.team?.id === teamId);
-        const playerId = p.player?.id;
-        // Player must have goals for this team AND be in current squad
-        const hasGoals = teamStats && teamStats.goals?.total > 0;
-        const inSquad = currentSquadIds.size === 0 || currentSquadIds.has(playerId);
-        return hasGoals && inSquad;
+        const stats = p.statistics || [];
+        // Check if player's primary (first) stats entry is for our team
+        const primaryTeam = stats[0]?.team?.id;
+        if (primaryTeam === teamId && stats[0]?.goals?.total > 0) {
+          return true;
+        }
+        // Also check if they have substantial goals for this team specifically
+        const teamStats = stats.find((s: any) => s.team?.id === teamId);
+        return teamStats && teamStats.goals?.total >= 5; // Minimum threshold to avoid noise
       });
       
       if (teamPlayer) {
-        const stats = teamPlayer.statistics?.find((s: any) => s.team?.id === teamId);
-        if (stats) {
+        const stats = teamPlayer.statistics?.find((s: any) => s.team?.id === teamId) || teamPlayer.statistics?.[0];
+        if (stats && stats.team?.id === teamId) {
           const player: TopPlayerStats = {
             name: teamPlayer.player?.name || 'Unknown',
             position: stats?.games?.position || 'Forward',
@@ -847,58 +841,9 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
     }
   }
   
-  // PRIORITY 2: Team players endpoint with squad filtering
-  // Now get player stats, but ONLY for players in current squad
-  const playersResponse = await apiRequest<any>(`/players?team=${teamId}&season=${season}&page=1`);
+  // PRIORITY 2: Get current squad and return best attacker (no stats, but reasonably accurate roster)
+  const squadResponse = await apiRequest<any>(`/players/squads?team=${teamId}`);
   
-  if (playersResponse?.response?.length > 0) {
-    // Filter for players who are:
-    // 1. In the current squad (if we have squad data)
-    // 2. Have actual playing stats for THIS team
-    // 3. Not goalkeepers
-    const teamPlayers = playersResponse.response.filter((p: any) => {
-      const playerId = p.player?.id;
-      const teamStats = p.statistics?.find((s: any) => s.team?.id === teamId);
-      
-      // If we have squad data, player must be in current squad
-      if (currentSquadIds.size > 0 && playerId && !currentSquadIds.has(playerId)) {
-        return false;
-      }
-      
-      // Must have played at least 1 game and not be a goalkeeper
-      return teamStats && 
-             teamStats.games?.appearences > 0 && 
-             teamStats.games?.position !== 'Goalkeeper';
-    });
-    
-    // Sort by goals scored for this team
-    const sortedPlayers = teamPlayers.sort((a: any, b: any) => {
-      const aStats = a.statistics?.find((s: any) => s.team?.id === teamId);
-      const bStats = b.statistics?.find((s: any) => s.team?.id === teamId);
-      const aGoals = aStats?.goals?.total || 0;
-      const bGoals = bStats?.goals?.total || 0;
-      return bGoals - aGoals;
-    });
-    
-    if (sortedPlayers.length > 0) {
-      const topPlayer = sortedPlayers[0];
-      const stats = topPlayer.statistics?.find((s: any) => s.team?.id === teamId);
-      
-      const player: TopPlayerStats = {
-        name: topPlayer.player?.name || 'Unknown',
-        position: stats?.games?.position || 'Forward',
-        photo: topPlayer.player?.photo,
-        goals: stats?.goals?.total || 0,
-        assists: stats?.goals?.assists || 0,
-        rating: stats?.games?.rating ? parseFloat(stats.games.rating) : undefined,
-        minutesPlayed: stats?.games?.minutes || 0,
-      };
-      setCache(cacheKey, player);
-      return player;
-    }
-  }
-  
-  // PRIORITY 3: Final fallback - use squad data (no stats)
   if (squadResponse?.response?.[0]?.players) {
     const players = squadResponse.response[0].players;
     // Prioritize attackers and midfielders
@@ -916,7 +861,7 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
     }
     
     if (bestPlayer) {
-      return {
+      const player: TopPlayerStats = {
         name: bestPlayer.name || 'Unknown',
         position: bestPlayer.position || 'Forward',
         photo: bestPlayer.photo,
@@ -924,6 +869,8 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
         assists: 0,
         minutesPlayed: 0,
       };
+      setCache(cacheKey, player);
+      return player;
     }
   }
   
