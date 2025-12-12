@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
+import ProBadge from '@/components/ProBadge';
 
 interface UserData {
   id: string;
@@ -116,9 +117,7 @@ export default function AccountDashboard({ user, recentAnalyses }: Props) {
               <p className="text-text-secondary">{user.email}</p>
             </div>
             <div className="ml-auto">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${planColors.bg} ${planColors.text}`}>
-                {user.plan} Plan
-              </span>
+              <ProBadge variant="default" showUpgrade={user.plan === 'FREE'} />
             </div>
           </div>
         </div>

@@ -68,6 +68,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   analyses      Analysis[]
+  favoriteTeams FavoriteTeam[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -195,6 +196,39 @@ model BlogPost {
   @@index([status])
   @@index([publishedAt])
   @@index([keywordId])
+}
+
+// ============================================
+// FAVORITE TEAMS (My Teams)
+// ============================================
+
+model FavoriteTeam {
+  id          String   @id @default(cuid())
+  userId      String
+  
+  // Team identification
+  teamName    String   // Exact team name from API
+  teamSlug    String   // Normalized slug for matching
+  sport       String   // e.g., "soccer", "basketball", "americanfootball"
+  league      String?  // e.g., "Premier League", "NBA"
+  sportKey    String?  // API sport key for lookups
+  
+  // Optional metadata
+  teamLogo    String?  // Cached logo URL
+  country     String?  // Country/region
+  
+  // Notification preferences (for future)
+  notifyMatches    Boolean @default(true)
+  notifyInjuries   Boolean @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, teamSlug, sport]) // Prevent duplicates
+  @@index([userId])
+  @@index([teamSlug])
+  @@index([sport])
 }
 
 enum KeywordStatus {

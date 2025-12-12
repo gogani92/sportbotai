@@ -11,6 +11,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { AuthProvider } from '@/components/auth';
+import { FavoritesProvider } from '@/lib/FavoritesContext';
 import { SITE_CONFIG, META, OG_DEFAULTS, getOrganizationSchema, getWebsiteSchema } from '@/lib/seo';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import CookieConsent from '@/components/CookieConsent';
@@ -124,23 +125,25 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          {/* Flex container for sticky footer */}
-          <div className="min-h-screen flex flex-col pb-16 md:pb-0">
-            <Header />
+          <FavoritesProvider>
+            {/* Flex container for sticky footer */}
+            <div className="min-h-screen flex flex-col pb-16 md:pb-0">
+              <Header />
+              
+              {/* Main content */}
+              <main className="flex-grow">
+                {children}
+              </main>
+              
+              <Footer />
+            </div>
             
-            {/* Main content */}
-            <main className="flex-grow">
-              {children}
-            </main>
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav />
             
-            <Footer />
-          </div>
-          
-          {/* Mobile Bottom Navigation */}
-          <MobileBottomNav />
-          
-          {/* Cookie Consent Banner */}
-          <CookieConsent />
+            {/* Cookie Consent Banner */}
+            <CookieConsent />
+          </FavoritesProvider>
         </AuthProvider>
       </body>
     </html>

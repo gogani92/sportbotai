@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import TeamLogo from '@/components/ui/TeamLogo';
 import LeagueLogo from '@/components/ui/LeagueLogo';
+import HistoryAccessBanner from '@/components/HistoryAccessBanner';
 
 interface AnalysisSummary {
   id: string;
@@ -36,6 +37,14 @@ interface HistoryResponse {
     limit: number;
     offset: number;
     hasMore: boolean;
+  };
+  accessInfo?: {
+    plan: string;
+    restricted: boolean;
+    visibleCount: number;
+    totalCount: number;
+    hiddenCount: number;
+    message: string | null;
   };
 }
 
@@ -158,12 +167,26 @@ export default function HistoryPage() {
             </h1>
             <p className="text-text-secondary">
               {history?.pagination.total || 0} total analyses
+              {history?.accessInfo?.restricted && history?.accessInfo?.hiddenCount > 0 && (
+                <span className="text-amber-400 ml-2">
+                  (showing last 24h)
+                </span>
+              )}
             </p>
           </div>
           <Link href="/analyzer" className="btn-primary">
             + New Analysis
           </Link>
         </div>
+
+        {/* History Access Banner for Free Users */}
+        {history?.accessInfo?.restricted && history?.accessInfo?.hiddenCount > 0 && (
+          <HistoryAccessBanner 
+            hiddenCount={history.accessInfo.hiddenCount}
+            totalCount={history.accessInfo.totalCount}
+            className="mb-6"
+          />
+        )}
 
         {/* Empty State */}
         {history?.analyses.length === 0 && (

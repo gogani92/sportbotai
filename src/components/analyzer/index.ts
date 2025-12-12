@@ -31,6 +31,10 @@ export { default as UsageCounter } from './UsageCounter';
 export { default as HeadToHeadSection } from './HeadToHeadSection';
 export { default as TeamStatsSection } from './TeamStatsSection';
 
+// Sharing & Copy Components
+export { default as ShareCard } from './ShareCard';
+export { default as CopyInsightsButton } from './CopyInsightsButton';
+
 // NEW: Premium Visualization Components
 export { default as ProbabilityDonut } from './ProbabilityDonut';
 export { default as StatComparisonBar, MultiStatComparison } from './StatComparisonBar';

@@ -38,6 +38,8 @@ import MatchContextIndicators from './MatchContextIndicators';
 import RestScheduleCard from './RestScheduleCard';
 import InjuryImpactCard from './InjuryImpactCard';
 import QuickBriefingCard from './QuickBriefingCard';
+import ShareCard from './ShareCard';
+import CopyInsightsButton from './CopyInsightsButton';
 
 interface AnalysisResultsProps {
   result: AnalyzeResponse;
@@ -89,6 +91,15 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
           />
         </section>
       )}
+
+      {/* ============================================ */}
+      {/* SHARE & COPY ACTIONS                        */}
+      {/* ============================================ */}
+      
+      <div className="flex items-center justify-end gap-2 mb-6">
+        <CopyInsightsButton result={result} variant="compact" />
+        <ShareCard result={result} />
+      </div>
 
       {/* ============================================ */}
       {/* TIER 1: CORE SUMMARY                        */}

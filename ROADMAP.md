@@ -41,23 +41,24 @@
 ### Phase 2: Personalization (Week 3-4) 👤
 *Goal: Give users reasons to return*
 
-- [ ] **My Teams** - Follow up to 10 teams
-- [ ] **Favorites Dashboard** - Personalized feed of followed teams
+- [x] **My Teams** - Follow up to 10 teams ✅
+- [x] **Favorites Dashboard** - Personalized feed of followed teams ✅
 - [ ] **Quick Analysis Queue** - Batch analyze multiple matches
 
 ### Phase 3: Viral Growth (Week 5-6) 📢
 *Goal: Users spread the app for us*
 
-- [ ] **Share Cards** - Beautiful, branded insight cards
-- [ ] **Social Preview Images** - Auto-generated OG images per match
-- [ ] **Copy Insights** - One-click copy formatted analysis
+- [x] **Share Cards** - Beautiful, branded insight cards ✅
+- [x] **Social Preview Images** - Auto-generated OG images per match (@vercel/og) ✅
+- [x] **Copy Insights** - One-click copy formatted analysis ✅
 
 ### Phase 4: Monetization (Week 7-8) 💳
 *Goal: Convert free users to paid*
 
-- [ ] **Payment Wall** - Limit free tier to 3/day
-- [ ] **Pro Badge** - Visual indicator for subscribers
-- [ ] **History Unlock** - Free users see last 24h only
+- [x] **Payment Wall** - Limit free tier to 3/day ✅
+- [x] **Pro Badge** - Visual indicator for subscribers ✅
+- [x] **History Unlock** - Free users see last 24h only ✅
+- [x] **Usage Limit Banner** - Shows when running low ✅
 
 ### Phase 5: Retention (Week 9-12) 📊
 *Goal: Keep users subscribed*
@@ -89,13 +90,22 @@
 - Stripe payments infrastructure
 - Analysis history
 - Responsive UI
-- **60-Second AI Briefing** (NEW)
-- **Trending Matches Homepage** (NEW)
-- **Audio Briefings via TTS** (NEW)
+- **60-Second AI Briefing** (Phase 1)
+- **Trending Matches Homepage** (Phase 1)
+- **Audio Briefings via TTS** (Phase 1)
+- **My Teams Favorites System** (Phase 2)
+- **Favorites Dashboard at /my-teams** (Phase 2)
+- **FavoriteButton component** (Phase 2)
+- **ShareCard with social sharing** (Phase 3)
+- **OG Image API at /api/og** (Phase 3)
+- **CopyInsightsButton** (Phase 3)
+- **ProBadge component** (Phase 4 - NEW)
+- **UsageLimitBanner component** (Phase 4 - NEW)
+- **HistoryAccessBanner component** (Phase 4 - NEW)
+- **History 24h restriction for free users** (Phase 4 - NEW)
 
 ### 🔧 Needs Work
-- No favorites system
-- No share functionality
+- Quick analysis queue for batch processing
 - Remove debug logging in production
 
 ---
@@ -118,4 +128,4 @@
 
 ---
 
-*Last Updated: December 12, 2025*
+*Last Updated: December 13, 2025*

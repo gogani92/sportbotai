@@ -1,0 +1,278 @@
+/**
+ * Team Profile API
+ * 
+ * GET /api/team/[teamId]
+ * Returns comprehensive team statistics and form data
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+
+const API_FOOTBALL_BASE = 'https://v3.football.api-sports.io';
+
+// Cache for API responses (1 hour TTL)
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 60 * 60 * 1000;
+
+function getCached<T>(key: string): T | null {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data as T;
+  }
+  return null;
+}
+
+function setCache(key: string, data: any): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
+async function apiRequest<T>(endpoint: string): Promise<T | null> {
+  const apiKey = process.env.API_FOOTBALL_KEY;
+  
+  if (!apiKey) {
+    console.warn('API_FOOTBALL_KEY not configured');
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${API_FOOTBALL_BASE}${endpoint}`, {
+      headers: { 'x-apisports-key': apiKey },
+      next: { revalidate: 3600 }, // Cache for 1 hour
+    });
+
+    if (!response.ok) {
+      console.error(`API-Football error: ${response.status}`);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('API-Football request failed:', error);
+    return null;
+  }
+}
+
+export interface TeamProfileData {
+  team: {
+    id: number;
+    name: string;
+    logo: string;
+    country: string;
+    founded: number | null;
+    venue: {
+      name: string;
+      city: string;
+      capacity: number;
+    } | null;
+  };
+  league: {
+    id: number;
+    name: string;
+    logo: string;
+    country: string;
+    season: number;
+  } | null;
+  standing: {
+    position: number;
+    points: number;
+    played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goalsFor: number;
+    goalsAgainst: number;
+    goalDiff: number;
+    form: string;
+  } | null;
+  stats: {
+    form: string;
+    formArray: ('W' | 'D' | 'L')[];
+    goalsScored: number;
+    goalsConceded: number;
+    cleanSheets: number;
+    failedToScore: number;
+    avgGoalsScored: number;
+    avgGoalsConceded: number;
+    homeRecord: { played: number; wins: number; draws: number; losses: number };
+    awayRecord: { played: number; wins: number; draws: number; losses: number };
+    biggestWin: string | null;
+    biggestLoss: string | null;
+  } | null;
+  recentMatches: {
+    date: string;
+    opponent: string;
+    opponentLogo: string;
+    score: string;
+    result: 'W' | 'D' | 'L';
+    home: boolean;
+    competition: string;
+  }[];
+  upcomingMatches: {
+    date: string;
+    opponent: string;
+    opponentLogo: string;
+    home: boolean;
+    competition: string;
+  }[];
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ teamId: string }> }
+) {
+  const { teamId } = await params;
+  const teamIdNum = parseInt(teamId, 10);
+
+  if (isNaN(teamIdNum)) {
+    return NextResponse.json({ error: 'Invalid team ID' }, { status: 400 });
+  }
+
+  // Check cache first
+  const cacheKey = `team-profile:${teamIdNum}`;
+  const cached = getCached<TeamProfileData>(cacheKey);
+  if (cached) {
+    return NextResponse.json({ success: true, data: cached, cached: true });
+  }
+
+  try {
+    // Fetch team info, statistics, fixtures in parallel
+    const [teamInfoRes, statsRes, fixturesRes, nextFixturesRes] = await Promise.all([
+      apiRequest<any>(`/teams?id=${teamIdNum}`),
+      apiRequest<any>(`/teams/statistics?team=${teamIdNum}&season=2024`),
+      apiRequest<any>(`/fixtures?team=${teamIdNum}&last=10`),
+      apiRequest<any>(`/fixtures?team=${teamIdNum}&next=5`),
+    ]);
+
+    if (!teamInfoRes?.response?.[0]) {
+      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
+    }
+
+    const teamInfo = teamInfoRes.response[0];
+    const stats = statsRes?.response;
+    const fixtures = fixturesRes?.response || [];
+    const nextFixtures = nextFixturesRes?.response || [];
+
+    // Get league standings if we have a league
+    let standing = null;
+    if (stats?.league?.id) {
+      const standingsRes = await apiRequest<any>(
+        `/standings?league=${stats.league.id}&season=2024`
+      );
+      
+      if (standingsRes?.response?.[0]?.league?.standings) {
+        const allStandings = standingsRes.response[0].league.standings.flat();
+        const teamStanding = allStandings.find((s: any) => s.team.id === teamIdNum);
+        if (teamStanding) {
+          standing = {
+            position: teamStanding.rank,
+            points: teamStanding.points,
+            played: teamStanding.all.played,
+            wins: teamStanding.all.win,
+            draws: teamStanding.all.draw,
+            losses: teamStanding.all.lose,
+            goalsFor: teamStanding.all.goals.for,
+            goalsAgainst: teamStanding.all.goals.against,
+            goalDiff: teamStanding.goalsDiff,
+            form: teamStanding.form || '',
+          };
+        }
+      }
+    }
+
+    // Process recent matches
+    const recentMatches = fixtures.map((f: any) => {
+      const isHome = f.teams.home.id === teamIdNum;
+      const teamScore = isHome ? f.goals.home : f.goals.away;
+      const oppScore = isHome ? f.goals.away : f.goals.home;
+      
+      let result: 'W' | 'D' | 'L' = 'D';
+      if (teamScore > oppScore) result = 'W';
+      else if (teamScore < oppScore) result = 'L';
+
+      return {
+        date: f.fixture.date,
+        opponent: isHome ? f.teams.away.name : f.teams.home.name,
+        opponentLogo: isHome ? f.teams.away.logo : f.teams.home.logo,
+        score: `${f.goals.home}-${f.goals.away}`,
+        result,
+        home: isHome,
+        competition: f.league.name,
+      };
+    });
+
+    // Process upcoming matches
+    const upcomingMatches = nextFixtures.map((f: any) => {
+      const isHome = f.teams.home.id === teamIdNum;
+      return {
+        date: f.fixture.date,
+        opponent: isHome ? f.teams.away.name : f.teams.home.name,
+        opponentLogo: isHome ? f.teams.away.logo : f.teams.home.logo,
+        home: isHome,
+        competition: f.league.name,
+      };
+    });
+
+    // Build stats object
+    const formString = stats?.form || '';
+    const teamStats = stats ? {
+      form: formString,
+      formArray: formString.slice(-10).split('') as ('W' | 'D' | 'L')[],
+      goalsScored: stats.goals?.for?.total?.total || 0,
+      goalsConceded: stats.goals?.against?.total?.total || 0,
+      cleanSheets: stats.clean_sheet?.total || 0,
+      failedToScore: stats.failed_to_score?.total || 0,
+      avgGoalsScored: stats.goals?.for?.average?.total ? parseFloat(stats.goals.for.average.total) : 0,
+      avgGoalsConceded: stats.goals?.against?.average?.total ? parseFloat(stats.goals.against.average.total) : 0,
+      homeRecord: {
+        played: stats.fixtures?.played?.home || 0,
+        wins: stats.fixtures?.wins?.home || 0,
+        draws: stats.fixtures?.draws?.home || 0,
+        losses: stats.fixtures?.loses?.home || 0,
+      },
+      awayRecord: {
+        played: stats.fixtures?.played?.away || 0,
+        wins: stats.fixtures?.wins?.away || 0,
+        draws: stats.fixtures?.draws?.away || 0,
+        losses: stats.fixtures?.loses?.away || 0,
+      },
+      biggestWin: stats.biggest?.wins?.home || stats.biggest?.wins?.away || null,
+      biggestLoss: stats.biggest?.loses?.home || stats.biggest?.loses?.away || null,
+    } : null;
+
+    const profileData: TeamProfileData = {
+      team: {
+        id: teamInfo.team.id,
+        name: teamInfo.team.name,
+        logo: teamInfo.team.logo,
+        country: teamInfo.team.country,
+        founded: teamInfo.team.founded,
+        venue: teamInfo.venue ? {
+          name: teamInfo.venue.name,
+          city: teamInfo.venue.city,
+          capacity: teamInfo.venue.capacity,
+        } : null,
+      },
+      league: stats?.league ? {
+        id: stats.league.id,
+        name: stats.league.name,
+        logo: stats.league.logo,
+        country: stats.league.country,
+        season: stats.league.season,
+      } : null,
+      standing,
+      stats: teamStats,
+      recentMatches,
+      upcomingMatches,
+    };
+
+    // Cache the result
+    setCache(cacheKey, profileData);
+
+    return NextResponse.json({ success: true, data: profileData });
+  } catch (error) {
+    console.error('Team profile error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch team profile' },
+      { status: 500 }
+    );
+  }
+}

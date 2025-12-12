@@ -3,6 +3,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ProBadge from '@/components/ProBadge';
 
 const PLAN_LIMITS: Record<string, number> = {
   FREE: 3,
@@ -173,7 +174,11 @@ export function UserMenu() {
                 )}
               </div>
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-text-muted/20 text-text-muted">
-                {plan}
+                {plan === 'PRO' || plan === 'PREMIUM' ? (
+                  <ProBadge variant="inline" />
+                ) : (
+                  plan
+                )}
               </span>
             </div>
             

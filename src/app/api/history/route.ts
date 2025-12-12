@@ -3,6 +3,9 @@
  * 
  * GET - Retrieve user's analysis history
  * Requires authentication
+ * 
+ * FREE users: Only see analyses from last 24 hours
+ * PRO/PREMIUM users: Full history access
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -25,6 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = token.id as string;
+    const userPlan = (token.plan as string) || 'FREE';
 
     // Get query params
     const { searchParams } = new URL(request.url);
@@ -38,8 +42,16 @@ export async function GET(request: NextRequest) {
       where.sport = sport;
     }
 
+    // FREE users: Only see analyses from last 24 hours
+    const isFreeUser = userPlan === 'FREE';
+    if (isFreeUser) {
+      const twentyFourHoursAgo = new Date();
+      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+      where.createdAt = { gte: twentyFourHoursAgo };
+    }
+
     // Fetch analyses
-    const [analyses, total] = await Promise.all([
+    const [analyses, total, totalAll] = await Promise.all([
       prisma.analysis.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -63,6 +75,10 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.analysis.count({ where }),
+      // For free users, also get total count (to show how many are hidden)
+      isFreeUser 
+        ? prisma.analysis.count({ where: { userId } })
+        : Promise.resolve(0),
     ]);
 
     return NextResponse.json({
@@ -72,6 +88,17 @@ export async function GET(request: NextRequest) {
         limit,
         offset,
         hasMore: offset + limit < total,
+      },
+      // Include info about restricted access for free users
+      accessInfo: {
+        plan: userPlan,
+        restricted: isFreeUser,
+        visibleCount: total,
+        totalCount: isFreeUser ? totalAll : total,
+        hiddenCount: isFreeUser ? totalAll - total : 0,
+        message: isFreeUser && totalAll > total 
+          ? `Showing analyses from last 24 hours. Upgrade to Pro to see all ${totalAll} analyses.`
+          : null,
       },
     });
   } catch (error) {
