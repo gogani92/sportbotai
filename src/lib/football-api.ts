@@ -791,19 +791,13 @@ export interface TopPlayerStats {
 export async function getTeamTopScorer(teamId: number, leagueId?: number): Promise<TopPlayerStats | null> {
   const cacheKey = `topscorer:${teamId}:${leagueId || 'all'}`;
   const cached = getCached<TopPlayerStats>(cacheKey);
-  if (cached) {
-    console.log(`[TopScorer] Cache hit for team ${teamId}: ${cached.name}`);
-    return cached;
-  }
+  if (cached) return cached;
 
-  console.log(`[TopScorer] Fetching for team ${teamId}, league ${leagueId}`);
   const season = getCurrentSeason();
   
   // First approach: Go directly to team players for accuracy
   // The league topscorers endpoint can have issues with transfers
-  console.log(`[TopScorer] Trying /players?team=${teamId}&season=${season}`);
   const playersResponse = await apiRequest<any>(`/players?team=${teamId}&season=${season}&page=1`);
-  console.log(`[TopScorer] Players response count: ${playersResponse?.response?.length || 0}`);
   
   if (playersResponse?.response?.length > 0) {
     // Filter for players with stats for THIS team
@@ -824,7 +818,6 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
     if (sortedPlayers.length > 0) {
       const topPlayer = sortedPlayers[0];
       const stats = topPlayer.statistics?.find((s: any) => s.team?.id === teamId);
-      console.log(`[TopScorer] Top player ${topPlayer.player?.name} has team ID ${stats?.team?.id} (expected ${teamId})`);
       
       const player: TopPlayerStats = {
         name: topPlayer.player?.name || 'Unknown',
@@ -835,7 +828,6 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
         rating: stats?.games?.rating ? parseFloat(stats.games.rating) : undefined,
         minutesPlayed: stats?.games?.minutes || 0,
       };
-      console.log(`[TopScorer] Found via /players: ${player.name} (${player.goals} goals) for team ${teamId}`);
       setCache(cacheKey, player);
       return player;
     }
@@ -843,7 +835,6 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
   
   // Second approach: League top scorers (only if direct team search failed)
   if (leagueId) {
-    console.log(`[TopScorer] Falling back to league top scorers for team ${teamId}`);
     const topScorersResponse = await apiRequest<any>(`/players/topscorers?league=${leagueId}&season=${season}`);
     if (topScorersResponse?.response) {
       // Find a player from our team - ensure stats are for THIS team specifically
@@ -864,7 +855,6 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
             rating: stats?.games?.rating ? parseFloat(stats.games.rating) : undefined,
             minutesPlayed: stats?.games?.minutes || 0,
           };
-          console.log(`[TopScorer] Found in league top scorers: ${player.name} for team ${teamId}`);
           setCache(cacheKey, player);
           return player;
         }
@@ -873,7 +863,6 @@ export async function getTeamTopScorer(teamId: number, leagueId?: number): Promi
   }
   
   // Final fallback: squad endpoint for player names (no stats)
-  console.log(`[TopScorer] Falling back to squad endpoint for team ${teamId}`);
   const squadResponse = await apiRequest<any>(`/players/squads?team=${teamId}`);
   if (squadResponse?.response?.[0]?.players) {
     const players = squadResponse.response[0].players;
@@ -919,25 +908,18 @@ export async function getMatchKeyPlayers(
     findTeam(awayTeam, league),
   ]);
 
-  console.log(`[KeyPlayers] Looking up: home="${homeTeam}" (id=${homeTeamId}), away="${awayTeam}" (id=${awayTeamId})`);
-
   if (!homeTeamId || !awayTeamId) {
-    console.log(`[KeyPlayers] Missing team ID - home: ${homeTeamId}, away: ${awayTeamId}`);
     return { home: null, away: null };
   }
 
   // Get league IDs for better player data
   const homeLeagueId = getTeamLeagueId(homeTeam);
   const awayLeagueId = getTeamLeagueId(awayTeam);
-  
-  console.log(`[KeyPlayers] League IDs - home: ${homeLeagueId}, away: ${awayLeagueId}`);
 
   const [homePlayer, awayPlayer] = await Promise.all([
     getTeamTopScorer(homeTeamId, homeLeagueId || undefined),
     getTeamTopScorer(awayTeamId, awayLeagueId || undefined),
   ]);
-
-  console.log(`[KeyPlayers] Results - home: ${homePlayer?.name}, away: ${awayPlayer?.name}`);
 
   return { home: homePlayer, away: awayPlayer };
 }
