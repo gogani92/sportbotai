@@ -131,8 +131,8 @@ export default function MatchCard({
       {/* Match time + Analyze CTA */}
       <div className="mt-3 pt-3 border-t border-divider flex items-center justify-between">
         <span className="text-xs text-text-muted">{formatMatchDate(commenceTime)}</span>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-accent text-bg-primary rounded-full group-hover:shadow-glow-accent transition-all">
-          <span className="w-1.5 h-1.5 bg-bg-primary rounded-full animate-pulse"></span>
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-accent/15 text-accent border border-accent/30 rounded-full group-hover:bg-accent group-hover:text-white group-hover:border-accent transition-all">
+          <span className="w-1.5 h-1.5 bg-accent rounded-full group-hover:bg-white animate-pulse"></span>
           Analyze
         </span>
       </div>
