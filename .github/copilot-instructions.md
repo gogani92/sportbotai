@@ -69,6 +69,19 @@ npm run lint         # ESLint check
 - Webhook: `src/app/api/stripe/webhook/route.ts`
 - Config: Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` in `.env.local`
 
+### Perplexity (Real-Time Sports Intelligence)
+- Service: `src/lib/perplexity.ts` - Real-time web search for live sports data
+- Used by: SportBot Agent (`/api/agent`) for live match research
+- Features:
+  - Injury news, lineup updates, breaking news
+  - Manager quotes and press conference insights
+  - Form analysis and recent results
+  - Odds movements and market trends
+- Config: Set `PERPLEXITY_API_KEY` in `.env.local`
+- Models: `sonar` (fast), `sonar-pro` (quality)
+- Falls back gracefully if not configured
+- Docs: https://docs.perplexity.ai/
+
 ### AI Analysis (TODO)
 - Currently uses mock data in `/api/analyze`
 - Replace `generateMockAnalysis()` with OpenAI/Claude API call
