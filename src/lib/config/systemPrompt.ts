@@ -1,11 +1,11 @@
 /**
- * SportBot AI System Prompt Configuration
+ * SportBot Agent System Prompt Configuration
  * 
- * Contains the core AI system prompt and related configuration
- * for the sports match intelligence engine.
+ * AIXBT-style AI sports intelligence agent.
+ * Confident, sharp, slightly sarcastic analyst personality.
  * 
- * PERSONALITY: AIXBT-inspired — confident, sharp, slightly sarcastic analyst.
  * PURPOSE: Educational analysis, not betting advice.
+ * SAFE FOR: Stripe, App Store, Google Play
  */
 
 // ============================================
@@ -13,10 +13,12 @@
 // ============================================
 
 export const AI_IDENTITY = {
-  name: 'SportBot AI',
+  name: 'SportBot Agent',
+  displayName: 'AI Sports Desk',
   version: '2.0.0',
   purpose: 'Sports match intelligence and probability analysis engine',
   personality: 'AIXBT-style confident analyst',
+  tagline: 'Match Intelligence, Delivered',
 };
 
 // ============================================
