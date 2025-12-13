@@ -1,11 +1,12 @@
 /**
  * SportBot Agent Posts API
  * 
- * Generates AIXBT-style sports intelligence posts.
+ * Generates AIXBT-style sports intelligence posts with REAL-TIME DATA.
+ * Powered by Perplexity for live web search + OpenAI for generation.
  * Safe, observational, analytical content - never betting advice.
  * 
- * POST /api/agent/generate - Generate a new agent post
- * GET /api/agent/feed - Get recent agent posts
+ * POST /api/agent - Generate a new agent post (with live research)
+ * GET /api/agent - Get recent agent posts
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,11 +17,29 @@ import {
   sanitizeAgentPost,
   type PostCategory 
 } from '@/lib/config/sportBotAgent';
+import { 
+  getPerplexityClient, 
+  quickMatchResearch,
+  type SearchCategory,
+  type ResearchResult 
+} from '@/lib/perplexity';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Map post categories to Perplexity search categories
+const CATEGORY_SEARCH_MAP: Record<PostCategory, SearchCategory[]> = {
+  MARKET_MOVEMENT: ['ODDS_MOVEMENT', 'BREAKING_NEWS'],
+  LINEUP_INTEL: ['LINEUP_NEWS', 'INJURY_NEWS'],
+  MOMENTUM_SHIFT: ['FORM_ANALYSIS', 'BREAKING_NEWS'],
+  MATCH_COMPLEXITY: ['HEAD_TO_HEAD', 'FORM_ANALYSIS'],
+  AI_INSIGHT: ['MATCH_PREVIEW', 'FORM_ANALYSIS'],
+  POST_MATCH: ['BREAKING_NEWS'],
+  VOLATILITY_ALERT: ['BREAKING_NEWS', 'INJURY_NEWS', 'LINEUP_NEWS'],
+  FORM_ANALYSIS: ['FORM_ANALYSIS', 'BREAKING_NEWS'],
+};
 
 // ============================================
 // TYPES
@@ -42,6 +61,7 @@ interface GeneratePostRequest {
   };
   additionalContext?: string;
   trigger?: string;
+  useRealTimeData?: boolean; // Enable Perplexity research
 }
 
 interface AgentPost {
@@ -55,6 +75,8 @@ interface AgentPost {
   league: string;
   timestamp: string;
   confidence: 'LOW' | 'MEDIUM' | 'HIGH';
+  realTimeData?: boolean; // Flag if real data was used
+  citations?: string[]; // Sources from Perplexity
 }
 
 // ============================================
@@ -64,7 +86,7 @@ interface AgentPost {
 export async function POST(request: NextRequest) {
   try {
     const body: GeneratePostRequest = await request.json();
-    const { category, matchContext, additionalContext, trigger } = body;
+    const { category, matchContext, additionalContext, trigger, useRealTimeData = true } = body;
 
     // Validate category
     if (!POST_CATEGORIES[category]) {
@@ -74,7 +96,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build context string
+    // ============================================
+    // STEP 1: Real-time research via Perplexity
+    // ============================================
+    let realTimeContext = '';
+    let citations: string[] = [];
+    let usedRealTimeData = false;
+
+    const perplexity = getPerplexityClient();
+    
+    if (useRealTimeData && perplexity.isConfigured()) {
+      console.log(`[SportBot Agent] Researching ${matchContext.homeTeam} vs ${matchContext.awayTeam}...`);
+      
+      try {
+        // Quick research for the match
+        const research = await quickMatchResearch(
+          matchContext.homeTeam,
+          matchContext.awayTeam,
+          matchContext.league
+        );
+
+        if (research.success && research.content) {
+          realTimeContext = `\n\n[LIVE INTELLIGENCE - ${new Date().toISOString()}]\n${research.content}`;
+          citations = research.citations;
+          usedRealTimeData = true;
+          console.log(`[SportBot Agent] Got ${citations.length} citations from live research`);
+        } else {
+          console.log('[SportBot Agent] No live data available, proceeding without');
+        }
+      } catch (researchError) {
+        console.warn('[SportBot Agent] Research failed, continuing without:', researchError);
+      }
+    }
+
+    // ============================================
+    // STEP 2: Build context with real-time data
+    // ============================================
     const contextString = `
 Match: ${matchContext.homeTeam} vs ${matchContext.awayTeam}
 League: ${matchContext.league}
@@ -82,18 +139,21 @@ Sport: ${matchContext.sport}
 ${matchContext.kickoff ? `Kickoff: ${matchContext.kickoff}` : ''}
 ${matchContext.odds ? `Odds: Home ${matchContext.odds.home} | Draw ${matchContext.odds.draw} | Away ${matchContext.odds.away}` : ''}
 ${trigger ? `Trigger: ${trigger}` : ''}
+${realTimeContext}
     `.trim();
 
     // Build prompt
     const prompt = buildAgentPostPrompt(category, contextString, additionalContext);
 
-    // Generate post via OpenAI
+    // ============================================
+    // STEP 3: Generate post via OpenAI
+    // ============================================
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'user', content: prompt }
       ],
-      max_tokens: 150,
+      max_tokens: 180, // Slightly more for real-time data posts
       temperature: 0.8, // Slightly creative for personality
     });
 
@@ -122,7 +182,9 @@ ${trigger ? `Trigger: ${trigger}` : ''}
       sport: matchContext.sport,
       league: matchContext.league,
       timestamp: new Date().toISOString(),
-      confidence: determineConfidence(category, additionalContext),
+      confidence: determineConfidence(category, additionalContext, usedRealTimeData),
+      realTimeData: usedRealTimeData,
+      citations: citations.length > 0 ? citations.slice(0, 3) : undefined, // Max 3 citations
     };
 
     return NextResponse.json({ success: true, post });
@@ -137,16 +199,25 @@ ${trigger ? `Trigger: ${trigger}` : ''}
 }
 
 // ============================================
-// GET - Get Feed Posts (Mock for now)
+// GET - Get Feed Posts
 // ============================================
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const sport = searchParams.get('sport');
   const limit = parseInt(searchParams.get('limit') || '10');
+  const action = searchParams.get('action'); // 'research' for live research mode
 
-  // In production, this would fetch from database
-  // For now, return example posts to show the feed
+  // Check if this is a research request
+  if (action === 'research') {
+    return handleResearchRequest(searchParams);
+  }
+
+  // Check Perplexity status
+  const perplexity = getPerplexityClient();
+  const perplexityEnabled = perplexity.isConfigured();
+
+  // Example posts showing the feed capability
   const examplePosts: AgentPost[] = [
     {
       id: 'post_example_1',
@@ -222,15 +293,74 @@ export async function GET(request: NextRequest) {
       total: filteredPosts.length,
       limit,
       sport: sport || 'all',
+      realTimeEnabled: perplexityEnabled,
     },
   });
+}
+
+// ============================================
+// RESEARCH HANDLER - Live data lookup
+// ============================================
+
+async function handleResearchRequest(searchParams: URLSearchParams) {
+  const homeTeam = searchParams.get('home');
+  const awayTeam = searchParams.get('away');
+  const league = searchParams.get('league') || undefined;
+
+  if (!homeTeam || !awayTeam) {
+    return NextResponse.json(
+      { error: 'Missing required params: home, away' },
+      { status: 400 }
+    );
+  }
+
+  const perplexity = getPerplexityClient();
+  
+  if (!perplexity.isConfigured()) {
+    return NextResponse.json({
+      success: false,
+      error: 'Real-time research not configured',
+      hint: 'Add PERPLEXITY_API_KEY to environment variables',
+    }, { status: 503 });
+  }
+
+  try {
+    const research = await quickMatchResearch(homeTeam, awayTeam, league);
+    
+    return NextResponse.json({
+      success: research.success,
+      match: `${homeTeam} vs ${awayTeam}`,
+      league: league || 'Unknown',
+      research: {
+        content: research.content,
+        citations: research.citations,
+        searchQuery: research.searchQuery,
+        timestamp: research.timestamp,
+      },
+      error: research.error,
+    });
+
+  } catch (error) {
+    console.error('Research request failed:', error);
+    return NextResponse.json(
+      { error: 'Research failed', details: error instanceof Error ? error.message : 'Unknown' },
+      { status: 500 }
+    );
+  }
 }
 
 // ============================================
 // HELPERS
 // ============================================
 
-function determineConfidence(category: PostCategory, context?: string): 'LOW' | 'MEDIUM' | 'HIGH' {
+function determineConfidence(category: PostCategory, context?: string, hasRealTimeData?: boolean): 'LOW' | 'MEDIUM' | 'HIGH' {
+  // Real-time data boosts confidence
+  if (hasRealTimeData) {
+    const highConfidenceCategories: PostCategory[] = ['LINEUP_INTEL', 'POST_MATCH', 'MARKET_MOVEMENT'];
+    if (highConfidenceCategories.includes(category)) return 'HIGH';
+    return 'MEDIUM'; // At least medium if we have real data
+  }
+  
   // Higher confidence for certain categories
   const highConfidenceCategories: PostCategory[] = ['LINEUP_INTEL', 'POST_MATCH'];
   const lowConfidenceCategories: PostCategory[] = ['MATCH_COMPLEXITY', 'VOLATILITY_ALERT'];

@@ -3,6 +3,7 @@
  * 
  * Displays SportBot Agent posts in a clean, engaging feed.
  * AIXBT-style intelligence updates for sports analysis.
+ * Now with real-time data powered by Perplexity.
  */
 
 'use client';
@@ -21,6 +22,15 @@ interface AgentPost {
   league: string;
   timestamp: string;
   confidence: 'LOW' | 'MEDIUM' | 'HIGH';
+  realTimeData?: boolean;
+  citations?: string[];
+}
+
+interface FeedMeta {
+  total: number;
+  limit: number;
+  sport: string;
+  realTimeEnabled?: boolean;
 }
 
 interface AISportsDeskProps {
@@ -46,6 +56,7 @@ export default function AISportsDesk({ sport, limit = 10, compact = false }: AIS
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [meta, setMeta] = useState<FeedMeta | null>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -63,6 +74,7 @@ export default function AISportsDesk({ sport, limit = 10, compact = false }: AIS
       
       if (data.success) {
         setPosts(data.posts);
+        setMeta(data.meta);
       } else {
         setError('Failed to load intelligence feed');
       }
@@ -122,9 +134,17 @@ export default function AISportsDesk({ sport, limit = 10, compact = false }: AIS
             <p className="text-xs text-text-muted">Live Match Intelligence</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-xs text-text-muted">Live</span>
+        <div className="flex items-center gap-3">
+          {meta?.realTimeEnabled && (
+            <div className="flex items-center gap-1.5 bg-purple-500/10 px-2 py-1 rounded-full border border-purple-500/20">
+              <span className="text-[10px]">⚡</span>
+              <span className="text-[10px] text-purple-400 font-medium">Real-Time</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-xs text-text-muted">Live</span>
+          </div>
         </div>
       </div>
 
@@ -182,6 +202,7 @@ export default function AISportsDesk({ sport, limit = 10, compact = false }: AIS
 
 function AgentPostCard({ post, compact }: { post: AgentPost; compact: boolean }) {
   const timeAgo = formatDistanceToNow(new Date(post.timestamp), { addSuffix: true });
+  const [showCitations, setShowCitations] = useState(false);
 
   return (
     <div className="bg-white/5 hover:bg-white/[0.07] border border-white/10 rounded-xl p-4 transition-all group">
@@ -190,6 +211,12 @@ function AgentPostCard({ post, compact }: { post: AgentPost; compact: boolean })
         <div className="flex items-center gap-2">
           <span className="text-lg">{post.categoryIcon}</span>
           <span className="text-xs font-medium text-text-secondary">{post.categoryName}</span>
+          {post.realTimeData && (
+            <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
+              <span>⚡</span>
+              <span>Live Data</span>
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className={`text-[10px] px-2 py-0.5 rounded-full border ${confidenceColors[post.confidence]}`}>
@@ -202,6 +229,35 @@ function AgentPostCard({ post, compact }: { post: AgentPost; compact: boolean })
       <p className="text-sm text-white leading-relaxed mb-3">
         {post.content}
       </p>
+
+      {/* Citations (if available) */}
+      {post.citations && post.citations.length > 0 && (
+        <div className="mb-3">
+          <button
+            onClick={() => setShowCitations(!showCitations)}
+            className="text-[10px] text-text-muted hover:text-text-secondary transition-colors flex items-center gap-1"
+          >
+            <span>📎</span>
+            <span>{post.citations.length} source{post.citations.length > 1 ? 's' : ''}</span>
+            <span>{showCitations ? '▲' : '▼'}</span>
+          </button>
+          {showCitations && (
+            <div className="mt-2 space-y-1">
+              {post.citations.map((url, i) => (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-[10px] text-primary/70 hover:text-primary truncate"
+                >
+                  {url}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Footer */}
       <div className="flex items-center justify-between text-xs text-text-muted">
