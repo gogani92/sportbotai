@@ -32,17 +32,42 @@ interface ChatResponse {
 }
 
 // ============================================
-// SUGGESTED QUESTIONS
+// SUGGESTED QUESTIONS - Showcasing different categories
 // ============================================
 
 const SUGGESTED_QUESTIONS = [
-  "What's the latest injury news for Manchester United?",
-  "Who's in good form in La Liga this week?",
-  "Any lineup news for tonight's Champions League games?",
-  "What are the odds trends for the Lakers game?",
-  "Tell me about the Arsenal vs Chelsea head to head",
-  "What did Guardiola say in his press conference?",
+  // Rosters & Squads
+  "Who is the starting goalkeeper for Real Madrid?",
+  // Injuries
+  "What's the latest injury news for Arsenal?",
+  // Fixtures
+  "When do Liverpool play next in the Premier League?",
+  // Results
+  "What was the score in last night's NBA games?",
+  // Standings
+  "Who's top of the Serie A table?",
+  // Stats
+  "How many goals has Haaland scored this season?",
+  // Transfers
+  "Any transfer rumors for the January window?",
+  // Managers
+  "What did Klopp say in his last press conference?",
+  // Odds
+  "What are the odds for the Lakers game tonight?",
+  // Comparisons
+  "Compare Messi and Ronaldo's stats this season",
 ];
+
+// Helper to get random questions (stable for SSR)
+function getRandomQuestions(count: number): string[] {
+  const shuffled = [...SUGGESTED_QUESTIONS];
+  // Use a simple shuffle algorithm
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
+}
 
 // ============================================
 // COMPONENT
@@ -54,6 +79,8 @@ export default function AIDeskChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Store random questions to prevent re-shuffle on every render
+  const [suggestedQuestions] = useState(() => getRandomQuestions(4));
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -205,10 +232,10 @@ export default function AIDeskChat() {
               </p>
             </div>
             
-            {/* Suggested questions */}
+            {/* Suggested questions - show 4 random ones */}
             <div className="space-y-2">
               <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Try asking:</p>
-              {SUGGESTED_QUESTIONS.slice(0, 4).map((q, i) => (
+              {suggestedQuestions.map((q, i) => (
                 <button
                   key={i}
                   onClick={() => sendMessage(q)}

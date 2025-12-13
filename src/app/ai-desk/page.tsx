@@ -1,13 +1,13 @@
 /**
  * AI Sports Desk Page
  * 
- * Live intelligence feed powered by SportBot Agent.
- * Real-time sports news, analysis, and insights.
+ * Main feature: SportBot Chat - Ask anything about sports
+ * Secondary: Live Intel Feed (auto-posts for X/Twitter)
  */
 
 import { Metadata } from 'next';
-import AISportsDesk from '@/components/AISportsDesk';
-import AIDeskChat from '@/components/AIDeskChat';
+import AIDeskHeroChat from '@/components/AIDeskHeroChat';
+import AIDeskFeedSidebar from '@/components/AIDeskFeedSidebar';
 import { META, SITE_CONFIG, getAIDeskSchema } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -52,61 +52,71 @@ export default function AIDeskPage() {
       />
       
       <main className="min-h-screen bg-bg">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/30 to-accent/30 rounded-xl flex items-center justify-center border border-white/10">
-              <span className="text-2xl">🧠</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">AI Sports Desk</h1>
-              <p className="text-text-muted text-sm">Live Intelligence Feed</p>
+        <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
+          {/* Page Header */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/30 to-accent/30 rounded-xl flex items-center justify-center border border-white/10">
+                <span className="text-2xl">🧠</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">AI Sports Desk</h1>
+                <p className="text-text-muted text-sm">Your AI-powered sports intelligence hub</p>
+              </div>
             </div>
           </div>
-          <p className="text-text-secondary mt-4 max-w-2xl">
-            Real-time sports intelligence powered by SportBot Agent. Get instant updates on injuries, 
-            lineups, market movements, and AI-driven match insights — all in one place.
-          </p>
-        </div>
 
-        {/* Feature Badges */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          <span className="px-3 py-1.5 bg-purple-500/10 text-purple-400 text-xs font-medium rounded-full border border-purple-500/20 flex items-center gap-1.5">
-            <span>⚡</span> Real-Time Data
-          </span>
-          <span className="px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs font-medium rounded-full border border-blue-500/20 flex items-center gap-1.5">
-            <span>📋</span> Lineup Intel
-          </span>
-          <span className="px-3 py-1.5 bg-green-500/10 text-green-400 text-xs font-medium rounded-full border border-green-500/20 flex items-center gap-1.5">
-            <span>📊</span> Market Moves
-          </span>
-          <span className="px-3 py-1.5 bg-orange-500/10 text-orange-400 text-xs font-medium rounded-full border border-orange-500/20 flex items-center gap-1.5">
-            <span>🏥</span> Injury Updates
-          </span>
-        </div>
+          {/* Main Layout: Chat Hero + Feed Sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* HERO: Chat - Takes 2/3 of the space */}
+            <div className="lg:col-span-2">
+              <AIDeskHeroChat />
+            </div>
 
-        {/* Main Feed */}
-        <div className="bg-bg-secondary border border-white/10 rounded-2xl p-6">
-          <AISportsDesk limit={15} />
-        </div>
+            {/* SIDEBAR: Live Intel Feed */}
+            <div className="space-y-4">
+              {/* Feed Component */}
+              <AIDeskFeedSidebar limit={10} />
+              
+              {/* Info Card */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                  <span>ℹ️</span> About AI Desk
+                </h3>
+                <p className="text-text-muted text-xs leading-relaxed">
+                  <strong className="text-white">Chat</strong> uses real-time web search + GPT-4 to answer 
+                  any sports question with the latest data.
+                </p>
+                <p className="text-text-muted text-xs leading-relaxed mt-2">
+                  <strong className="text-white">Intel Feed</strong> auto-generates posts about market 
+                  movements, injuries, and insights — syncing to 𝕏 soon.
+                </p>
+              </div>
 
-        {/* Info Card */}
-        <div className="mt-8 bg-white/5 border border-white/10 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-            <span>ℹ️</span> About AI Sports Desk
-          </h3>
-          <p className="text-text-muted text-sm leading-relaxed">
-            SportBot Agent monitors live sports news and provides instant analysis. 
-            Posts are generated by AI using real-time web data and should be used for 
-            informational purposes only. This is not betting advice.
-          </p>
-        </div>
-      </div>
+              {/* Disclaimer */}
+              <div className="bg-yellow-500/5 border border-yellow-500/10 rounded-xl p-4">
+                <p className="text-yellow-500/80 text-xs leading-relaxed">
+                  ⚠️ AI-generated content for informational purposes only. This is not betting advice. 
+                  Please gamble responsibly.
+                </p>
+              </div>
+            </div>
+          </div>
 
-      {/* AI Chat - Floating component */}
-      <AIDeskChat />
-    </main>
+          {/* Mobile: Feature badges (visible on mobile, hidden on desktop) */}
+          <div className="flex flex-wrap gap-2 mt-6 lg:hidden">
+            <span className="px-3 py-1.5 bg-purple-500/10 text-purple-400 text-xs font-medium rounded-full border border-purple-500/20 flex items-center gap-1.5">
+              <span>⚡</span> Real-Time Data
+            </span>
+            <span className="px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs font-medium rounded-full border border-blue-500/20 flex items-center gap-1.5">
+              <span>🤖</span> GPT-4 + Perplexity
+            </span>
+            <span className="px-3 py-1.5 bg-green-500/10 text-green-400 text-xs font-medium rounded-full border border-green-500/20 flex items-center gap-1.5">
+              <span>📡</span> Auto Intel Feed
+            </span>
+          </div>
+        </div>
+      </main>
     </>
   );
 }

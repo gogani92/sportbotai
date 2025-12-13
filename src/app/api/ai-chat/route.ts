@@ -39,41 +39,187 @@ const openai = new OpenAI({
 // SYSTEM PROMPTS
 // ============================================
 
-const CHAT_SYSTEM_PROMPT = `You are SportBot, an AI sports analyst assistant. You provide intelligent, data-driven sports analysis and answer questions about matches, teams, players, and sports news.
+const CHAT_SYSTEM_PROMPT = `You are SportBot, an elite AI sports analyst assistant. You provide intelligent, data-driven sports analysis and answer ANY sports question with expertise.
 
 PERSONALITY:
-- Confident and knowledgeable
-- Direct and clear communication
+- Confident and knowledgeable sports expert
+- Direct and clear communication  
 - Slightly witty but always professional
 - Data-focused with sharp insights
+- Enthusiastic about sports
 
-GUIDELINES:
-1. Use the real-time context provided to give accurate, current information
-2. If asked about specific matches, teams, or players, reference the latest data
-3. Be helpful and informative
-4. Acknowledge when information might be outdated or uncertain
-5. NEVER give betting advice, tips, or tell users to bet
-6. You can discuss odds factually (as data points) but never recommend bets
-7. Focus on analysis, insights, and understanding - not predictions
+CAPABILITIES - You can answer questions about:
 
-RESPONSE STYLE:
-- Keep responses concise but informative (2-4 paragraphs max)
-- Use bullet points for clarity when listing facts
-- Cite sources when relevant (from the provided context)
-- If no relevant real-time data was found, acknowledge it and give general insights
+1. ROSTERS & SQUADS
+   - Current team lineups and players
+   - Starting XI / Starting 5
+   - Player positions and roles
+   - New signings and departures
 
-PROHIBITED:
+2. MATCHES & FIXTURES
+   - Upcoming games and schedules
+   - Kickoff times and venues
+   - TV/streaming channels
+   - Match previews
+
+3. RESULTS & SCORES
+   - Live scores and final results
+   - Match statistics
+   - Goal scorers and assists
+   - Game highlights
+
+4. STANDINGS & TABLES
+   - League tables and positions
+   - Points, wins, draws, losses
+   - Goal difference
+   - Qualification scenarios
+
+5. STATISTICS & RECORDS
+   - Player stats (goals, assists, etc.)
+   - Team statistics
+   - Head-to-head records
+   - Historical achievements
+
+6. INJURIES & AVAILABILITY
+   - Current injury lists
+   - Expected return dates
+   - Suspensions
+   - Squad availability
+
+7. TRANSFERS & RUMORS
+   - Transfer news and confirmed deals
+   - Rumors and speculation
+   - Contract situations
+   - Free agents
+
+8. MANAGERS & TACTICS
+   - Manager information
+   - Tactical formations
+   - Playing styles
+   - Press conference quotes
+
+9. ODDS & MARKETS (factual only)
+   - Current odds (as data points)
+   - Favorites and underdogs
+   - Market movements
+   - NO betting advice
+
+10. COMPARISONS & ANALYSIS
+    - Player vs player comparisons
+    - Team comparisons
+    - Form analysis
+    - Key matchups
+
+RESPONSE GUIDELINES:
+1. Use the REAL-TIME CONTEXT provided - it has current data
+2. Be specific with numbers, dates, and names
+3. Keep responses concise (2-4 paragraphs, bullet points for lists)
+4. Cite sources when available
+5. If info seems outdated, say so
+6. For predictions, give analysis but acknowledge uncertainty
+
+PROHIBITED (Never say):
 - "You should bet on..."
-- "I recommend betting..."
+- "I recommend betting..."  
 - "Place a bet on..."
-- Any gambling advice or encouragement
+- Any gambling advice
 - Guaranteed predictions
 
-You help users UNDERSTAND sports, not win bets.`;
+You help users UNDERSTAND sports deeply, not win bets.`;
 
 // ============================================
-// HELPER FUNCTIONS
+// QUERY CATEGORY DETECTION
 // ============================================
+
+type QueryCategory = 
+  | 'ROSTER'      // Who plays for team X?
+  | 'FIXTURE'     // When is the next game?
+  | 'RESULT'      // What was the score?
+  | 'STANDINGS'   // League table
+  | 'STATS'       // Player/team statistics
+  | 'INJURY'      // Injury updates
+  | 'TRANSFER'    // Transfer news
+  | 'MANAGER'     // Coach/manager info
+  | 'ODDS'        // Betting odds (factual)
+  | 'COMPARISON'  // Player/team comparisons
+  | 'HISTORY'     // Historical records
+  | 'BROADCAST'   // TV/streaming info
+  | 'VENUE'       // Stadium info
+  | 'GENERAL';    // Generic sports question
+
+/**
+ * Detect the category of sports question
+ */
+function detectQueryCategory(message: string): QueryCategory {
+  const lower = message.toLowerCase();
+  
+  // Roster/Squad
+  if (/who (plays|is|are)|roster|squad|lineup|starting|player|team sheet|formation/i.test(message)) {
+    return 'ROSTER';
+  }
+  
+  // Fixture/Schedule
+  if (/when (is|does|do|are)|next (game|match|fixture)|schedule|kickoff|what time|upcoming/i.test(message)) {
+    return 'FIXTURE';
+  }
+  
+  // Results/Scores
+  if (/score|result|won|lost|beat|draw|final score|how did|did .* win/i.test(message)) {
+    return 'RESULT';
+  }
+  
+  // Standings/Table
+  if (/standings|table|position|rank|points|top of|bottom of|league table/i.test(message)) {
+    return 'STANDINGS';
+  }
+  
+  // Statistics
+  if (/stats|statistics|goals|assists|top scorer|most|average|record|career/i.test(message)) {
+    return 'STATS';
+  }
+  
+  // Injuries
+  if (/injur|fit|available|out|miss|suspend|ban|ruled out|doubtful/i.test(message)) {
+    return 'INJURY';
+  }
+  
+  // Transfers
+  if (/transfer|sign|signing|rumor|buy|sell|loan|contract|free agent|deal/i.test(message)) {
+    return 'TRANSFER';
+  }
+  
+  // Manager/Coach
+  if (/manager|coach|boss|head coach|said|press conference|tactic|formation/i.test(message)) {
+    return 'MANAGER';
+  }
+  
+  // Odds/Markets
+  if (/odds|favorite|underdog|market|price|over under|spread|moneyline/i.test(message)) {
+    return 'ODDS';
+  }
+  
+  // Comparisons
+  if (/vs|versus|compare|better|who is better|difference between/i.test(message)) {
+    return 'COMPARISON';
+  }
+  
+  // History/Records
+  if (/history|all.time|record|ever|most .* in history|champion|trophy|won the/i.test(message)) {
+    return 'HISTORY';
+  }
+  
+  // Broadcast/TV
+  if (/watch|channel|tv|stream|broadcast|where .* watch|how .* watch/i.test(message)) {
+    return 'BROADCAST';
+  }
+  
+  // Venue/Stadium
+  if (/stadium|venue|arena|capacity|where .* play|home ground/i.test(message)) {
+    return 'VENUE';
+  }
+  
+  return 'GENERAL';
+}
 
 /**
  * Detect if the query needs real-time search
@@ -89,100 +235,116 @@ function needsRealTimeSearch(message: string): boolean {
     'what are the rules',
     'how many players',
     'what is a foul',
-    'explain',
+    'explain the rules',
     'definition of',
-    'how does',
-    'history of',
+    'how does .* work',
+    'history of the sport',
+    'when was .* invented',
   ];
   
   // If it's a general knowledge question, skip search
-  if (noSearchKeywords.some(keyword => lowerMessage.includes(keyword))) {
+  if (noSearchKeywords.some(keyword => {
+    if (keyword.includes('.*')) {
+      return new RegExp(keyword).test(lowerMessage);
+    }
+    return lowerMessage.includes(keyword);
+  })) {
     return false;
   }
   
-  // Keywords that DEFINITELY need real-time search
-  const realTimeKeywords = [
-    // Time-based
-    'today', 'tonight', 'tomorrow', 'this week', 'weekend', 'now', 'current', 'currently',
-    'right now', 'at the moment', 'this season', '2024', '2025',
-    // News & updates
-    'latest', 'recent', 'news', 'update', 'injured', 'injury', 'injuries',
-    'lineup', 'starting', 'confirmed', 'rumor', 'transfer', 'signed', 'signing',
-    // Form & performance
-    'form', 'streak', 'odds', 'price', 'market', 'standings', 'table', 'position',
-    // Matches
-    'vs', 'versus', 'match', 'game', 'play', 'playing', 'fixture',
-    'who will', 'what time', 'when is', 'where is',
-    'score', 'result', 'won', 'lost', 'draw', 'beat',
-    // Leagues
-    'premier league', 'la liga', 'champions league', 'europa league', 'euroleague',
-    'nba', 'nfl', 'nhl', 'mlb', 'acb', 'eurocup',
-    // People
-    'manager', 'coach', 'press conference', 'said', 'player', 'players',
-    // Teams/Rosters
-    'roster', 'squad', 'team', 'lineup', 'center', 'forward', 'guard', 'goalkeeper',
-    'defender', 'midfielder', 'striker', 'bench', 'captain',
-    // Specific teams (common queries)
-    'barcelona', 'real madrid', 'lakers', 'celtics', 'manchester', 'liverpool',
-    'bayern', 'psg', 'juventus', 'arsenal', 'chelsea', 'tottenham',
-  ];
-  
-  // If any real-time keyword found, search
-  if (realTimeKeywords.some(keyword => lowerMessage.includes(keyword))) {
-    return true;
-  }
-  
-  // Default: If it mentions a team name or looks like a sports question, search
-  // This catches questions like "who plays for X" even without explicit keywords
-  const sportsPatterns = [
-    /who (is|are|plays|play)/i,
-    /what (is|are) .*(team|club|squad)/i,
-    /tell me about/i,
-    /(fc|cf|bc|ac) /i,  // Football/Basketball club prefixes
-  ];
-  
-  if (sportsPatterns.some(pattern => pattern.test(message))) {
-    return true;
-  }
-  
-  // Default to searching for safety (better to have fresh data)
+  // Everything else gets real-time search
   return true;
 }
 
 /**
- * Extract search query from user message
- * Optimize for getting current/recent information
+ * Build optimized search query based on question category
  */
-function extractSearchQuery(message: string): string {
-  const lowerMessage = message.toLowerCase();
+function extractSearchQuery(message: string): { query: string; category: QueryCategory; recency: 'hour' | 'day' | 'week' | 'month' } {
+  const category = detectQueryCategory(message);
   
   // Clean up the message for search
   let query = message
     .replace(/\?/g, '')
-    .replace(/please|can you|could you|tell me|what do you think/gi, '')
+    .replace(/please|can you|could you|tell me|what do you think|i want to know/gi, '')
     .trim();
   
-  // Detect query type and add appropriate context
-  const isRosterQuery = /roster|squad|player|center|forward|guard|lineup|team|who plays/i.test(message);
-  const isMatchQuery = /vs|versus|match|game|fixture|play against/i.test(message);
-  const isStandingsQuery = /standings|table|position|rank/i.test(message);
-  const isInjuryQuery = /injur|injured|fit|available|out|miss/i.test(message);
+  // Category-specific query optimization
+  let recency: 'hour' | 'day' | 'week' | 'month' = 'day';
   
-  // Add current year/season for roster and standings queries
-  if (isRosterQuery) {
-    query += ' 2024-2025 season roster squad current';
-  } else if (isStandingsQuery) {
-    query += ' 2024-2025 current standings';
-  } else if (isInjuryQuery) {
-    query += ' injury news update today December 2024';
-  } else if (isMatchQuery) {
-    query += ' preview latest news';
-  } else if (!lowerMessage.includes('news') && !lowerMessage.includes('today')) {
-    // Generic: add recency context
-    query += ' latest news December 2024';
+  switch (category) {
+    case 'ROSTER':
+      query += ' 2024-2025 season current roster squad players';
+      recency = 'week';
+      break;
+      
+    case 'FIXTURE':
+      query += ' upcoming fixture schedule next match kickoff time December 2024';
+      recency = 'day';
+      break;
+      
+    case 'RESULT':
+      query += ' final score result match report';
+      recency = 'day';
+      break;
+      
+    case 'STANDINGS':
+      query += ' 2024-2025 league table standings points';
+      recency = 'day';
+      break;
+      
+    case 'STATS':
+      query += ' 2024-2025 season statistics stats goals assists';
+      recency = 'week';
+      break;
+      
+    case 'INJURY':
+      query += ' injury update news team news fitness December 2024';
+      recency = 'day';
+      break;
+      
+    case 'TRANSFER':
+      query += ' transfer news rumors latest December 2024';
+      recency = 'day';
+      break;
+      
+    case 'MANAGER':
+      query += ' manager coach press conference tactics news';
+      recency = 'day';
+      break;
+      
+    case 'ODDS':
+      query += ' betting odds market prices bookmakers';
+      recency = 'day';
+      break;
+      
+    case 'COMPARISON':
+      query += ' comparison stats 2024-2025 head to head';
+      recency = 'week';
+      break;
+      
+    case 'HISTORY':
+      query += ' history record all time statistics';
+      recency = 'month';
+      break;
+      
+    case 'BROADCAST':
+      query += ' TV channel stream where to watch broadcast';
+      recency = 'day';
+      break;
+      
+    case 'VENUE':
+      query += ' stadium venue arena ground';
+      recency = 'month';
+      break;
+      
+    case 'GENERAL':
+    default:
+      query += ' latest news December 2024';
+      recency = 'day';
+      break;
   }
   
-  return query;
+  return { query, category, recency };
 }
 
 // ============================================
@@ -219,24 +381,26 @@ export async function POST(request: NextRequest) {
       if (perplexity.isConfigured()) {
         console.log('[AI-Chat] Fetching real-time context from Perplexity...');
         
-        const searchQuery = extractSearchQuery(message);
+        // Extract optimized search query with category detection
+        const { query: searchQuery, category, recency } = extractSearchQuery(message);
         
-        // Use wider recency window for roster/standings queries
-        const isStructuralQuery = /roster|squad|player|standings|table|team/i.test(message);
-        const recency = isStructuralQuery ? 'week' : 'day';
+        console.log(`[AI-Chat] Category: ${category} | Recency: ${recency}`);
+        console.log(`[AI-Chat] Search query: "${searchQuery}"`);
         
-        console.log(`[AI-Chat] Search query: "${searchQuery}" (recency: ${recency})`);
+        // Use higher token limit for detailed queries like rosters or comparisons
+        const needsMoreTokens = ['ROSTER', 'COMPARISON', 'STANDINGS', 'STATS'].includes(category);
         
         const searchResult = await perplexity.search(searchQuery, {
           recency,
           model: 'sonar-pro',
-          maxTokens: 1000, // More tokens for detailed roster info
+          maxTokens: needsMoreTokens ? 1500 : 1000,
         });
 
         if (searchResult.success && searchResult.content) {
           perplexityContext = searchResult.content;
           citations = searchResult.citations || [];
           console.log('[AI-Chat] Perplexity context retrieved:', perplexityContext.slice(0, 200) + '...');
+          console.log('[AI-Chat] Citations received:', JSON.stringify(citations));
         } else {
           console.log('[AI-Chat] No Perplexity results:', searchResult.error);
         }
