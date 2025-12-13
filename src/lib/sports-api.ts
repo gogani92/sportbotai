@@ -3,14 +3,16 @@
  * 
  * Unified client for API-Sports family:
  * - API-Football (Soccer)
- * - API-Basketball (NBA, EuroLeague, etc.)
+ * - API-NBA (Dedicated NBA API) - paid specialized service
+ * - API-Basketball (EuroLeague, EuroCup, ACB, NCAAB) - general basketball
  * - API-American-Football (NFL)
  * - API-Hockey (NHL)
  * - API-MMA (UFC, Bellator)
  * 
- * All use the same API key from api-sports.io
- * Free tier: 100 requests/day (shared across all sports)
+ * IMPORTANT: NBA uses dedicated API (v2.nba.api-sports.io)
+ * Other basketball (EuroLeague, etc.) uses v1.basketball.api-sports.io
  * 
+ * All use the same API key from api-sports.io
  * Dashboard: https://dashboard.api-football.com/
  */
 
@@ -22,8 +24,8 @@ import { FormMatch, HeadToHeadMatch, TeamStats } from '@/types';
 
 const API_BASES: Record<string, string> = {
   soccer: 'https://v3.football.api-sports.io',
-  nba: 'https://v2.nba.api-sports.io',  // Dedicated NBA API
-  basketball: 'https://v1.basketball.api-sports.io',  // EuroLeague, NCAAB, etc.
+  nba: 'https://v2.nba.api-sports.io',  // DEDICATED NBA API (paid)
+  basketball: 'https://v1.basketball.api-sports.io',  // EuroLeague, EuroCup, ACB, NCAAB
   american_football: 'https://v1.american-football.api-sports.io',
   hockey: 'https://v1.hockey.api-sports.io',
   mma: 'https://v1.mma.api-sports.io',  // UFC, Bellator, etc.
@@ -32,7 +34,6 @@ const API_BASES: Record<string, string> = {
 // ============================================
 // DYNAMIC SEASON HELPERS
 // ============================================
-
 /**
  * Get current basketball season (NBA runs Oct-June)
  * Format: "2024-2025"
@@ -91,6 +92,7 @@ function getCurrentSoccerSeason(): number {
 }
 
 // Map common sport names to API-Sports sport keys
+// IMPORTANT: 'nba' routes to dedicated NBA API, 'basketball' routes to Basketball API
 const SPORT_MAPPING: Record<string, string> = {
   // Soccer variants
   'soccer': 'soccer',
@@ -113,12 +115,20 @@ const SPORT_MAPPING: Record<string, string> = {
   'english_premier_league': 'soccer',
   'epl': 'soccer',
   
-  // Basketball variants - NBA uses dedicated API
+  // Basketball variants
+  // NBA -> Dedicated NBA API (v2.nba.api-sports.io)
+  'nba': 'nba',
+  'basketball_nba': 'nba',
+  
+  // Other Basketball -> Basketball API (v1.basketball.api-sports.io)
   'basketball': 'basketball',
-  'basketball_nba': 'nba',  // Dedicated NBA API
-  'basketball_euroleague': 'basketball',
-  'basketball_ncaab': 'basketball',
-  'nba': 'nba',  // Dedicated NBA API
+  'basketball_euroleague': 'basketball',  // EuroLeague
+  'basketball_eurocup': 'basketball',      // EuroCup
+  'basketball_ncaab': 'basketball',        // NCAA
+  'basketball_acb': 'basketball',          // ACB Spain
+  'euroleague': 'basketball',
+  'eurocup': 'basketball',
+  'acb': 'basketball',
   
   // American Football
   'americanfootball': 'american_football',
@@ -619,10 +629,34 @@ async function getSoccerH2H(homeTeamId: number, awayTeamId: number, baseUrl: str
 }
 
 // ============================================
-// BASKETBALL FUNCTIONS
+// BASKETBALL FUNCTIONS (EuroLeague, NCAAB, ACB, etc.)
+// Uses v1.basketball.api-sports.io
 // ============================================
 
-// NBA team name mappings
+/**
+ * Basketball League IDs on API-Basketball:
+ * - 12: NBA (use dedicated NBA API instead)
+ * - 120: EuroLeague
+ * - 202: EuroCup
+ * - 117: ACB (Spain)
+ * - 194: NCAAB (USA College)
+ * - 110: France Pro A
+ * - 80: Germany BBL
+ * - 203: Italy Lega Basket
+ */
+const BASKETBALL_LEAGUE_IDS = {
+  EUROLEAGUE: 120,
+  EUROCUP: 202,
+  ACB_SPAIN: 117,
+  NCAAB: 194,
+  FRANCE_PRO_A: 110,
+  GERMANY_BBL: 80,
+  ITALY_LEGA: 203,
+  VTB_LEAGUE: 10,  // Russia
+  BSL_TURKEY: 79,
+};
+
+// NBA team name mappings (for the dedicated NBA API)
 const NBA_TEAM_MAPPINGS: Record<string, string> = {
   // Full names to short
   'los angeles lakers': 'Lakers',
@@ -659,9 +693,69 @@ const NBA_TEAM_MAPPINGS: Record<string, string> = {
   'memphis grizzlies': 'Grizzlies',
 };
 
+// EuroLeague and European Basketball team mappings
+const EUROLEAGUE_TEAM_MAPPINGS: Record<string, string> = {
+  // EuroLeague Teams
+  'real madrid baloncesto': 'Real Madrid',
+  'real madrid basket': 'Real Madrid',
+  'barcelona basket': 'FC Barcelona',
+  'fc barcelona basket': 'FC Barcelona',
+  'fc barcelona': 'FC Barcelona',
+  'barça basket': 'FC Barcelona',
+  'olympiacos bc': 'Olympiacos',
+  'olympiacos piraeus': 'Olympiacos',
+  'panathinaikos bc': 'Panathinaikos',
+  'panathinaikos athens': 'Panathinaikos',
+  'fenerbahce beko': 'Fenerbahce',
+  'fenerbahce istanbul': 'Fenerbahce',
+  'anadolu efes': 'Anadolu Efes',
+  'efes istanbul': 'Anadolu Efes',
+  'maccabi tel aviv': 'Maccabi Tel Aviv',
+  'maccabi electra': 'Maccabi Tel Aviv',
+  'cska moscow': 'CSKA Moscow',
+  'cska': 'CSKA Moscow',
+  'zalgiris kaunas': 'Zalgiris',
+  'bc zalgiris': 'Zalgiris',
+  'baskonia vitoria': 'Baskonia',
+  'td systems baskonia': 'Baskonia',
+  'saski baskonia': 'Baskonia',
+  'bayern munich basket': 'Bayern Munich',
+  'fc bayern munich basketball': 'Bayern Munich',
+  'bayern munich basketball': 'Bayern Munich',
+  'alba berlin': 'Alba Berlin',
+  'bc alba berlin': 'Alba Berlin',
+  'olimpia milano': 'Olimpia Milano',
+  'ax armani exchange milano': 'Olimpia Milano',
+  'ea7 emporio armani milan': 'Olimpia Milano',
+  'armani milano': 'Olimpia Milano',
+  'virtus bologna': 'Virtus Bologna',
+  'segafredo virtus bologna': 'Virtus Bologna',
+  'ldlc asvel villeurbanne': 'ASVEL',
+  'asvel lyon': 'ASVEL',
+  'asvel villeurbanne': 'ASVEL',
+  'monaco basket': 'Monaco',
+  'as monaco basket': 'Monaco',
+  'as monaco': 'Monaco',
+  'partizan belgrade': 'Partizan',
+  'kk partizan': 'Partizan',
+  'red star belgrade': 'Crvena Zvezda',
+  'crvena zvezda': 'Crvena Zvezda',
+  'kk crvena zvezda': 'Crvena Zvezda',
+  // ACB Spain Teams
+  'valencia basket': 'Valencia',
+  'bc valencia': 'Valencia',
+  'unicaja malaga': 'Unicaja',
+  'joventut badalona': 'Joventut',
+  'club joventut badalona': 'Joventut',
+  'gran canaria': 'Gran Canaria',
+  'herbalife gran canaria': 'Gran Canaria',
+  'cb gran canaria': 'Gran Canaria',
+};
+
 function normalizeBasketballTeamName(name: string): string {
   const lower = name.toLowerCase().trim();
-  return NBA_TEAM_MAPPINGS[lower] || name;
+  // Check NBA mappings first, then EuroLeague mappings
+  return NBA_TEAM_MAPPINGS[lower] || EUROLEAGUE_TEAM_MAPPINGS[lower] || name;
 }
 
 async function findBasketballTeam(teamName: string, baseUrl: string): Promise<number | null> {
@@ -670,22 +764,46 @@ async function findBasketballTeam(teamName: string, baseUrl: string): Promise<nu
   const cached = getCached<number>(cacheKey);
   if (cached) return cached;
 
-  // Try with NBA league ID (12) first, then without
-  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=12`);
+  // Priority search order for European/non-NBA basketball:
+  // 1. EuroLeague (most important)
+  // 2. EuroCup (second tier European)
+  // 3. ACB Spain (strong domestic league)
+  // 4. Other leagues
+  const leagueSearchOrder = [
+    BASKETBALL_LEAGUE_IDS.EUROLEAGUE,
+    BASKETBALL_LEAGUE_IDS.EUROCUP,
+    BASKETBALL_LEAGUE_IDS.ACB_SPAIN,
+    BASKETBALL_LEAGUE_IDS.ITALY_LEGA,
+    BASKETBALL_LEAGUE_IDS.GERMANY_BBL,
+    BASKETBALL_LEAGUE_IDS.FRANCE_PRO_A,
+    BASKETBALL_LEAGUE_IDS.BSL_TURKEY,
+    BASKETBALL_LEAGUE_IDS.VTB_LEAGUE,
+    BASKETBALL_LEAGUE_IDS.NCAAB,
+  ];
   
-  // If not found in NBA, try EuroLeague (120)
-  if (!response?.response?.length) {
-    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=120`);
+  let response: any = null;
+  
+  // Try each league in priority order
+  for (const leagueId of leagueSearchOrder) {
+    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=${leagueId}`);
+    if (response?.response?.length > 0) {
+      const teamId = response.response[0].id;
+      const leagueName = Object.entries(BASKETBALL_LEAGUE_IDS).find(([, id]) => id === leagueId)?.[0] || leagueId;
+      console.log(`[Basketball] Found team "${teamName}" in ${leagueName} -> ID ${teamId}`);
+      setCache(cacheKey, teamId);
+      return teamId;
+    }
   }
   
   // Fallback: search without league filter
+  response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}`);
   if (!response?.response?.length && normalizedName !== teamName) {
     response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
   }
   
   if (response?.response?.length > 0) {
     const teamId = response.response[0].id;
-    console.log(`[Basketball] Found team "${teamName}" -> ID ${teamId}`);
+    console.log(`[Basketball] Found team "${teamName}" -> ID ${teamId} (generic search)`);
     setCache(cacheKey, teamId);
     return teamId;
   }
@@ -1329,11 +1447,14 @@ async function fetchSoccerData(homeTeam: string, awayTeam: string, baseUrl: stri
 }
 
 // ============================================
-// NBA-SPECIFIC FUNCTIONS (v2.nba.api-sports.io)
+// NBA-SPECIFIC FUNCTIONS (DEDICATED NBA API)
+// Uses v2.nba.api-sports.io - separate from Basketball API
+// This is a paid, specialized NBA API with better coverage
 // ============================================
 
 /**
  * Get current NBA season (format: 2024 for 2024-25 season)
+ * NBA season runs October to June
  */
 function getCurrentNBASeason(): number {
   const now = new Date();
