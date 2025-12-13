@@ -20,17 +20,37 @@ interface LiveStatsCounterProps {
 }
 
 export function LiveStatsCounter({ className = '' }: LiveStatsCounterProps) {
-  // Simulated growing count (in production, fetch from API)
-  const [count, setCount] = useState(12847);
+  // Start with a fixed value to avoid hydration mismatch
+  const [count, setCount] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
+    // Set initial count only on client
+    setMounted(true);
+    setCount(12847);
+    
     // Increment randomly every 3-8 seconds to simulate activity
     const interval = setInterval(() => {
-      setCount(prev => prev + Math.floor(Math.random() * 3) + 1);
+      setCount(prev => (prev || 12847) + Math.floor(Math.random() * 3) + 1);
     }, Math.random() * 5000 + 3000);
     
     return () => clearInterval(interval);
   }, []);
+
+  // Show placeholder during SSR to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div className={`inline-flex items-center gap-2 ${className}`}>
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+        </span>
+        <span className="text-white/60 text-sm">
+          <span className="text-white font-semibold tabular-nums">12,849</span> analyses today
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
@@ -39,7 +59,7 @@ export function LiveStatsCounter({ className = '' }: LiveStatsCounterProps) {
         <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
       </span>
       <span className="text-white/60 text-sm">
-        <span className="text-white font-semibold tabular-nums">{count.toLocaleString()}</span> analyses today
+        <span className="text-white font-semibold tabular-nums">{(count || 12847).toLocaleString()}</span> analyses today
       </span>
     </div>
   );

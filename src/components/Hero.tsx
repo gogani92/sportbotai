@@ -1,8 +1,10 @@
 /**
  * Hero section for landing page
  * 
- * Modern sports analytics themed hero with mock analysis card preview.
+ * Modern sports analytics themed hero with SportBot Agent showcase.
  */
+
+'use client';
 
 import Link from 'next/link';
 import { LiveStatsCounter } from './SocialProof';
