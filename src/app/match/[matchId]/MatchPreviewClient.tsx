@@ -433,59 +433,159 @@ function MatchHeader({
     minute: '2-digit',
   });
 
-  // Check if sport is soccer/football
-  const isSoccer = sport?.toLowerCase() === 'soccer' || 
-                   sport?.toLowerCase() === 'football' ||
-                   league?.toLowerCase().includes('premier') ||
-                   league?.toLowerCase().includes('la liga') ||
-                   league?.toLowerCase().includes('bundesliga') ||
-                   league?.toLowerCase().includes('serie a') ||
-                   league?.toLowerCase().includes('ligue 1') ||
-                   league?.toLowerCase().includes('champions');
+  // Detect sport type
+  const sportLower = sport?.toLowerCase() || '';
+  const leagueLower = league?.toLowerCase() || '';
+  
+  const isSoccer = sportLower === 'soccer' || 
+                   sportLower === 'football' ||
+                   leagueLower.includes('premier') ||
+                   leagueLower.includes('la liga') ||
+                   leagueLower.includes('bundesliga') ||
+                   leagueLower.includes('serie a') ||
+                   leagueLower.includes('ligue 1') ||
+                   leagueLower.includes('champions');
+                   
+  const isBasketball = sportLower === 'basketball' ||
+                       sportLower.includes('basketball') ||
+                       leagueLower.includes('nba') ||
+                       leagueLower.includes('euroleague') ||
+                       leagueLower.includes('ncaa basketball');
+                       
+  const isAmericanFootball = sportLower === 'americanfootball' ||
+                             sportLower.includes('american') ||
+                             leagueLower.includes('nfl') ||
+                             leagueLower.includes('ncaa football');
+                             
+  const isHockey = sportLower === 'hockey' ||
+                   sportLower.includes('hockey') ||
+                   sportLower.includes('icehockey') ||
+                   leagueLower.includes('nhl') ||
+                   leagueLower.includes('shl');
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/10 p-6 sm:p-8">
-      {/* Soccer field background - only for soccer matches */}
+      {/* Soccer field background */}
       {isSoccer && (
         <div className="absolute inset-0 pointer-events-none opacity-[0.07]">
-          <svg
-            viewBox="0 0 400 250"
-            className="w-full h-full"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            {/* Field outline */}
+          <svg viewBox="0 0 400 250" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
             <rect x="10" y="10" width="380" height="230" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
-            
-            {/* Center line */}
             <line x1="200" y1="10" x2="200" y2="240" stroke="currentColor" strokeWidth="2" className="text-primary" />
-            
-            {/* Center circle */}
             <circle cx="200" cy="125" r="40" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
             <circle cx="200" cy="125" r="3" fill="currentColor" className="text-primary" />
-            
-            {/* Left penalty area */}
             <rect x="10" y="60" width="60" height="130" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
-            {/* Left goal area */}
             <rect x="10" y="90" width="25" height="70" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
-            {/* Left penalty spot */}
             <circle cx="50" cy="125" r="2" fill="currentColor" className="text-primary" />
-            {/* Left penalty arc */}
             <path d="M 70 100 A 30 30 0 0 1 70 150" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
-            
-            {/* Right penalty area */}
             <rect x="330" y="60" width="60" height="130" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
-            {/* Right goal area */}
             <rect x="365" y="90" width="25" height="70" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
-            {/* Right penalty spot */}
             <circle cx="350" cy="125" r="2" fill="currentColor" className="text-primary" />
-            {/* Right penalty arc */}
             <path d="M 330 100 A 30 30 0 0 0 330 150" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
-            
-            {/* Corner arcs */}
             <path d="M 10 20 A 10 10 0 0 0 20 10" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
             <path d="M 380 10 A 10 10 0 0 0 390 20" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
             <path d="M 10 230 A 10 10 0 0 1 20 240" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
             <path d="M 380 240 A 10 10 0 0 1 390 230" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary" />
+          </svg>
+        </div>
+      )}
+      
+      {/* Basketball court background */}
+      {isBasketball && (
+        <div className="absolute inset-0 pointer-events-none opacity-[0.07]">
+          <svg viewBox="0 0 400 220" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+            {/* Court outline */}
+            <rect x="10" y="10" width="380" height="200" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Center line */}
+            <line x1="200" y1="10" x2="200" y2="210" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Center circle */}
+            <circle cx="200" cy="110" r="30" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Left three-point arc */}
+            <path d="M 10 60 L 50 60 A 70 70 0 0 1 50 160 L 10 160" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Left key/paint */}
+            <rect x="10" y="70" width="70" height="80" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Left free throw circle */}
+            <circle cx="80" cy="110" r="25" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Left basket */}
+            <circle cx="25" cy="110" r="8" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Left backboard */}
+            <line x1="15" y1="95" x2="15" y2="125" stroke="currentColor" strokeWidth="3" className="text-orange-500" />
+            {/* Right three-point arc */}
+            <path d="M 390 60 L 350 60 A 70 70 0 0 0 350 160 L 390 160" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Right key/paint */}
+            <rect x="320" y="70" width="70" height="80" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Right free throw circle */}
+            <circle cx="320" cy="110" r="25" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Right basket */}
+            <circle cx="375" cy="110" r="8" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-500" />
+            {/* Right backboard */}
+            <line x1="385" y1="95" x2="385" y2="125" stroke="currentColor" strokeWidth="3" className="text-orange-500" />
+          </svg>
+        </div>
+      )}
+      
+      {/* American Football field background */}
+      {isAmericanFootball && (
+        <div className="absolute inset-0 pointer-events-none opacity-[0.07]">
+          <svg viewBox="0 0 400 180" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+            {/* Field outline */}
+            <rect x="10" y="10" width="380" height="160" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500" />
+            {/* End zones */}
+            <rect x="10" y="10" width="35" height="160" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500" />
+            <rect x="355" y="10" width="35" height="160" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500" />
+            {/* Yard lines - every 10 yards (scaled) */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
+              <line key={i} x1={45 + i * 31} y1="10" x2={45 + i * 31} y2="170" stroke="currentColor" strokeWidth="1.5" className="text-green-500" />
+            ))}
+            {/* 50 yard line (center, thicker) */}
+            <line x1="200" y1="10" x2="200" y2="170" stroke="currentColor" strokeWidth="2.5" className="text-green-500" />
+            {/* Hash marks on sides */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
+              <g key={`hash-${i}`}>
+                <line x1={45 + i * 31} y1="55" x2={45 + i * 31 + 8} y2="55" stroke="currentColor" strokeWidth="1" className="text-green-500" />
+                <line x1={45 + i * 31} y1="125" x2={45 + i * 31 + 8} y2="125" stroke="currentColor" strokeWidth="1" className="text-green-500" />
+              </g>
+            ))}
+            {/* Goal posts (simplified) */}
+            <path d="M 10 75 L 0 75 L 0 105 L 10 105" fill="none" stroke="currentColor" strokeWidth="2" className="text-yellow-500" />
+            <line x1="0" y1="90" x2="0" y2="60" stroke="currentColor" strokeWidth="2" className="text-yellow-500" />
+            <path d="M 390 75 L 400 75 L 400 105 L 390 105" fill="none" stroke="currentColor" strokeWidth="2" className="text-yellow-500" />
+            <line x1="400" y1="90" x2="400" y2="60" stroke="currentColor" strokeWidth="2" className="text-yellow-500" />
+          </svg>
+        </div>
+      )}
+      
+      {/* Ice Hockey rink background */}
+      {isHockey && (
+        <div className="absolute inset-0 pointer-events-none opacity-[0.07]">
+          <svg viewBox="0 0 400 200" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+            {/* Rink outline with rounded corners */}
+            <rect x="10" y="10" width="380" height="180" rx="40" ry="40" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-400" />
+            {/* Center red line */}
+            <line x1="200" y1="10" x2="200" y2="190" stroke="currentColor" strokeWidth="3" className="text-red-500" />
+            {/* Blue lines */}
+            <line x1="130" y1="10" x2="130" y2="190" stroke="currentColor" strokeWidth="2.5" className="text-blue-500" />
+            <line x1="270" y1="10" x2="270" y2="190" stroke="currentColor" strokeWidth="2.5" className="text-blue-500" />
+            {/* Center circle */}
+            <circle cx="200" cy="100" r="30" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-400" />
+            <circle cx="200" cy="100" r="3" fill="currentColor" className="text-blue-400" />
+            {/* Faceoff circles - left zone */}
+            <circle cx="70" cy="60" r="20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-500" />
+            <circle cx="70" cy="60" r="2" fill="currentColor" className="text-red-500" />
+            <circle cx="70" cy="140" r="20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-500" />
+            <circle cx="70" cy="140" r="2" fill="currentColor" className="text-red-500" />
+            {/* Faceoff circles - right zone */}
+            <circle cx="330" cy="60" r="20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-500" />
+            <circle cx="330" cy="60" r="2" fill="currentColor" className="text-red-500" />
+            <circle cx="330" cy="140" r="20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-500" />
+            <circle cx="330" cy="140" r="2" fill="currentColor" className="text-red-500" />
+            {/* Goal creases */}
+            <path d="M 30 85 A 15 15 0 0 1 30 115" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-400" />
+            <line x1="30" y1="85" x2="30" y2="115" stroke="currentColor" strokeWidth="2" className="text-red-500" />
+            <path d="M 370 85 A 15 15 0 0 0 370 115" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-400" />
+            <line x1="370" y1="85" x2="370" y2="115" stroke="currentColor" strokeWidth="2" className="text-red-500" />
+            {/* Goals */}
+            <rect x="15" y="90" width="8" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-500" />
+            <rect x="377" y="90" width="8" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-500" />
           </svg>
         </div>
       )}
