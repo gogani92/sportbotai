@@ -426,6 +426,21 @@ button:focus-visible {
   animation: float 3s ease-in-out infinite;
 }
 
+.animate-float-delayed {
+  animation: float 3s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+/* Shimmer animation for cards */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
 /* Fade in animation */
 @keyframes fadeIn {
   from { opacity: 0; }

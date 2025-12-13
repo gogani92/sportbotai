@@ -82,109 +82,126 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right Side - Mock Analysis Card */}
+          {/* Right Side - SportBot Agent Card */}
           <div className="relative lg:pl-8">
             <div className="relative">
-              {/* Glow Effect */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-50" />
+              {/* Animated Glow Effect */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-purple-600/30 via-violet-500/20 to-fuchsia-500/30 rounded-3xl blur-2xl opacity-60 animate-pulse" />
+              <div className="absolute -inset-2 bg-gradient-to-br from-purple-500/10 to-transparent rounded-2xl" />
               
-              {/* Card - Match Intelligence Preview */}
-              <div className="relative bg-bg-card border border-divider rounded-card p-6 shadow-2xl">
-                {/* Card Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-                      <span className="text-xl">⚽</span>
+              {/* Card - SportBot Agent */}
+              <div className="relative bg-gradient-to-br from-bg-card via-bg-card to-purple-950/20 border border-purple-500/30 rounded-2xl overflow-hidden shadow-2xl">
+                {/* Animated Header Bar */}
+                <div className="relative bg-gradient-to-r from-purple-600/20 via-violet-600/20 to-fuchsia-600/20 px-6 py-4 border-b border-purple-500/20">
+                  <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(168,85,247,0.1),transparent)] animate-shimmer" />
+                  <div className="flex items-center justify-between relative">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                          <span className="text-2xl">🧠</span>
+                        </div>
+                        <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-bg-card animate-pulse" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-lg">SportBot Agent</p>
+                        <p className="text-purple-300 text-sm flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                          AI Sports Desk • Live
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-white font-semibold">Premier League</p>
-                      <p className="text-gray-500 text-sm">Today • 15:00</p>
-                    </div>
-                  </div>
-                  <span className="badge badge-success">Preview Ready</span>
-                </div>
-
-                {/* Teams */}
-                <div className="flex items-center justify-between py-4 border-y border-divider">
-                  <div className="text-center flex-1">
-                    <p className="text-white font-bold text-lg">Arsenal</p>
-                    <p className="text-gray-500 text-sm">Home</p>
-                  </div>
-                  <div className="px-4">
-                    <span className="text-gray-600 text-2xl font-light">vs</span>
-                  </div>
-                  <div className="text-center flex-1">
-                    <p className="text-white font-bold text-lg">Chelsea</p>
-                    <p className="text-gray-500 text-sm">Away</p>
+                    <Link href="/ai-desk" className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs font-semibold rounded-full border border-purple-500/30 transition-all hover:scale-105">
+                      Open Desk →
+                    </Link>
                   </div>
                 </div>
 
-                {/* Match Headlines */}
-                <div className="mt-4 space-y-2">
-                  <p className="text-xs text-text-muted uppercase tracking-wider">🔥 Match Headlines</p>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2 bg-green-500/10 rounded-lg p-3 border border-green-500/20">
-                      <span className="text-green-400">📈</span>
-                      <p className="text-sm text-gray-300">Arsenal: 8 home wins in a row</p>
+                {/* Live Intelligence Feed */}
+                <div className="p-5 space-y-3">
+                  {/* Post 1 - Market Movement */}
+                  <div className="group relative bg-gradient-to-r from-orange-500/10 to-transparent rounded-xl p-4 border border-orange-500/20 hover:border-orange-500/40 transition-all cursor-pointer">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">📊</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-orange-400 text-xs font-semibold uppercase tracking-wider">Market Movement</span>
+                          <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-bold rounded">MODERATE</span>
+                        </div>
+                        <p className="text-gray-200 text-sm leading-relaxed">
+                          Sharp movement detected on the early Premier League fixture. Market uncertainty elevated after late team news.
+                        </p>
+                        <p className="text-gray-500 text-xs mt-2">Chelsea vs Everton • 15m ago</p>
+                      </div>
                     </div>
-                    <div className="flex items-start gap-2 bg-red-500/10 rounded-lg p-3 border border-red-500/20">
-                      <span className="text-red-400">📉</span>
-                      <p className="text-sm text-gray-300">Chelsea: Only 2 away wins this season</p>
+                  </div>
+
+                  {/* Post 2 - Lineup Intel */}
+                  <div className="group relative bg-gradient-to-r from-green-500/10 to-transparent rounded-xl p-4 border border-green-500/20 hover:border-green-500/40 transition-all cursor-pointer">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">📋</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-green-400 text-xs font-semibold uppercase tracking-wider">Lineup Intel</span>
+                          <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] font-bold rounded">CONFIDENT</span>
+                        </div>
+                        <p className="text-gray-200 text-sm leading-relaxed">
+                          Key midfielder confirmed out. Model volatility adjusted upward. Classic mid-week rotation chaos.
+                        </p>
+                        <p className="text-gray-500 text-xs mt-2">Man City vs Man United • 2h ago</p>
+                      </div>
                     </div>
-                    <div className="flex items-start gap-2 bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
-                      <span className="text-blue-400">⚔️</span>
-                      <p className="text-sm text-gray-300">H2H: Arsenal unbeaten in last 5</p>
+                  </div>
+
+                  {/* Post 3 - AI Insight */}
+                  <div className="group relative bg-gradient-to-r from-purple-500/10 to-transparent rounded-xl p-4 border border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">🎯</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-purple-400 text-xs font-semibold uppercase tracking-wider">AI Insight</span>
+                          <span className="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded">UNCERTAIN</span>
+                        </div>
+                        <p className="text-gray-200 text-sm leading-relaxed">
+                          High-complexity alert. Both sides showing inconsistent form and a history of chaotic encounters.
+                        </p>
+                        <p className="text-gray-500 text-xs mt-2">Liverpool vs Tottenham • 3h ago</p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Form Comparison */}
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-xs text-gray-500 mb-2">Arsenal Form</p>
-                    <div className="flex gap-1">
-                      {['W','W','W','D','W'].map((r, i) => (
-                        <span key={i} className={`w-6 h-6 rounded text-xs flex items-center justify-center font-bold ${
-                          r === 'W' ? 'bg-green-500/20 text-green-400' : 
-                          r === 'D' ? 'bg-yellow-500/20 text-yellow-400' : 
-                          'bg-red-500/20 text-red-400'
-                        }`}>{r}</span>
-                      ))}
-                    </div>
+                {/* Footer - Feature Pills */}
+                <div className="px-5 pb-5">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2.5 py-1 bg-purple-500/10 text-purple-300 text-xs font-medium rounded-full border border-purple-500/20">
+                      ⚡ Real-Time
+                    </span>
+                    <span className="px-2.5 py-1 bg-blue-500/10 text-blue-300 text-xs font-medium rounded-full border border-blue-500/20">
+                      🔄 Auto-Updating
+                    </span>
+                    <span className="px-2.5 py-1 bg-green-500/10 text-green-300 text-xs font-medium rounded-full border border-green-500/20">
+                      🏥 Injury Alerts
+                    </span>
+                    <span className="px-2.5 py-1 bg-orange-500/10 text-orange-300 text-xs font-medium rounded-full border border-orange-500/20">
+                      📈 Odds Shifts
+                    </span>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-xs text-gray-500 mb-2">Chelsea Form</p>
-                    <div className="flex gap-1">
-                      {['L','D','W','L','L'].map((r, i) => (
-                        <span key={i} className={`w-6 h-6 rounded text-xs flex items-center justify-center font-bold ${
-                          r === 'W' ? 'bg-green-500/20 text-green-400' : 
-                          r === 'D' ? 'bg-yellow-500/20 text-yellow-400' : 
-                          'bg-red-500/20 text-red-400'
-                        }`}>{r}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* AI Briefing Preview */}
-                <div className="mt-4 p-4 bg-gradient-to-r from-purple-500/10 to-violet-500/10 rounded-lg border border-purple-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">🤖</span>
-                    <span className="text-white font-medium text-sm">AI Briefing</span>
-                    <span className="text-xs text-gray-500">• 60 sec</span>
-                  </div>
-                  <p className="text-gray-400 text-sm leading-relaxed">
-                    Arsenal enter this London derby in dominant home form. Chelsea&apos;s away struggles continue with just 2 wins on the road...
-                  </p>
                 </div>
               </div>
             </div>
 
             {/* Floating Elements */}
-            <div className="absolute -right-4 top-1/4 bg-bg-card border border-divider rounded-lg px-3 py-2 shadow-lg animate-float hidden lg:block">
+            <div className="absolute -right-2 top-16 bg-gradient-to-r from-green-500/90 to-emerald-500/90 rounded-lg px-3 py-2 shadow-lg shadow-green-500/30 animate-float hidden lg:block">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-accent rounded-full" />
-                <span className="text-white text-sm font-medium">Live Data</span>
+                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                <span className="text-white text-sm font-bold">LIVE</span>
+              </div>
+            </div>
+            
+            <div className="absolute -left-4 bottom-20 bg-bg-card border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg animate-float-delayed hidden lg:block">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🧠</span>
+                <span className="text-purple-300 text-sm font-medium">AI Powered</span>
               </div>
             </div>
           </div>
