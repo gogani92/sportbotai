@@ -31,7 +31,6 @@ const SPORTS = [
       { key: 'soccer_italy_serie_a', name: 'Serie A' },
       { key: 'soccer_france_ligue_one', name: 'Ligue 1' },
       { key: 'soccer_uefa_champs_league', name: 'Champions League' },
-      { key: 'soccer_usa_mls', name: 'MLS' },
     ],
   },
   {

@@ -1229,12 +1229,12 @@ const LEAGUE_LOGOS: Record<string, string> = {
   // ============================================
   
   // Premier League - All variations (Odds API format)
-  'Premier League': 'https://crests.football-data.org/PL.png',
-  'EPL': 'https://crests.football-data.org/PL.png',
-  'English Premier League': 'https://crests.football-data.org/PL.png',
-  'soccer_epl': 'https://crests.football-data.org/PL.png',
-  'soccer_england_premier_league': 'https://crests.football-data.org/PL.png',
-  'England - Premier League': 'https://crests.football-data.org/PL.png',
+  'Premier League': 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/280px-Premier_League_Logo.svg.png',
+  'EPL': 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/280px-Premier_League_Logo.svg.png',
+  'English Premier League': 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/280px-Premier_League_Logo.svg.png',
+  'soccer_epl': 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/280px-Premier_League_Logo.svg.png',
+  'soccer_england_premier_league': 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/280px-Premier_League_Logo.svg.png',
+  'England - Premier League': 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/280px-Premier_League_Logo.svg.png',
   
   // La Liga - All variations (Odds API returns "La Liga - Spain")
   'La Liga': 'https://crests.football-data.org/PD.png',
