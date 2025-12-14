@@ -206,7 +206,7 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
     return <MatchPreviewSkeleton />;
   }
 
-  if (error || !data) {
+  if (error || !data || !data.matchInfo) {
     return (
       <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -257,40 +257,44 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
         />
 
         {/* Viral Stats Bar - The hook */}
-        <div className="mt-6">
-          <ViralStatsBar
-            homeTeam={data.matchInfo.homeTeam}
-            awayTeam={data.matchInfo.awayTeam}
-            stats={{
-              h2h: {
-                headline: data.viralStats.h2h.headline,
-                favors: data.viralStats.h2h.favors,
-              },
-              form: {
-                home: data.viralStats.form.home,
-                away: data.viralStats.form.away,
-              },
-              keyAbsence: data.viralStats.keyAbsence ? {
-                team: data.viralStats.keyAbsence.team,
-                player: data.viralStats.keyAbsence.player,
-                impact: 'key' as const,
-              } : undefined,
-              streak: data.viralStats.streak || undefined,
-            }}
-          />
-        </div>
+        {data.viralStats && (
+          <div className="mt-6">
+            <ViralStatsBar
+              homeTeam={data.matchInfo.homeTeam}
+              awayTeam={data.matchInfo.awayTeam}
+              stats={{
+                h2h: data.viralStats.h2h ? {
+                  headline: data.viralStats.h2h.headline || 'No H2H data',
+                  favors: data.viralStats.h2h.favors || 'even',
+                } : { headline: 'No H2H data', favors: 'even' },
+                form: data.viralStats.form ? {
+                  home: data.viralStats.form.home || 'DDDDD',
+                  away: data.viralStats.form.away || 'DDDDD',
+                } : { home: 'DDDDD', away: 'DDDDD' },
+                keyAbsence: data.viralStats.keyAbsence ? {
+                  team: data.viralStats.keyAbsence.team,
+                  player: data.viralStats.keyAbsence.player,
+                  impact: 'key' as const,
+                } : undefined,
+                streak: data.viralStats.streak || undefined,
+              }}
+            />
+          </div>
+        )}
 
         {/* AI Match Story - The verdict */}
-        <div className="mt-8">
-          <MatchStory
-            homeTeam={data.matchInfo.homeTeam}
-            awayTeam={data.matchInfo.awayTeam}
-            favored={data.story.favored}
-            confidence={data.story.confidence}
-            narrative={data.story.narrative}
-            supportingStats={data.story.supportingStats}
-          />
-        </div>
+        {data.story && (
+          <div className="mt-8">
+            <MatchStory
+              homeTeam={data.matchInfo.homeTeam}
+              awayTeam={data.matchInfo.awayTeam}
+              favored={data.story.favored || 'draw'}
+              confidence={data.story.confidence || 'moderate'}
+              narrative={data.story.narrative || 'Analysis unavailable.'}
+              supportingStats={data.story.supportingStats || []}
+            />
+          </div>
+        )}
 
         {/* Match Headlines */}
         {data.headlines && data.headlines.length > 0 && (
@@ -304,62 +308,68 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
         )}
 
         {/* Home/Away Splits */}
-        <div className="mt-8">
-          <HomeAwaySplits
-            homeTeam={data.matchInfo.homeTeam}
-            awayTeam={data.matchInfo.awayTeam}
-            homeTeamAtHome={{
-              played: data.homeAwaySplits.homeTeamAtHome.played,
-              wins: data.homeAwaySplits.homeTeamAtHome.wins,
-              draws: data.homeAwaySplits.homeTeamAtHome.draws,
-              losses: data.homeAwaySplits.homeTeamAtHome.losses,
-              goalsFor: data.homeAwaySplits.homeTeamAtHome.goalsFor,
-              goalsAgainst: data.homeAwaySplits.homeTeamAtHome.goalsAgainst,
-              cleanSheets: data.homeAwaySplits.homeTeamAtHome.cleanSheets,
-              highlight: data.homeAwaySplits.homeTeamAtHome.highlight || undefined,
-            }}
-            awayTeamAway={{
-              played: data.homeAwaySplits.awayTeamAway.played,
-              wins: data.homeAwaySplits.awayTeamAway.wins,
-              draws: data.homeAwaySplits.awayTeamAway.draws,
-              losses: data.homeAwaySplits.awayTeamAway.losses,
-              goalsFor: data.homeAwaySplits.awayTeamAway.goalsFor,
-              goalsAgainst: data.homeAwaySplits.awayTeamAway.goalsAgainst,
-              cleanSheets: data.homeAwaySplits.awayTeamAway.cleanSheets,
-              highlight: data.homeAwaySplits.awayTeamAway.highlight || undefined,
-            }}
-          />
-        </div>
+        {data.homeAwaySplits && data.homeAwaySplits.homeTeamAtHome && data.homeAwaySplits.awayTeamAway && (
+          <div className="mt-8">
+            <HomeAwaySplits
+              homeTeam={data.matchInfo.homeTeam}
+              awayTeam={data.matchInfo.awayTeam}
+              homeTeamAtHome={{
+                played: data.homeAwaySplits.homeTeamAtHome.played || 0,
+                wins: data.homeAwaySplits.homeTeamAtHome.wins || 0,
+                draws: data.homeAwaySplits.homeTeamAtHome.draws || 0,
+                losses: data.homeAwaySplits.homeTeamAtHome.losses || 0,
+                goalsFor: data.homeAwaySplits.homeTeamAtHome.goalsFor || 0,
+                goalsAgainst: data.homeAwaySplits.homeTeamAtHome.goalsAgainst || 0,
+                cleanSheets: data.homeAwaySplits.homeTeamAtHome.cleanSheets || 0,
+                highlight: data.homeAwaySplits.homeTeamAtHome.highlight || undefined,
+              }}
+              awayTeamAway={{
+                played: data.homeAwaySplits.awayTeamAway.played || 0,
+                wins: data.homeAwaySplits.awayTeamAway.wins || 0,
+                draws: data.homeAwaySplits.awayTeamAway.draws || 0,
+                losses: data.homeAwaySplits.awayTeamAway.losses || 0,
+                goalsFor: data.homeAwaySplits.awayTeamAway.goalsFor || 0,
+                goalsAgainst: data.homeAwaySplits.awayTeamAway.goalsAgainst || 0,
+                cleanSheets: data.homeAwaySplits.awayTeamAway.cleanSheets || 0,
+                highlight: data.homeAwaySplits.awayTeamAway.highlight || undefined,
+              }}
+            />
+          </div>
+        )}
 
         {/* Goals Timing */}
-        <div className="mt-8">
-          <GoalsTiming
-            homeTeam={data.matchInfo.homeTeam}
-            awayTeam={data.matchInfo.awayTeam}
-            homeTiming={{
-              scoring: data.goalsTiming.home.scoring as GoalsTimingData['scoring'],
-              conceding: data.goalsTiming.home.conceding as GoalsTimingData['conceding'],
-              insight: data.goalsTiming.home.insight || undefined,
-            }}
-            awayTiming={{
-              scoring: data.goalsTiming.away.scoring as GoalsTimingData['scoring'],
-              conceding: data.goalsTiming.away.conceding as GoalsTimingData['conceding'],
-              insight: data.goalsTiming.away.insight || undefined,
-            }}
-          />
-        </div>
+        {data.goalsTiming && data.goalsTiming.home && data.goalsTiming.away && (
+          <div className="mt-8">
+            <GoalsTiming
+              homeTeam={data.matchInfo.homeTeam}
+              awayTeam={data.matchInfo.awayTeam}
+              homeTiming={{
+                scoring: (data.goalsTiming.home.scoring || {}) as GoalsTimingData['scoring'],
+                conceding: (data.goalsTiming.home.conceding || {}) as GoalsTimingData['conceding'],
+                insight: data.goalsTiming.home.insight || undefined,
+              }}
+              awayTiming={{
+                scoring: (data.goalsTiming.away.scoring || {}) as GoalsTimingData['scoring'],
+                conceding: (data.goalsTiming.away.conceding || {}) as GoalsTimingData['conceding'],
+                insight: data.goalsTiming.away.insight || undefined,
+              }}
+            />
+          </div>
+        )}
 
         {/* Context Factors */}
-        <div className="mt-8">
-          <ContextFactors 
-            homeTeam={data.matchInfo.homeTeam}
-            awayTeam={data.matchInfo.awayTeam}
-            factors={data.contextFactors.map(f => ({
-              ...f,
-              favors: f.favors as 'home' | 'away' | 'neutral',
-            }))} 
-          />
-        </div>
+        {data.contextFactors && data.contextFactors.length > 0 && (
+          <div className="mt-8">
+            <ContextFactors 
+              homeTeam={data.matchInfo.homeTeam}
+              awayTeam={data.matchInfo.awayTeam}
+              factors={data.contextFactors.map(f => ({
+                ...f,
+                favors: f.favors as 'home' | 'away' | 'neutral',
+              }))} 
+            />
+          </div>
+        )}
 
         {/* Key Player Battle */}
         {data.keyPlayerBattle && (

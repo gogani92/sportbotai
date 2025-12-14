@@ -40,7 +40,7 @@ export default function MatchHeadlines({
             <p className="text-xs text-text-muted">Key facts about this fixture</p>
           </div>
         </div>
-        <span className="text-xs text-text-muted">{headlines.length} insights</span>
+        <span className="text-xs text-text-muted">{headlines?.length || 0} insights</span>
       </div>
 
       {/* Headlines List */}

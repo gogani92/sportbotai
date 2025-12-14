@@ -135,7 +135,7 @@ export default function MatchStory({
         </div>
 
         {/* Supporting Stats */}
-        {supportingStats.length > 0 && (
+        {supportingStats && supportingStats.length > 0 && (
           <div className="mt-6 pt-4 border-t border-white/5">
             <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">
               Data Behind This Analysis
