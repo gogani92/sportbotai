@@ -15,6 +15,9 @@ import { getEnrichedMatchData, getMatchInjuries, getMatchGoalTiming, getMatchKey
 import { getMultiSportEnrichedData } from '@/lib/sports-api';
 import OpenAI from 'openai';
 
+// Allow longer execution time for multi-API calls (NBA, NFL, etc.)
+export const maxDuration = 60;
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -24,18 +27,24 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const startTime = Date.now();
+  
   try {
     const { matchId } = await params;
+    console.log(`[Match-Preview] Starting preview for: ${matchId.substring(0, 50)}...`);
 
     // Parse match ID to extract teams
     const matchInfo = parseMatchId(matchId);
     
     if (!matchInfo) {
+      console.error(`[Match-Preview] Failed to parse matchId: ${matchId}`);
       return NextResponse.json(
         { error: 'Match not found' },
         { status: 404 }
       );
     }
+
+    console.log(`[Match-Preview] Parsed match: ${matchInfo.homeTeam} vs ${matchInfo.awayTeam} (${matchInfo.sport})`);
 
     // Determine if this is a non-soccer sport
     const isNonSoccer = ['basketball', 'basketball_nba', 'nba', 'americanfootball', 'nfl', 'icehockey', 'nhl', 'baseball', 'mlb', 'mma', 'ufc']
@@ -52,18 +61,33 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (isNonSoccer) {
       // Use multi-sport API for basketball, NFL, etc.
       console.log(`[Match-Preview] Using multi-sport API for ${matchInfo.sport}`);
-      enrichedData = await getMultiSportEnrichedData(
-        matchInfo.homeTeam,
-        matchInfo.awayTeam,
-        matchInfo.sport,
-        matchInfo.league
-      );
-      console.log(`[Match-Preview] ${matchInfo.sport} data:`, {
-        dataSource: enrichedData.dataSource,
-        homeFormGames: enrichedData.homeForm?.length || 0,
-        awayFormGames: enrichedData.awayForm?.length || 0,
-        h2hGames: enrichedData.headToHead?.length || 0,
-      });
+      try {
+        enrichedData = await getMultiSportEnrichedData(
+          matchInfo.homeTeam,
+          matchInfo.awayTeam,
+          matchInfo.sport,
+          matchInfo.league
+        );
+        console.log(`[Match-Preview] ${matchInfo.sport} data fetched in ${Date.now() - startTime}ms:`, {
+          dataSource: enrichedData.dataSource,
+          homeFormGames: enrichedData.homeForm?.length || 0,
+          awayFormGames: enrichedData.awayForm?.length || 0,
+          h2hGames: enrichedData.headToHead?.length || 0,
+        });
+      } catch (sportError) {
+        console.error(`[Match-Preview] Sport API error for ${matchInfo.sport}:`, sportError);
+        // Use fallback empty data
+        enrichedData = {
+          sport: matchInfo.sport,
+          homeForm: null,
+          awayForm: null,
+          headToHead: null,
+          h2hSummary: null,
+          homeStats: null,
+          awayStats: null,
+          dataSource: 'UNAVAILABLE',
+        };
+      }
     } else {
       // Use football API for soccer
       [enrichedData, injuries, goalTimingData, keyPlayers, referee, fixtureInfo] = await Promise.all([
@@ -318,11 +342,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       referee: referee,
     };
 
+    console.log(`[Match-Preview] Completed in ${Date.now() - startTime}ms`);
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Match preview error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error(`[Match-Preview] Error after ${Date.now() - startTime}ms:`, errorMessage);
+    console.error('[Match-Preview] Stack:', errorStack);
     return NextResponse.json(
-      { error: 'Failed to generate match preview' },
+      { error: 'Failed to generate match preview', details: errorMessage },
       { status: 500 }
     );
   }
