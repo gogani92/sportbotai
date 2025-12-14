@@ -440,8 +440,8 @@ interface RoutingDecision {
 
 // Time-sensitive keywords that ALWAYS need real-time data
 const REALTIME_TRIGGERS = {
-  // Current season/form (changes weekly)
-  currentSeason: /this season|current season|sez[oó]n|2024.?2025|form|recent|últim|dernièr|letzte/i,
+  // Current season/form (changes weekly) - includes Serbian/Croatian
+  currentSeason: /this season|current season|sez[oó]n|2024.?2025|form|recent|últim|dernièr|letzte|koliko (golova|asistencija)|how many goals|goals (this|scored)|postig(ao|la)/i,
   
   // Live/Today (changes hourly)  
   liveData: /today|tonight|now|live|score|result|playing|won|lost|beat|sinoć|večeras|hoy|heute|aujourd/i,
@@ -449,8 +449,8 @@ const REALTIME_TRIGGERS = {
   // Breaking news (changes daily)
   breakingNews: /news|update|breaking|announced|confirmed|sign|transfer|injur|out|miss|ruled out|povred/i,
   
-  // Current status questions
-  currentStatus: /where (does|is|do)|gde igra|koji klub|plays for|current (team|club)|juega en|spielt für/i,
+  // Current status questions - includes Serbian
+  currentStatus: /where (does|is|do)|gde igra|gdje igra|koji klub|za koga igra|plays for|current (team|club)|juega en|spielt für/i,
   
   // Standings/table (changes weekly)
   standings: /standing|table|position|rank|top of|lead|tabela|clasificación|classement|tabelle/i,
@@ -711,9 +711,38 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
     .replace(/please|can you|could you|tell me|what do you think|i want to know/gi, '')
     .trim();
   
-  // Extract player/team name for better search
-  const nameMatch = query.match(/([A-Z][a-zćčšžđñü]+(?:\s+[A-Z][a-zćčšžđñü]+)+)|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
-  const extractedName = nameMatch ? nameMatch[0] : null;
+  // Extract player/team name for better search - ROBUST extraction
+  // Try multiple patterns, case-insensitive
+  const namePatterns = [
+    // Serbian/Croatian: "gde igra [NAME]", "koliko [NAME]"
+    /(?:gde|gdje|ko|tko|koliko)\s+(?:igra|je|ima)?\s*([a-zA-ZćčšžđĆČŠŽĐñüéáíóú]+\s+[a-zA-ZćčšžđĆČŠŽĐñüéáíóú]+)/i,
+    // "where does [NAME] play", "who is [NAME]"
+    /(?:where|who|what|how many)\s+(?:does|is|did|has)\s+([a-zA-Z]+\s+[a-zA-Z]+)/i,
+    // Two consecutive capitalized words
+    /([A-Z][a-zćčšžđñü]+\s+[A-Z][a-zćčšžđñü]+)/,
+    // Two consecutive words after common sports verbs
+    /(?:plays?|scored?|assist|goals?)\s+(?:for|by|of)?\s*([a-zA-Z]+\s+[a-zA-Z]+)/i,
+    // Generic: two words that look like names (2-15 chars each)
+    /\b([a-zA-ZćčšžđĆČŠŽĐñüéáíóú]{2,15}\s+[a-zA-ZćčšžđĆČŠŽĐñüéáíóú]{3,20})\b/i,
+  ];
+  
+  let extractedName: string | null = null;
+  for (const pattern of namePatterns) {
+    const match = query.match(pattern);
+    if (match && match[1]) {
+      // Skip common non-name words
+      const candidate = match[1].trim();
+      const skipWords = /^(the |how |what |who |where |this |that |team |player |goals |season )/i;
+      if (!skipWords.test(candidate) && candidate.split(' ').length >= 2) {
+        // Capitalize the name properly
+        extractedName = candidate
+          .split(' ')
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
+        break;
+      }
+    }
+  }
   
   switch (route.source) {
     case 'GPT_ONLY':
@@ -727,18 +756,20 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
       
     case 'REALTIME':
       if (extractedName) {
-        // For current status queries
+        // For current status queries (where does X play)
         if (REALTIME_TRIGGERS.currentStatus.test(message)) {
-          return `"${extractedName}" 2024-2025 current club team transfermarkt December 2024`;
+          return `"${extractedName}" 2024-2025 current club team transfermarkt soccerway`;
         }
-        // For stats queries
+        // For stats queries (how many goals, season stats)
         if (REALTIME_TRIGGERS.currentSeason.test(message)) {
-          return `"${extractedName}" 2024-2025 season stats goals assists current form`;
+          return `"${extractedName}" 2024-2025 goals assists statistics transfermarkt soccerway current season`;
         }
         // For injury queries
         if (REALTIME_TRIGGERS.breakingNews.test(message)) {
           return `"${extractedName}" injury news update December 2024`;
         }
+        // Default: combined current team + stats search
+        return `"${extractedName}" 2024-2025 current team goals statistics transfermarkt`;
       }
       // Default real-time enhancement
       return `${query} ${route.recency === 'hour' ? 'today' : route.recency === 'day' ? 'December 2024' : '2024-2025'}`;
@@ -746,7 +777,7 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
     case 'HYBRID':
       // Use real-time with some Wikipedia context
       if (extractedName) {
-        return `"${extractedName}" 2024-2025 current team stats career transfermarkt`;
+        return `"${extractedName}" 2024-2025 current team stats career transfermarkt soccerway`;
       }
       return `${query} 2024-2025`;
       
