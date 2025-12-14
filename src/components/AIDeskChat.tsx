@@ -8,7 +8,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, ExternalLink, X, MessageCircle, Volume2, VolumeX, Square } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, ExternalLink, X, MessageCircle, Volume2, VolumeX, Square, ThumbsUp, ThumbsDown, Mic, MicOff } from 'lucide-react';
 
 // ============================================
 // TYPES
@@ -23,6 +23,7 @@ interface ChatMessage {
   followUps?: string[];
   fromCache?: boolean;
   isStreaming?: boolean;
+  feedbackGiven?: 'up' | 'down' | null;
   timestamp: Date;
 }
 
@@ -36,6 +37,9 @@ interface ChatResponse {
 
 // Audio playback states
 type AudioState = 'idle' | 'loading' | 'playing' | 'error';
+
+// Voice input states
+type VoiceState = 'idle' | 'listening' | 'processing' | 'error' | 'unsupported';
 
 // ============================================
 // SUGGESTED QUESTIONS - Showcasing different categories
@@ -88,6 +92,10 @@ export default function AIDeskChat() {
   const [audioState, setAudioState] = useState<AudioState>('idle');
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  
+  // Voice input state
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -212,6 +220,113 @@ export default function AIDeskChat() {
       setPlayingMessageId(null);
     }
   }, [playingMessageId, audioState, stopAudio]);
+
+  // ==========================================
+  // VOICE INPUT FUNCTIONS
+  // ==========================================
+  
+  // Check for speech recognition support on mount
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceState('unsupported');
+    }
+  }, []);
+
+  const startVoiceInput = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceState('unsupported');
+      return;
+    }
+
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setVoiceState('listening');
+    };
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join('');
+      
+      setInput(transcript);
+      
+      // If final result, process it
+      if (event.results[event.results.length - 1].isFinal) {
+        setVoiceState('processing');
+      }
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('Speech recognition error:', event.error);
+      setVoiceState(event.error === 'not-allowed' ? 'unsupported' : 'error');
+    };
+
+    recognition.onend = () => {
+      if (voiceState === 'listening') {
+        // If we have input, send it
+        if (input.trim()) {
+          sendMessage(input.trim());
+        }
+      }
+      setVoiceState('idle');
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [input, voiceState]);
+
+  const stopVoiceInput = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setVoiceState('idle');
+  }, []);
+
+  // ==========================================
+  // FEEDBACK FUNCTIONS
+  // ==========================================
+  
+  const submitFeedback = useCallback(async (
+    messageId: string,
+    rating: 'up' | 'down',
+    query: string,
+    response: string,
+    meta?: { usedRealTimeSearch?: boolean; fromCache?: boolean }
+  ) => {
+    try {
+      const res = await fetch('/api/ai-chat/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          query,
+          response,
+          rating: rating === 'up' ? 5 : 1,
+          usedRealTimeSearch: meta?.usedRealTimeSearch,
+          fromCache: meta?.fromCache,
+        }),
+      });
+
+      if (res.ok) {
+        // Update message to show feedback given
+        setMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, feedbackGiven: rating } : m
+        ));
+      }
+    } catch (err) {
+      console.error('Feedback error:', err);
+    }
+  }, []);
 
   const sendMessage = async (messageText?: string) => {
     const text = messageText || input.trim();
@@ -517,8 +632,9 @@ export default function AIDeskChat() {
                   )}
 
                   {/* Voice read button for assistant messages */}
-                  {msg.role === 'assistant' && msg.content && (
+                  {msg.role === 'assistant' && msg.content && !msg.isStreaming && (
                     <div className="flex items-center gap-2 mt-2">
+                      {/* Listen button */}
                       <button
                         onClick={() => playMessage(msg.id, msg.content)}
                         disabled={audioState === 'loading' && playingMessageId === msg.id}
@@ -548,6 +664,47 @@ export default function AIDeskChat() {
                           </>
                         )}
                       </button>
+                      
+                      {/* Feedback buttons */}
+                      {!msg.feedbackGiven ? (
+                        <div className="flex items-center gap-1 ml-2">
+                          <button
+                            onClick={() => {
+                              const userMsg = messages.find((m, i) => 
+                                m.role === 'user' && messages[i + 1]?.id === msg.id
+                              );
+                              submitFeedback(msg.id, 'up', userMsg?.content || '', msg.content, {
+                                usedRealTimeSearch: msg.usedRealTimeSearch,
+                                fromCache: msg.fromCache,
+                              });
+                            }}
+                            className="p-1.5 rounded-lg bg-white/5 text-text-muted hover:bg-green-500/20 hover:text-green-400 transition-all"
+                            title="Good response"
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              const userMsg = messages.find((m, i) => 
+                                m.role === 'user' && messages[i + 1]?.id === msg.id
+                              );
+                              submitFeedback(msg.id, 'down', userMsg?.content || '', msg.content, {
+                                usedRealTimeSearch: msg.usedRealTimeSearch,
+                                fromCache: msg.fromCache,
+                              });
+                            }}
+                            className="p-1.5 rounded-lg bg-white/5 text-text-muted hover:bg-red-500/20 hover:text-red-400 transition-all"
+                            title="Needs improvement"
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-text-muted ml-2">
+                          {msg.feedbackGiven === 'up' ? '👍 Thanks!' : '👎 Noted'}
+                        </span>
+                      )}
+                      
                       {audioState === 'error' && playingMessageId === msg.id && (
                         <span className="text-xs text-red-400 flex items-center gap-1">
                           <VolumeX className="w-3 h-3" />
@@ -613,10 +770,35 @@ export default function AIDeskChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about any match..."
-            disabled={isLoading}
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 sm:px-4 py-3 text-sm text-white placeholder-text-muted focus:outline-none focus:border-primary/50 disabled:opacity-50"
+            placeholder={voiceState === 'listening' ? 'Listening...' : 'Ask about any match...'}
+            disabled={isLoading || voiceState === 'listening'}
+            className={`flex-1 bg-white/5 border rounded-xl px-3 sm:px-4 py-3 text-sm text-white placeholder-text-muted focus:outline-none disabled:opacity-50 ${
+              voiceState === 'listening' 
+                ? 'border-red-500/50 animate-pulse' 
+                : 'border-white/10 focus:border-primary/50'
+            }`}
           />
+          
+          {/* Voice input button */}
+          {voiceState !== 'unsupported' && (
+            <button
+              onClick={voiceState === 'listening' ? stopVoiceInput : startVoiceInput}
+              disabled={isLoading}
+              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-colors active:scale-95 ${
+                voiceState === 'listening'
+                  ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                  : 'bg-white/10 hover:bg-white/20'
+              }`}
+              title={voiceState === 'listening' ? 'Stop listening' : 'Voice input'}
+            >
+              {voiceState === 'listening' ? (
+                <MicOff className="w-5 h-5 text-white" />
+              ) : (
+                <Mic className="w-5 h-5 text-white" />
+              )}
+            </button>
+          )}
+          
           <button
             onClick={() => sendMessage()}
             disabled={!input.trim() || isLoading}

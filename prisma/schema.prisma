@@ -249,6 +249,40 @@ enum PostStatus {
 // SPORTBOT AGENT MEMORY SYSTEM
 // ============================================
 
+// Chat feedback for response quality tracking
+model ChatFeedback {
+  id              String   @id @default(cuid())
+  
+  // Feedback details
+  messageId       String               // Frontend message ID
+  queryHash       String?              // Hash of the original query
+  query           String   @db.Text    // The user's question
+  response        String   @db.Text    // The AI response
+  
+  // Rating
+  rating          Int                  // 1 = thumbs down, 5 = thumbs up
+  feedback        String?  @db.Text    // Optional text feedback
+  
+  // Context
+  sport           String?
+  category        String?              // Query category
+  brainMode       String?
+  usedRealTimeSearch Boolean @default(false)
+  fromCache       Boolean  @default(false)
+  
+  // User info (optional for anonymous)
+  userId          String?
+  userPlan        String?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([rating])
+  @@index([queryHash])
+  @@index([sport])
+  @@index([category])
+  @@index([createdAt])
+}
+
 // Track all chat queries for learning
 model ChatQuery {
   id              String   @id @default(cuid())

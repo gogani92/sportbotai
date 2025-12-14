@@ -8,15 +8,21 @@
  * - Response streaming (SSE)
  * - Query caching (category-based TTL)
  * - Multi-language support
+ * - Tier-based rate limiting
+ * - Favorite team context
  */
 
 import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { getPerplexityClient } from '@/lib/perplexity';
 import { detectChatMode, buildSystemPrompt, type BrainMode } from '@/lib/sportbot-brain';
 import { trackQuery } from '@/lib/sportbot-memory';
 import { saveKnowledge, buildLearnedContext, getTerminologyForSport } from '@/lib/sportbot-knowledge';
 import { cacheGet, cacheSet, CACHE_KEYS, hashChatQuery, getChatTTL } from '@/lib/cache';
+import { checkChatRateLimit, getClientIp, CHAT_RATE_LIMITS } from '@/lib/rateLimit';
+import { prisma } from '@/lib/prisma';
 
 // ============================================
 // TYPES
@@ -309,6 +315,66 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ==========================================
+    // TIER-BASED RATE LIMITING
+    // ==========================================
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    const userPlan = session?.user?.plan || null;
+    const identifier = userId || getClientIp(request);
+    
+    const rateLimit = await checkChatRateLimit(identifier, userPlan);
+    
+    if (!rateLimit.success) {
+      const limits = CHAT_RATE_LIMITS[rateLimit.tier as keyof typeof CHAT_RATE_LIMITS];
+      const retryAfter = Math.ceil((rateLimit.reset - Date.now()) / 1000);
+      
+      return new Response(JSON.stringify({
+        error: 'Rate limit exceeded',
+        message: `You've reached your limit of ${limits.requests} messages per hour. ${
+          !userPlan || userPlan === 'FREE' 
+            ? 'Upgrade to Pro for 100/hour or Premium for 500/hour.' 
+            : ''
+        }`,
+        remaining: 0,
+        limit: limits.requests,
+        retryAfter,
+        tier: rateLimit.tier,
+      }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': String(retryAfter),
+          'X-RateLimit-Limit': String(limits.requests),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(rateLimit.reset),
+        }
+      });
+    }
+
+    // ==========================================
+    // FETCH USER'S FAVORITE TEAMS FOR CONTEXT
+    // ==========================================
+    let favoriteTeamsContext = '';
+    if (userId) {
+      try {
+        const favorites = await prisma.favoriteTeam.findMany({
+          where: { userId },
+          select: { teamName: true, sport: true, league: true },
+          take: 5,
+        });
+        
+        if (favorites.length > 0) {
+          const teamsList = favorites.map(f => 
+            `${f.teamName} (${f.sport}${f.league ? `, ${f.league}` : ''})`
+          ).join(', ');
+          favoriteTeamsContext = `USER'S FAVORITE TEAMS: ${teamsList}. If relevant to their question, provide extra context about these teams.`;
+        }
+      } catch (err) {
+        console.log('[AI-Chat-Stream] Could not fetch favorites:', err);
+      }
+    }
+
     // Check cache first (only for queries without conversation history)
     const queryHash = hashChatQuery(message);
     const cacheKey = CACHE_KEYS.chat(queryHash);
@@ -409,6 +475,11 @@ export async function POST(request: NextRequest) {
         systemPrompt += `\n\nSPORT TERMINOLOGY: ${sportTerminology.slice(0, 10).join(', ')}`;
       }
     } catch { /* ignore */ }
+
+    // Add favorite teams context for personalized responses
+    if (favoriteTeamsContext) {
+      systemPrompt += `\n\n${favoriteTeamsContext}`;
+    }
     
     // Add language instruction
     if (translation.needsTranslation && originalLanguage !== 'en') {

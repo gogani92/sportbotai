@@ -2,10 +2,12 @@
  * Rate Limiting Utility using Upstash Redis
  * 
  * Provides sliding window rate limiting for API protection
+ * with tier-based limits for different subscription plans.
  */
 
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { Plan } from '@prisma/client';
 
 // Initialize Redis client (will be null if not configured)
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
@@ -14,6 +16,56 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
     })
   : null;
+
+// ============================================
+// TIER-BASED CHAT RATE LIMITS
+// ============================================
+
+export const CHAT_RATE_LIMITS = {
+  FREE: { requests: 20, window: '1 h' },      // 20 per hour
+  PRO: { requests: 100, window: '1 h' },      // 100 per hour
+  PREMIUM: { requests: 500, window: '1 h' },  // 500 per hour
+  ANONYMOUS: { requests: 10, window: '1 h' }, // 10 per hour (not logged in)
+} as const;
+
+// Create tier-specific rate limiters for chat
+export const chatRateLimiters = {
+  FREE: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(CHAT_RATE_LIMITS.FREE.requests, CHAT_RATE_LIMITS.FREE.window),
+        analytics: true,
+        prefix: 'ratelimit:chat:free',
+      })
+    : null,
+    
+  PRO: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(CHAT_RATE_LIMITS.PRO.requests, CHAT_RATE_LIMITS.PRO.window),
+        analytics: true,
+        prefix: 'ratelimit:chat:pro',
+      })
+    : null,
+    
+  PREMIUM: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(CHAT_RATE_LIMITS.PREMIUM.requests, CHAT_RATE_LIMITS.PREMIUM.window),
+        analytics: true,
+        prefix: 'ratelimit:chat:premium',
+      })
+    : null,
+    
+  ANONYMOUS: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(CHAT_RATE_LIMITS.ANONYMOUS.requests, CHAT_RATE_LIMITS.ANONYMOUS.window),
+        analytics: true,
+        prefix: 'ratelimit:chat:anon',
+      })
+    : null,
+};
 
 // Rate limiters for different use cases
 export const rateLimiters = {
@@ -94,6 +146,48 @@ export async function checkRateLimit(
     limit: result.limit,
     remaining: result.remaining,
     reset: result.reset,
+  };
+}
+
+/**
+ * Check rate limit for chat based on user's subscription tier
+ * @param identifier - User ID or IP address
+ * @param plan - User's subscription plan (or null for anonymous)
+ * @returns Object with success status, remaining requests, and tier info
+ */
+export async function checkChatRateLimit(
+  identifier: string,
+  plan: Plan | null
+): Promise<{
+  success: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+  tier: string;
+}> {
+  const tier = plan || 'ANONYMOUS';
+  const limiter = chatRateLimiters[tier];
+  const limits = CHAT_RATE_LIMITS[tier];
+  
+  // If rate limiting is not configured, allow all requests
+  if (!limiter) {
+    return {
+      success: true,
+      limit: limits.requests,
+      remaining: limits.requests,
+      reset: 0,
+      tier,
+    };
+  }
+
+  const result = await limiter.limit(identifier);
+  
+  return {
+    success: result.success,
+    limit: result.limit,
+    remaining: result.remaining,
+    reset: result.reset,
+    tier,
   };
 }
 
