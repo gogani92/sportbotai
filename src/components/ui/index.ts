@@ -1,5 +1,8 @@
 /**
  * UI Components Barrel Export
+ * 
+ * Clean, reusable UI components.
+ * Dark theme, accent color #2AF6A0, professional SaaS feel.
  */
 
 export { default as TeamLogo } from './TeamLogo';
@@ -35,3 +38,27 @@ export {
   ErrorState,
   MaintenanceState,
 } from './EmptyStates';
+
+// Value Badges
+export { default as ValueBadge, LiveBadge, StatBadge, ConfidenceBadge, HotBadge } from './ValueBadge';
+
+// Stats Cards
+export { default as StatsCard, StatsRow, MiniStats, ProgressStatsCard } from './StatsCard';
+
+// Match List
+export { default as MatchListItem, MatchList } from './MatchListItem';
+
+// Section Headers
+export { default as SectionHeader, SectionDivider, PageTitle, MiniHeader } from './SectionHeader';
+
+// Animated Counter
+export { default as AnimatedCounter, StatCounter, MiniCounter, HeroCounter } from './AnimatedCounter';
+
+// Feature Cards
+export { default as FeatureCard, MiniFeature, FeatureGrid, LargeFeatureCard, ComparisonCard } from './FeatureCard';
+
+// Tabs
+export { default as Tabs, TabPanel, TabsContainer, ToggleGroup } from './Tabs';
+
+// Data Tables
+export { default as DataTable, StatsTable, ComparisonTable, MiniStatsList } from './DataTable';
