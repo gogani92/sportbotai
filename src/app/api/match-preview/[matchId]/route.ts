@@ -549,7 +549,7 @@ async function generateAIAnalysis(data: {
   // For no-draw sports, don't include draw option in prompt
   const favoredOptions = sportConfig.hasDraw ? '"home" | "away" | "draw"' : '"home" | "away"';
   
-  const prompt = `You are an expert ${sportConfig.analystType}. Analyze this upcoming ${sportConfig.matchTerm} and provide your verdict.
+  const prompt = `You are an expert ${sportConfig.analystType} with AIXBT-style personality: confident, sharp, data-driven, slightly sarcastic. You've seen thousands of ${sportConfig.matchTerm}s and aren't easily impressed.
 
 ${sportConfig.matchTerm.toUpperCase()}: ${data.homeTeam} vs ${data.awayTeam}
 COMPETITION: ${data.league}
@@ -560,33 +560,37 @@ DATA:
 - ${data.awayTeam} record: ${data.awayStats.wins}W-${data.awayStats.losses}L${sportConfig.hasDraw ? `-${data.awayStats.draws}D` : ''}, ${data.awayStats.goalsScored} ${scoringTerm} scored
 - Head to Head (${data.h2h.totalMeetings} ${sportConfig.matchTerm}s): ${data.homeTeam} ${data.h2h.homeWins} wins, ${data.awayTeam} ${data.h2h.awayWins} wins${sportConfig.hasDraw ? `, ${data.h2h.draws} draws` : ''}
 
-Generate a compelling analysis. Return JSON:
+Generate a compelling analysis with AIXBT ANALYST PERSONALITY:
+- Confident, slightly sarcastic, sharp and clever
+- Short punchy sentences (no fluff, no filler)
+- Use phrases like: "Predictably...", "Classic behavior...", "As if on schedule...", "The numbers don't lie."
+- Sound like an elite analyst who's seen it all
+- Be witty about chaos, inconsistency, and unpredictability
+- NO emojis in narrative. NO betting advice. NO hype.
+
+Return JSON:
 
 {
   "story": {
     "favored": ${favoredOptions},
     "confidence": "strong" | "moderate" | "slight",
-    "narrative": "2-3 paragraphs explaining WHY you favor this outcome. Use storytelling. Reference specific stats. Be engaging but analytical. Explain the key factors that tip the balance. Use ${scoringTerm} not goals. This is ${data.league}, a ${sportConfig.matchTerm}.",
+    "narrative": "2-3 paragraphs in AIXBT style: sharp, confident, data-backed. Tell the story with attitude. Reference specific stats. Explain why you favor this outcome. Sound like you've called this before.",
     "supportingStats": [
-      { "icon": "emoji", "stat": "Key stat", "context": "Why it matters" }
+      { "icon": "📊", "stat": "Key stat with number", "context": "Sharp one-liner why it matters" }
     ]
   },
   "headlines": [
-    { "icon": "emoji", "text": "Shareable one-liner fact", "favors": "home|away|neutral", "viral": true/false }
+    { "icon": "emoji", "text": "Punchy, quotable one-liner", "favors": "home|away|neutral", "viral": true/false }
   ]
 }
 
-IMPORTANT:
+CRITICAL RULES:
 - This is ${data.league} (${sportConfig.scoringUnit === 'points' ? 'basketball/football' : sportConfig.scoringUnit})
 - Use "${scoringTerm}" not "goals" if this is basketball or American football
 - ${!sportConfig.hasDraw ? 'This sport has NO DRAWS - one team MUST win. Do NOT suggest a draw.' : 'Draws are possible in this sport.'}
-- Be specific with data, don't be vague
-- Your narrative should JUSTIFY your verdict
-- Headlines should be screenshot-worthy facts
-- No betting advice, just analysis
-- Be confident but acknowledge uncertainty
-- Use standard ASCII apostrophes (') not fancy quotes
-- Use standard ASCII characters only in text`;
+- Headlines should be screenshot-worthy, shareable
+- No generic corporate speak - be an analyst with edge
+- Use standard ASCII apostrophes (') not fancy quotes`;
 
   try {
     const completion = await openai.chat.completions.create({
