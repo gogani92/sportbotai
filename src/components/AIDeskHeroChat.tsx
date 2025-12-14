@@ -52,12 +52,8 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 function getRandomQuestions(count: number) {
-  const shuffled = [...SUGGESTED_QUESTIONS];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled.slice(0, count);
+  // Return first N items for SSR stability (shuffled on client)
+  return SUGGESTED_QUESTIONS.slice(0, count);
 }
 
 // ============================================
@@ -69,7 +65,7 @@ export default function AIDeskHeroChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [suggestedQuestions] = useState(() => getRandomQuestions(6));
+  const [suggestedQuestions, setSuggestedQuestions] = useState(() => getRandomQuestions(6));
   
   // Audio state for TTS
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -79,6 +75,16 @@ export default function AIDeskHeroChat() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Shuffle questions on client mount only (after hydration)
+  useEffect(() => {
+    const shuffled = [...SUGGESTED_QUESTIONS];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setSuggestedQuestions(shuffled.slice(0, 6));
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {

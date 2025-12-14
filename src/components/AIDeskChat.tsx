@@ -64,15 +64,10 @@ const SUGGESTED_QUESTIONS = [
   "Compare Messi and Ronaldo's stats this season",
 ];
 
-// Helper to get random questions (stable for SSR)
+// Get random questions - only shuffle on client side
 function getRandomQuestions(count: number): string[] {
-  const shuffled = [...SUGGESTED_QUESTIONS];
-  // Use a simple shuffle algorithm
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled.slice(0, count);
+  // Return first N items for SSR stability
+  return SUGGESTED_QUESTIONS.slice(0, count);
 }
 
 // ============================================
@@ -85,8 +80,8 @@ export default function AIDeskChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Store random questions to prevent re-shuffle on every render
-  const [suggestedQuestions] = useState(() => getRandomQuestions(4));
+  // Start with stable questions, shuffle on client mount
+  const [suggestedQuestions, setSuggestedQuestions] = useState(() => getRandomQuestions(4));
   
   // Audio state for TTS
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -96,6 +91,16 @@ export default function AIDeskChat() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Shuffle questions on client mount only (after hydration)
+  useEffect(() => {
+    const shuffled = [...SUGGESTED_QUESTIONS];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setSuggestedQuestions(shuffled.slice(0, 4));
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
