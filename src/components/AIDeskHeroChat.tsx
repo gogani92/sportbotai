@@ -390,39 +390,6 @@ export default function AIDeskHeroChat() {
                       )}
                     </div>
                   )}
-
-                  {/* Citations */}
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div className="mt-3 space-y-1">
-                      <p className="text-xs text-text-muted">Sources:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {msg.citations.slice(0, 4).map((url, i) => {
-                          // Skip if not a valid URL
-                          if (!url || typeof url !== 'string' || !url.startsWith('http')) {
-                            return null;
-                          }
-                          try {
-                            const urlObj = new URL(url);
-                            const hostname = urlObj.hostname.replace('www.', '');
-                            return (
-                              <a
-                                key={i}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 px-2 py-1 rounded-md"
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                                {hostname}
-                              </a>
-                            );
-                          } catch {
-                            return null;
-                          }
-                        }).filter(Boolean)}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

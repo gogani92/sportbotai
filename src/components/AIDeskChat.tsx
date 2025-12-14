@@ -437,25 +437,6 @@ export default function AIDeskChat() {
                       )}
                     </div>
                   )}
-
-                  {/* Citations */}
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      <p className="text-xs text-text-muted">Sources:</p>
-                      {msg.citations.slice(0, 3).map((url, i) => (
-                        <a
-                          key={i}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 truncate"
-                        >
-                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">{new URL(url).hostname}</span>
-                        </a>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
