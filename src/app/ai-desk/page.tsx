@@ -77,21 +77,6 @@ export default function AIDeskPage() {
             <div className="space-y-4">
               {/* Feed Component */}
               <AIDeskFeedSidebar limit={10} />
-              
-              {/* Info Card */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                  <span>ℹ️</span> About AI Desk
-                </h3>
-                <p className="text-text-muted text-xs leading-relaxed">
-                  <strong className="text-white">Chat</strong> uses real-time web search + GPT-4 to answer 
-                  any sports question with the latest data.
-                </p>
-                <p className="text-text-muted text-xs leading-relaxed mt-2">
-                  <strong className="text-white">Intel Feed</strong> auto-generates posts about market 
-                  movements, injuries, and insights — syncing to 𝕏 soon.
-                </p>
-              </div>
 
               {/* Disclaimer */}
               <div className="bg-yellow-500/5 border border-yellow-500/10 rounded-xl p-4">
