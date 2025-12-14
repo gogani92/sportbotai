@@ -3,14 +3,13 @@
  * 
  * Unified client for API-Sports family:
  * - API-Football (Soccer)
- * - API-NBA (Dedicated NBA API) - paid specialized service
- * - API-Basketball (EuroLeague, EuroCup, ACB, NCAAB) - general basketball
+ * - API-Basketball (NBA, EuroLeague, EuroCup, ACB, NCAAB)
  * - API-American-Football (NFL)
  * - API-Hockey (NHL)
  * - API-MMA (UFC, Bellator)
  * 
- * IMPORTANT: NBA uses dedicated API (v2.nba.api-sports.io)
- * Other basketball (EuroLeague, etc.) uses v1.basketball.api-sports.io
+ * NOTE: All basketball including NBA uses v1.basketball.api-sports.io
+ * NBA league ID = 12 in the Basketball API
  * 
  * All use the same API key from api-sports.io
  * Dashboard: https://dashboard.api-football.com/
@@ -24,8 +23,7 @@ import { FormMatch, HeadToHeadMatch, TeamStats } from '@/types';
 
 const API_BASES: Record<string, string> = {
   soccer: 'https://v3.football.api-sports.io',
-  nba: 'https://v2.nba.api-sports.io',  // DEDICATED NBA API (paid)
-  basketball: 'https://v1.basketball.api-sports.io',  // EuroLeague, EuroCup, ACB, NCAAB
+  basketball: 'https://v1.basketball.api-sports.io',  // All basketball including NBA (league 12)
   american_football: 'https://v1.american-football.api-sports.io',
   hockey: 'https://v1.hockey.api-sports.io',
   mma: 'https://v1.mma.api-sports.io',  // UFC, Bellator, etc.
@@ -92,7 +90,7 @@ function getCurrentSoccerSeason(): number {
 }
 
 // Map common sport names to API-Sports sport keys
-// IMPORTANT: 'nba' routes to dedicated NBA API, 'basketball' routes to Basketball API
+// All basketball (including NBA) uses the Basketball API
 const SPORT_MAPPING: Record<string, string> = {
   // Soccer variants
   'soccer': 'soccer',
@@ -115,12 +113,10 @@ const SPORT_MAPPING: Record<string, string> = {
   'english_premier_league': 'soccer',
   'epl': 'soccer',
   
-  // Basketball variants
-  // NBA -> Dedicated NBA API (v2.nba.api-sports.io)
-  'nba': 'nba',
-  'basketball_nba': 'nba',
-  
-  // Other Basketball -> Basketball API (v1.basketball.api-sports.io)
+  // Basketball variants - ALL use Basketball API (v1.basketball.api-sports.io)
+  // NBA league ID = 12
+  'nba': 'basketball',
+  'basketball_nba': 'basketball',
   'basketball': 'basketball',
   'basketball_euroleague': 'basketball',  // EuroLeague
   'basketball_eurocup': 'basketball',      // EuroCup
@@ -643,8 +639,10 @@ async function getSoccerH2H(homeTeamId: number, awayTeamId: number, baseUrl: str
  * - 110: France Pro A
  * - 80: Germany BBL
  * - 203: Italy Lega Basket
+ * - 12: NBA (USA)
  */
 const BASKETBALL_LEAGUE_IDS = {
+  NBA: 12,  // NBA is league 12 in Basketball API
   EUROLEAGUE: 120,
   EUROCUP: 202,
   ACB_SPAIN: 117,
@@ -758,17 +756,51 @@ function normalizeBasketballTeamName(name: string): string {
   return NBA_TEAM_MAPPINGS[lower] || EUROLEAGUE_TEAM_MAPPINGS[lower] || name;
 }
 
-async function findBasketballTeam(teamName: string, baseUrl: string): Promise<number | null> {
+async function findBasketballTeam(teamName: string, baseUrl: string, isNBA: boolean = false): Promise<number | null> {
   const normalizedName = normalizeBasketballTeamName(teamName);
-  const cacheKey = `basketball:team:${normalizedName}`;
+  const cacheKey = `basketball:team:${normalizedName}:${isNBA ? 'nba' : 'other'}`;
   const cached = getCached<number>(cacheKey);
   if (cached) return cached;
 
-  // Priority search order for European/non-NBA basketball:
-  // 1. EuroLeague (most important)
-  // 2. EuroCup (second tier European)
-  // 3. ACB Spain (strong domestic league)
-  // 4. Other leagues
+  // Basketball API requires season parameter for team searches
+  const season = getCurrentBasketballSeason();
+  let response: any = null;
+  
+  if (isNBA) {
+    // For NBA, search only in NBA league (ID 12)
+    console.log(`[Basketball] Searching NBA (league 12) for team: "${teamName}" (normalized: "${normalizedName}") season ${season}`);
+    
+    // Try normalized name first
+    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=${BASKETBALL_LEAGUE_IDS.NBA}&season=${season}`);
+    
+    if (!response?.response?.length && normalizedName !== teamName) {
+      // Try original name
+      response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}&league=${BASKETBALL_LEAGUE_IDS.NBA}&season=${season}`);
+    }
+    
+    // Try searching by name parts (city or team name)
+    if (!response?.response?.length) {
+      const parts = teamName.split(' ');
+      // Try last word (usually the team name like "Cavaliers", "Lakers")
+      if (parts.length > 1) {
+        const lastWord = parts[parts.length - 1];
+        console.log(`[Basketball] Trying NBA search with team nickname: "${lastWord}"`);
+        response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(lastWord)}&league=${BASKETBALL_LEAGUE_IDS.NBA}&season=${season}`);
+      }
+    }
+    
+    if (response?.response?.length > 0) {
+      const teamId = response.response[0].id;
+      console.log(`[Basketball] Found NBA team "${teamName}" -> ID ${teamId} (${response.response[0].name})`);
+      setCache(cacheKey, teamId);
+      return teamId;
+    }
+    
+    console.warn(`[Basketball] NBA team not found: "${teamName}"`);
+    return null;
+  }
+
+  // Non-NBA basketball: Priority search order for European basketball
   const leagueSearchOrder = [
     BASKETBALL_LEAGUE_IDS.EUROLEAGUE,
     BASKETBALL_LEAGUE_IDS.EUROCUP,
@@ -781,11 +813,9 @@ async function findBasketballTeam(teamName: string, baseUrl: string): Promise<nu
     BASKETBALL_LEAGUE_IDS.NCAAB,
   ];
   
-  let response: any = null;
-  
-  // Try each league in priority order
+  // Try each league in priority order (with season parameter required by API)
   for (const leagueId of leagueSearchOrder) {
-    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=${leagueId}`);
+    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=${leagueId}&season=${season}`);
     if (response?.response?.length > 0) {
       const teamId = response.response[0].id;
       const leagueName = Object.entries(BASKETBALL_LEAGUE_IDS).find(([, id]) => id === leagueId)?.[0] || leagueId;
@@ -795,10 +825,10 @@ async function findBasketballTeam(teamName: string, baseUrl: string): Promise<nu
     }
   }
   
-  // Fallback: search without league filter
-  response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}`);
+  // Fallback: search without league filter (still needs season)
+  response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&season=${season}`);
   if (!response?.response?.length && normalizedName !== teamName) {
-    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
+    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}&season=${season}`);
   }
   
   if (response?.response?.length > 0) {
@@ -819,29 +849,44 @@ async function getBasketballTeamGames(teamId: number, baseUrl: string): Promise<
 
   // Get games from current season
   const season = getCurrentBasketballSeason();
-  const response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=${season}&last=5`);
+  console.log(`[Basketball] Fetching games for team ${teamId}, season ${season}`);
   
-  if (!response?.response) return [];
-
-  const games: GameResult[] = response.response.map((game: any) => {
-    const isHome = game.teams.home.id === teamId;
-    const teamScore = isHome ? game.scores.home.total : game.scores.away.total;
-    const oppScore = isHome ? game.scores.away.total : game.scores.home.total;
+  // Try with season first
+  let response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=${season}`);
+  
+  // Filter for finished games only and take last 5
+  if (response?.response) {
+    const finishedGames = response.response
+      .filter((g: any) => g.status?.short === 'FT' || g.status?.short === 'AOT')
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
     
-    // Basketball has no draws
-    const result: 'W' | 'L' = teamScore > oppScore ? 'W' : 'L';
+    if (finishedGames.length > 0) {
+      const games: GameResult[] = finishedGames.map((game: any) => {
+        const isHome = game.teams.home.id === teamId;
+        const teamScore = isHome ? game.scores.home.total : game.scores.away.total;
+        const oppScore = isHome ? game.scores.away.total : game.scores.home.total;
+        
+        // Basketball has no draws
+        const result: 'W' | 'L' = teamScore > oppScore ? 'W' : 'L';
 
-    return {
-      result,
-      score: `${game.scores.home.total}-${game.scores.away.total}`,
-      opponent: isHome ? game.teams.away.name : game.teams.home.name,
-      date: game.date,
-      home: isHome,
-    };
-  });
-
-  setCache(cacheKey, games);
-  return games;
+        return {
+          result,
+          score: `${game.scores.home.total}-${game.scores.away.total}`,
+          opponent: isHome ? game.teams.away.name : game.teams.home.name,
+          date: game.date,
+          home: isHome,
+        };
+      });
+      
+      console.log(`[Basketball] Found ${games.length} finished games for team ${teamId}`);
+      setCache(cacheKey, games);
+      return games;
+    }
+  }
+  
+  console.warn(`[Basketball] No games found for team ${teamId}`);
+  return [];
 }
 
 async function getBasketballTeamStats(teamId: number, baseUrl: string): Promise<TeamSeasonStats | null> {
@@ -850,26 +895,44 @@ async function getBasketballTeamStats(teamId: number, baseUrl: string): Promise<
   if (cached) return cached;
 
   const season = getCurrentBasketballSeason();
-  const response = await apiRequest<any>(baseUrl, `/statistics?team=${teamId}&season=${season}`);
   
-  if (!response?.response) return null;
-
-  const stats = response.response;
-  const gamesPlayed = (stats.games?.played?.all || 0);
-  const wins = stats.games?.wins?.all?.total || 0;
-  const losses = stats.games?.loses?.all?.total || 0;
+  // Try NBA league first (12), then other leagues
+  // The statistics endpoint requires league parameter
+  const leaguesToTry = [
+    BASKETBALL_LEAGUE_IDS.NBA,
+    BASKETBALL_LEAGUE_IDS.EUROLEAGUE,
+    BASKETBALL_LEAGUE_IDS.EUROCUP,
+    BASKETBALL_LEAGUE_IDS.ACB_SPAIN,
+  ];
   
-  const result: TeamSeasonStats = {
-    gamesPlayed,
-    wins,
-    losses,
-    pointsFor: stats.points?.for?.total?.all || 0,
-    pointsAgainst: stats.points?.against?.total?.all || 0,
-    winPercentage: gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0,
-  };
-
-  setCache(cacheKey, result);
-  return result;
+  for (const leagueId of leaguesToTry) {
+    const response = await apiRequest<any>(baseUrl, `/statistics?team=${teamId}&season=${season}&league=${leagueId}`);
+    
+    if (response?.response) {
+      const stats = response.response;
+      const gamesPlayed = stats.games?.played?.all || 0;
+      const wins = stats.games?.wins?.all?.total || 0;
+      const losses = stats.games?.loses?.all?.total || 0;
+      
+      if (gamesPlayed > 0) {
+        const result: TeamSeasonStats = {
+          gamesPlayed,
+          wins,
+          losses,
+          pointsFor: stats.points?.for?.total?.all || 0,
+          pointsAgainst: stats.points?.against?.total?.all || 0,
+          winPercentage: gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0,
+        };
+        
+        console.log(`[Basketball] Found stats for team ${teamId} in league ${leagueId}: ${wins}W-${losses}L`);
+        setCache(cacheKey, result);
+        return result;
+      }
+    }
+  }
+  
+  console.warn(`[Basketball] No stats found for team ${teamId}`);
+  return null;
 }
 
 async function getBasketballH2H(homeTeamId: number, awayTeamId: number, baseUrl: string): Promise<{ matches: H2HMatch[], summary: any } | null> {
@@ -877,11 +940,15 @@ async function getBasketballH2H(homeTeamId: number, awayTeamId: number, baseUrl:
   const cached = getCached<{ matches: H2HMatch[], summary: any }>(cacheKey);
   if (cached) return cached;
 
-  const response = await apiRequest<any>(baseUrl, `/games?h2h=${homeTeamId}-${awayTeamId}&last=10`);
+  // Basketball API doesn't support 'last' parameter, we filter/limit in code
+  const response = await apiRequest<any>(baseUrl, `/games?h2h=${homeTeamId}-${awayTeamId}`);
   
   if (!response?.response || response.response.length === 0) return null;
 
-  const games = response.response;
+  // Sort by date descending and take most recent 10
+  const games = response.response
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10);
   let homeWins = 0, awayWins = 0;
 
   const matches: H2HMatch[] = games.slice(0, 5).map((g: any) => {
@@ -977,12 +1044,15 @@ async function findHockeyTeam(teamName: string, baseUrl: string): Promise<number
   const cached = getCached<number>(cacheKey);
   if (cached) return cached;
 
-  // Try with NHL league ID (57) first
-  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=57`);
+  // Hockey API requires season parameter for team searches
+  const season = getCurrentHockeySeason();
   
-  // Fallback: search without league filter
+  // Try with NHL league ID (57) first
+  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=57&season=${season}`);
+  
+  // Fallback: search without league filter but with season
   if (!response?.response?.length && normalizedName !== teamName) {
-    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
+    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}&season=${season}`);
   }
   
   if (response?.response?.length > 0) {
@@ -1002,11 +1072,18 @@ async function getHockeyTeamGames(teamId: number, baseUrl: string): Promise<Game
   if (cached) return cached;
 
   const season = getCurrentHockeySeason();
-  const response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=${season}&last=5`);
+  // Hockey API doesn't support 'last' parameter, we filter in code
+  const response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=${season}`);
   
   if (!response?.response) return [];
 
-  const games: GameResult[] = response.response.map((game: any) => {
+  // Filter for finished games, sort by date desc, take last 5
+  const finishedGames = response.response
+    .filter((g: any) => g.status?.short === 'FT' || g.status?.short === 'AOT')
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  const games: GameResult[] = finishedGames.map((game: any) => {
     const isHome = game.teams.home.id === teamId;
     const teamScore = isHome ? game.scores.home : game.scores.away;
     const oppScore = isHome ? game.scores.away : game.scores.home;
@@ -1033,7 +1110,8 @@ async function getHockeyTeamStats(teamId: number, baseUrl: string): Promise<Team
   if (cached) return cached;
 
   const season = getCurrentHockeySeason();
-  const response = await apiRequest<any>(baseUrl, `/teams/statistics?team=${teamId}&season=${season}`);
+  // Hockey stats endpoint requires league parameter (NHL = 57)
+  const response = await apiRequest<any>(baseUrl, `/teams/statistics?team=${teamId}&season=${season}&league=57`);
   
   if (!response?.response) return null;
 
@@ -1060,11 +1138,31 @@ async function getHockeyH2H(homeTeamId: number, awayTeamId: number, baseUrl: str
   const cached = getCached<{ matches: H2HMatch[], summary: any }>(cacheKey);
   if (cached) return cached;
 
-  const response = await apiRequest<any>(baseUrl, `/games?h2h=${homeTeamId}-${awayTeamId}&last=10`);
+  // Hockey API doesn't support H2H parameter directly
+  // We need to get games from both teams and find common matchups
+  const season = getCurrentHockeySeason();
   
-  if (!response?.response || response.response.length === 0) return null;
+  // Get games for home team
+  const homeGamesResponse = await apiRequest<any>(baseUrl, `/games?team=${homeTeamId}&season=${season}`);
+  
+  if (!homeGamesResponse?.response || homeGamesResponse.response.length === 0) return null;
 
-  const games = response.response;
+  // Filter for games where the other team is the away team (H2H matchups)
+  const h2hGames = homeGamesResponse.response.filter((g: any) => 
+    (g.teams.home.id === homeTeamId && g.teams.away.id === awayTeamId) ||
+    (g.teams.home.id === awayTeamId && g.teams.away.id === homeTeamId)
+  );
+  
+  if (h2hGames.length === 0) return null;
+
+  // Sort by date descending and take last 10
+  const games = h2hGames
+    .filter((g: any) => g.status?.short === 'FT' || g.status?.short === 'AOT')
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10);
+  
+  if (games.length === 0) return null;
+  
   let homeWins = 0, awayWins = 0;
 
   const matches: H2HMatch[] = games.slice(0, 5).map((g: any) => {
@@ -1159,12 +1257,15 @@ async function findNFLTeam(teamName: string, baseUrl: string): Promise<number | 
   const cached = getCached<number>(cacheKey);
   if (cached) return cached;
 
-  // Try with NFL league ID (1) first
-  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=1`);
+  // NFL API requires season parameter for team searches
+  const season = getCurrentNFLSeason();
   
-  // Fallback: search without league filter
+  // Try with NFL league ID (1) first
+  let response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(normalizedName)}&league=1&season=${season}`);
+  
+  // Fallback: search without league filter but with season
   if (!response?.response?.length && normalizedName !== teamName) {
-    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}`);
+    response = await apiRequest<any>(baseUrl, `/teams?search=${encodeURIComponent(teamName)}&season=${season}`);
   }
   
   if (response?.response?.length > 0) {
@@ -1185,11 +1286,18 @@ async function getNFLTeamGames(teamId: number, baseUrl: string): Promise<GameRes
 
   // NFL season
   const season = getCurrentNFLSeason();
-  const response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=${season}&last=5`);
+  // NFL API doesn't support 'last' parameter, we filter in code
+  const response = await apiRequest<any>(baseUrl, `/games?team=${teamId}&season=${season}`);
   
   if (!response?.response) return [];
 
-  const games: GameResult[] = response.response.map((game: any) => {
+  // Filter for finished games, sort by date desc, take last 5
+  const finishedGames = response.response
+    .filter((g: any) => g.game?.status?.short === 'FT')
+    .sort((a: any, b: any) => new Date(b.game?.date?.date || 0).getTime() - new Date(a.game?.date?.date || 0).getTime())
+    .slice(0, 5);
+
+  const games: GameResult[] = finishedGames.map((game: any) => {
     const isHome = game.teams.home.id === teamId;
     const teamScore = isHome ? game.scores.home.total : game.scores.away.total;
     const oppScore = isHome ? game.scores.away.total : game.scores.home.total;
@@ -1216,24 +1324,33 @@ async function getNFLTeamStats(teamId: number, baseUrl: string): Promise<TeamSea
   if (cached) return cached;
 
   const season = getCurrentNFLSeason();
-  const response = await apiRequest<any>(baseUrl, `/teams/statistics?id=${teamId}&season=${season}`);
+  // NFL API doesn't have /teams/statistics endpoint - use standings instead
+  const response = await apiRequest<any>(baseUrl, `/standings?league=1&season=${season}`);
   
-  if (!response?.response) return null;
+  if (!response?.response || response.response.length === 0) return null;
 
-  const stats = response.response;
-  const gamesPlayed = (stats.games?.played || 0);
-  const wins = stats.games?.wins?.total || 0;
-  const losses = stats.games?.loses?.total || 0;
+  // Find team in standings
+  const teamStanding = response.response.find((s: any) => s.team?.id === teamId);
+  
+  if (!teamStanding) {
+    console.warn(`[NFL] Team ${teamId} not found in standings`);
+    return null;
+  }
+
+  const wins = teamStanding.won || 0;
+  const losses = teamStanding.lost || 0;
+  const gamesPlayed = wins + losses;
   
   const result: TeamSeasonStats = {
     gamesPlayed,
     wins,
     losses,
-    pointsFor: stats.points?.for?.total || 0,
-    pointsAgainst: stats.points?.against?.total || 0,
+    pointsFor: teamStanding.points?.for || 0,
+    pointsAgainst: teamStanding.points?.against || 0,
     winPercentage: gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0,
   };
 
+  console.log(`[NFL] Found stats for team ${teamId}: ${wins}W-${losses}L`);
   setCache(cacheKey, result);
   return result;
 }
@@ -1243,11 +1360,16 @@ async function getNFLH2H(homeTeamId: number, awayTeamId: number, baseUrl: string
   const cached = getCached<{ matches: H2HMatch[], summary: any }>(cacheKey);
   if (cached) return cached;
 
-  const response = await apiRequest<any>(baseUrl, `/games?h2h=${homeTeamId}-${awayTeamId}&last=10`);
+  // NFL API supports H2H but not 'last' parameter - we filter/limit in code
+  const response = await apiRequest<any>(baseUrl, `/games?h2h=${homeTeamId}-${awayTeamId}`);
   
   if (!response?.response || response.response.length === 0) return null;
 
-  const games = response.response;
+  // Sort by date descending and take last 10
+  const games = response.response
+    .sort((a: any, b: any) => new Date(b.game?.date?.date || 0).getTime() - new Date(a.game?.date?.date || 0).getTime())
+    .slice(0, 10);
+  
   let homeWins = 0, awayWins = 0, draws = 0;
 
   const matches: H2HMatch[] = games.slice(0, 5).map((g: any) => {
@@ -1337,11 +1459,10 @@ export async function getMultiSportEnrichedData(
       case 'soccer':
         return await fetchSoccerData(homeTeam, awayTeam, baseUrl);
       
-      case 'nba':
-        return await fetchNBAData(homeTeam, awayTeam, baseUrl);
-      
       case 'basketball':
-        return await fetchBasketballData(homeTeam, awayTeam, baseUrl);
+        // All basketball including NBA uses the Basketball API
+        // Pass sport to determine league ID (NBA = 12)
+        return await fetchBasketballData(homeTeam, awayTeam, baseUrl, sport);
       
       case 'hockey':
         return await fetchHockeyData(homeTeam, awayTeam, baseUrl);
@@ -1721,10 +1842,16 @@ async function fetchNBAData(homeTeam: string, awayTeam: string, baseUrl: string)
   };
 }
 
-async function fetchBasketballData(homeTeam: string, awayTeam: string, baseUrl: string): Promise<MultiSportEnrichedData> {
+async function fetchBasketballData(homeTeam: string, awayTeam: string, baseUrl: string, originalSport: string = 'basketball'): Promise<MultiSportEnrichedData> {
+  // Determine if this is NBA or other basketball
+  const isNBA = originalSport.toLowerCase().includes('nba');
+  const leagueId = isNBA ? BASKETBALL_LEAGUE_IDS.NBA : null;
+  
+  console.log(`[Basketball] Fetching ${isNBA ? 'NBA' : 'basketball'} data for ${homeTeam} vs ${awayTeam}`);
+  
   const [homeTeamId, awayTeamId] = await Promise.all([
-    findBasketballTeam(homeTeam, baseUrl),
-    findBasketballTeam(awayTeam, baseUrl),
+    findBasketballTeam(homeTeam, baseUrl, isNBA),
+    findBasketballTeam(awayTeam, baseUrl, isNBA),
   ]);
 
   if (!homeTeamId || !awayTeamId) {
