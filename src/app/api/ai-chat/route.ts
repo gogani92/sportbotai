@@ -305,10 +305,17 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
   
   switch (category) {
     case 'PLAYER':
-      // For player lookups, include Wikipedia for obscure players
-      // Famous players will get plenty of real-time results anyway
-      query += ' player profile current team club 2024 2025 career wikipedia biography nationality';
-      recency = 'week';
+      // For player lookups - be very specific to avoid confusion
+      // Extract the player name and search for their Wikipedia page directly
+      const playerNameMatch = query.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
+      if (playerNameMatch) {
+        const playerName = playerNameMatch[0];
+        // Search Wikipedia specifically for this player
+        query = `"${playerName}" site:wikipedia.org footballer OR basketball player OR athlete career club team nationality born`;
+      } else {
+        query += ' site:wikipedia.org player profile career team nationality born';
+      }
+      recency = 'month'; // Wikipedia pages don't change hourly
       break;
       
     case 'ROSTER':
