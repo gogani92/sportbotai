@@ -44,6 +44,7 @@ const openai = new OpenAI({
 // ============================================
 
 type QueryCategory = 
+  | 'PLAYER'      // Where does player X play? Who is player X?
   | 'ROSTER'      // Who plays for team X?
   | 'FIXTURE'     // When is the next game?
   | 'RESULT'      // What was the score?
@@ -63,8 +64,6 @@ type QueryCategory =
  * Detect the category of sports question
  */
 function detectQueryCategory(message: string): QueryCategory {
-  const lower = message.toLowerCase();
-  
   // Roster/Squad
   if (/who (plays|is|are)|roster|squad|lineup|starting|player|team sheet|formation/i.test(message)) {
     return 'ROSTER';
@@ -125,8 +124,17 @@ function detectQueryCategory(message: string): QueryCategory {
     return 'BROADCAST';
   }
   
-  // Venue/Stadium
-  if (/stadium|venue|arena|capacity|where .* play|home ground/i.test(message)) {
+  // Player lookup - "where does X play", "who is X", "X player"
+  // Detect: proper noun + play/team, or asking about a person
+  if (/where (does|do|did|is) \w+ \w* ?play|which team (does|is)|what team (does|is)|who is [A-Z]/i.test(message)) {
+    // Make sure it's not asking about a team's home ground
+    if (!/stadium|arena|venue|home ground|capacity/i.test(message)) {
+      return 'PLAYER';
+    }
+  }
+  
+  // Venue/Stadium - only if explicitly asking about stadium
+  if (/stadium|venue|arena|capacity|home ground|where .* (team|club) play/i.test(message)) {
     return 'VENUE';
   }
   
@@ -134,38 +142,125 @@ function detectQueryCategory(message: string): QueryCategory {
 }
 
 /**
- * Detect if the query needs real-time search
- * Default to TRUE for most sports questions to ensure fresh data
- * Only skip for very generic knowledge questions
+ * SMART ROUTING: Decide if query needs Perplexity (real-time) or GPT-only
+ * 
+ * PERPLEXITY (sonar-pro) - Use when:
+ *   ✓ Current data needed (today's scores, live standings, recent news)
+ *   ✓ Specific team/player info (rosters, injuries, transfers)
+ *   ✓ Time-sensitive questions (fixtures, odds, form)
+ *   ✓ Breaking news / rumors
+ *   ✓ Factual lookups that change frequently
+ * 
+ * GPT-ONLY - Use when:
+ *   ✓ Static knowledge (rules, history pre-2023, sport explanations)
+ *   ✓ Opinion / analysis questions (who's better, predictions)
+ *   ✓ Hypothetical scenarios ("what if Messi...")
+ *   ✓ General sports knowledge that doesn't change
+ *   ✓ Simple greetings / chitchat
+ */
+
+// Time-sensitive keywords that REQUIRE real-time search
+const REALTIME_KEYWORDS = [
+  // Current state
+  'today', 'tonight', 'now', 'current', 'currently', 'right now', 'latest', 'recent',
+  'this week', 'this season', 'this month', '2024', '2025', 'december',
+  
+  // Player lookups (where does X play, who is X)
+  'where does', 'where do', 'where is', 'which team', 'what team', 'plays for',
+  'who is', 'play for', 'signed for', 'joined',
+  
+  // Roster/Team composition (changes frequently)
+  'roster', 'squad', 'lineup', 'starting', 'team sheet', 'formation',
+  'who plays for', 'who is on', 'players on',
+  
+  // Time-sensitive data
+  'injury', 'injured', 'fit', 'available', 'ruled out', 'doubtful', 'suspended',
+  'transfer', 'signing', 'signed', 'deal', 'rumor', 'linked',
+  'standings', 'table', 'position', 'points', 'rank',
+  'score', 'result', 'won', 'lost', 'beat', 'draw',
+  'next match', 'next game', 'upcoming', 'fixture', 'when is', 'when does',
+  'odds', 'favorite', 'underdog', 'price', 'market',
+  
+  // News-related
+  'news', 'update', 'said', 'announced', 'confirmed', 'report', 'according',
+  'press conference', 'interview', 'quote',
+  
+  // Stat lookups that need current data
+  'top scorer', 'leading', 'most goals', 'most assists', 'golden boot',
+  'form', 'streak', 'unbeaten', 'winless',
+];
+
+// Keywords that indicate GPT can answer alone (static knowledge)
+const GPT_ONLY_KEYWORDS = [
+  // Rules & definitions
+  'what is offside', 'what are the rules', 'rules of', 'how many players',
+  'what is a foul', 'explain', 'definition', 'meaning of',
+  'how does .* work', 'what counts as', 'when is it',
+  
+  // Historical (pre-2023, won't change)
+  'all.time', 'history of', 'when was .* invented', 'originated',
+  'first ever', 'record for', 'most .* ever', 'greatest of all time',
+  'hall of fame', 'legend', 'retired',
+  
+  // Opinion / Analysis (GPT reasoning)
+  'who is better', 'who would win', 'compare', 'vs',
+  'should i', 'do you think', 'your opinion', 'what do you think',
+  'predict', 'will .* win', 'chances of',
+  
+  // Hypothetical
+  'what if', 'imagine', 'hypothetically', 'would it be possible',
+  
+  // General chat
+  'hello', 'hi', 'hey', 'thanks', 'thank you', 'bye', 'help',
+  'who are you', 'what can you do',
+];
+
+/**
+ * Smart detection: Does this query need real-time data?
  */
 function needsRealTimeSearch(message: string): boolean {
-  const lowerMessage = message.toLowerCase();
+  const lower = message.toLowerCase();
   
-  // Questions that DON'T need real-time search (general knowledge)
-  const noSearchKeywords = [
-    'what is offside',
-    'what are the rules',
-    'how many players',
-    'what is a foul',
-    'explain the rules',
-    'definition of',
-    'how does .* work',
-    'history of the sport',
-    'when was .* invented',
-  ];
-  
-  // If it's a general knowledge question, skip search
-  if (noSearchKeywords.some(keyword => {
+  // First check: Is this clearly a GPT-only question?
+  for (const keyword of GPT_ONLY_KEYWORDS) {
     if (keyword.includes('.*')) {
-      return new RegExp(keyword).test(lowerMessage);
+      if (new RegExp(keyword, 'i').test(lower)) {
+        console.log(`[Router] GPT-only match: "${keyword}"`);
+        return false;
+      }
+    } else if (lower.includes(keyword)) {
+      console.log(`[Router] GPT-only match: "${keyword}"`);
+      return false;
     }
-    return lowerMessage.includes(keyword);
-  })) {
-    return false;
   }
   
-  // Everything else gets real-time search
-  return true;
+  // Second check: Does it contain real-time keywords?
+  for (const keyword of REALTIME_KEYWORDS) {
+    if (lower.includes(keyword)) {
+      console.log(`[Router] Real-time match: "${keyword}"`);
+      return true;
+    }
+  }
+  
+  // Third check: Does it mention a specific team/player? (likely needs current data)
+  const hasTeamOrPlayer = /\b(fc|bc|ac|united|city|real|atletico|juventus|barcelona|bayern|arsenal|chelsea|liverpool|tottenham|lakers|celtics|warriors|chiefs|eagles|cowboys|yankees|dodgers|messi|ronaldo|lebron|curry|mahomes|haaland|mbappe|salah)\b/i.test(message);
+  
+  if (hasTeamOrPlayer) {
+    console.log('[Router] Team/player detected - using real-time search');
+    return true;
+  }
+  
+  // Fourth check: Is it a specific question (who, what, when, where)?
+  const isSpecificQuestion = /^(who|what|when|where|how many|how much|which)\b/i.test(message);
+  
+  if (isSpecificQuestion && message.length > 20) {
+    console.log('[Router] Specific question - using real-time search');
+    return true;
+  }
+  
+  // Default: Short/vague queries can use GPT alone
+  console.log('[Router] No strong signals - defaulting to GPT-only');
+  return false;
 }
 
 /**
@@ -184,6 +279,12 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
   let recency: 'hour' | 'day' | 'week' | 'month' = 'day';
   
   switch (category) {
+    case 'PLAYER':
+      // For player lookups, search for their current team/profile
+      query += ' player profile current team club 2024 2025 career wikipedia';
+      recency = 'week';
+      break;
+      
     case 'ROSTER':
       query += ' 2024-2025 season current roster squad players';
       recency = 'week';
@@ -285,9 +386,10 @@ export async function POST(request: NextRequest) {
 
     let perplexityContext = '';
     let citations: string[] = [];
+    const shouldSearch = needsRealTimeSearch(message);
 
     // Step 1: Use Perplexity for real-time search if needed
-    if (needsRealTimeSearch(message)) {
+    if (shouldSearch) {
       const perplexity = getPerplexityClient();
       
       if (perplexity.isConfigured()) {
@@ -382,7 +484,8 @@ Please answer the user's question using the real-time data above. Cite sources i
       response,
       citations,
       usedRealTimeSearch: !!perplexityContext,
-      model: 'gpt-4o-mini + sonar-pro',
+      routingDecision: shouldSearch ? 'perplexity+gpt' : 'gpt-only',
+      model: shouldSearch ? 'gpt-4o-mini + sonar-pro' : 'gpt-4o-mini',
     });
 
   } catch (error) {

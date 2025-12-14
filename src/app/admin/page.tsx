@@ -4,10 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import AdminDashboard from './AdminDashboard';
 
-// List of admin emails - add your email here
+// Only owner has access - DO NOT share or add other emails
 const ADMIN_EMAILS = [
-  'admin@sportbotai.com',
-  // Add more admin emails as needed
+  'gogecmaestrotib92@gmail.com',
 ];
 
 export default async function AdminPage() {
@@ -32,6 +31,12 @@ export default async function AdminPage() {
     todayAnalyses,
     recentUsers,
     recentAnalyses,
+    // Chat/Memory stats
+    chatStats,
+    topCategories,
+    topTeams,
+    recentQueries,
+    agentPostsCount,
   ] = await Promise.all([
     // Total users
     prisma.user.count(),
@@ -83,6 +88,21 @@ export default async function AdminPage() {
         },
       },
     }),
+    
+    // Chat query stats
+    getChatStats(),
+    
+    // Top categories
+    getTopCategoriesFromDB(),
+    
+    // Top teams
+    getTopTeamsFromDB(),
+    
+    // Recent queries
+    getRecentQueries(),
+    
+    // Agent posts count
+    getAgentPostsCount(),
   ]);
 
   // Calculate MRR (Monthly Recurring Revenue)
@@ -98,11 +118,105 @@ export default async function AdminPage() {
     mrr,
   };
 
+  const chatAnalytics = {
+    ...chatStats,
+    topCategories,
+    topTeams,
+    recentQueries,
+    agentPostsCount,
+  };
+
   return (
     <AdminDashboard
       stats={stats}
       recentUsers={recentUsers}
       recentAnalyses={recentAnalyses}
+      chatAnalytics={chatAnalytics}
     />
   );
+}
+
+// Helper functions for chat analytics
+async function getChatStats() {
+  try {
+    const [totalQueries, todayQueries, queriesWithSearch, queriesWithCitations] = await Promise.all([
+      prisma.chatQuery.count(),
+      prisma.chatQuery.count({
+        where: {
+          createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        },
+      }),
+      prisma.chatQuery.count({ where: { usedRealTimeSearch: true } }),
+      prisma.chatQuery.count({ where: { hadCitations: true } }),
+    ]);
+    
+    return {
+      totalQueries,
+      todayQueries,
+      queriesWithSearch,
+      queriesWithCitations,
+      searchRate: totalQueries > 0 ? Math.round((queriesWithSearch / totalQueries) * 100) : 0,
+    };
+  } catch {
+    return { totalQueries: 0, todayQueries: 0, queriesWithSearch: 0, queriesWithCitations: 0, searchRate: 0 };
+  }
+}
+
+async function getTopCategoriesFromDB() {
+  try {
+    const results = await prisma.chatQuery.groupBy({
+      by: ['category'],
+      where: { category: { not: null } },
+      _count: { category: true },
+      orderBy: { _count: { category: 'desc' } },
+      take: 10,
+    });
+    return results.map(r => ({ category: r.category!, count: r._count.category }));
+  } catch {
+    return [];
+  }
+}
+
+async function getTopTeamsFromDB() {
+  try {
+    const results = await prisma.chatQuery.groupBy({
+      by: ['team'],
+      where: { team: { not: null } },
+      _count: { team: true },
+      orderBy: { _count: { team: 'desc' } },
+      take: 10,
+    });
+    return results.map(r => ({ team: r.team!, count: r._count.team }));
+  } catch {
+    return [];
+  }
+}
+
+async function getRecentQueries() {
+  try {
+    return await prisma.chatQuery.findMany({
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        query: true,
+        category: true,
+        brainMode: true,
+        sport: true,
+        team: true,
+        usedRealTimeSearch: true,
+        createdAt: true,
+      },
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function getAgentPostsCount() {
+  try {
+    return await prisma.agentPost.count();
+  } catch {
+    return 0;
+  }
 }
