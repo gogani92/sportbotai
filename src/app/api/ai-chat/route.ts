@@ -317,8 +317,12 @@ function detectQueryCategory(message: string): QueryCategory {
     return 'STANDINGS';
   }
   
-  // Statistics
-  if (/stats|statistics|goals|assists|top scorer|most|average|record|career/i.test(message)) {
+  // Statistics - THIS MUST COME BEFORE PLAYER to catch "player + stats" queries
+  // Including current season questions about player performance
+  if (/stats|statistics|goals|assists|top scorer|most|average|record|career/i.test(message) ||
+      /koliko (golova|asistencija|utakmica)|how many goals|goals this season|season stats/i.test(message) ||
+      /golova je postigao|goals (has|did) .* score|scored this season/i.test(message) ||
+      /sezon|this season|current season|2024|2025/i.test(message)) {
     return 'STATS';
   }
   
@@ -393,6 +397,269 @@ function detectQueryCategory(message: string): QueryCategory {
  *   - Pure opinions with no factual component
  */
 
+// ============================================
+// INTELLIGENT ROUTING DECISION ENGINE
+// ============================================
+
+/**
+ * Data sources and their characteristics:
+ * 
+ * GPT-ONLY (no search):
+ *   - Rules, definitions, explanations
+ *   - General sports knowledge (tactics, formations)
+ *   - Historical facts that are well-established
+ *   - Greetings and meta questions
+ *   Cost: $0.001, Latency: 500ms
+ * 
+ * WIKIPEDIA (via Perplexity site:wikipedia):
+ *   - Player biographies (birth date, nationality, career history)
+ *   - Team history, founding dates
+ *   - All-time records and achievements
+ *   - Trophy counts, historical stats
+ *   Cost: $0.003, Latency: 1.5s
+ * 
+ * PERPLEXITY REAL-TIME (full web search):
+ *   - Current season stats (goals, assists, form)
+ *   - Today's match results
+ *   - Injury updates, lineup news
+ *   - Transfer rumors and confirmed deals
+ *   - Current standings
+ *   - Breaking news
+ *   Cost: $0.005, Latency: 2s
+ */
+
+type DataSource = 'GPT_ONLY' | 'WIKIPEDIA' | 'REALTIME' | 'HYBRID';
+
+interface RoutingDecision {
+  source: DataSource;
+  searchQuery?: string;
+  recency?: 'hour' | 'day' | 'week' | 'month';
+  confidence: number; // 0-100
+  reason: string;
+}
+
+// Time-sensitive keywords that ALWAYS need real-time data
+const REALTIME_TRIGGERS = {
+  // Current season/form (changes weekly)
+  currentSeason: /this season|current season|sez[oó]n|2024.?2025|form|recent|últim|dernièr|letzte/i,
+  
+  // Live/Today (changes hourly)  
+  liveData: /today|tonight|now|live|score|result|playing|won|lost|beat|sinoć|večeras|hoy|heute|aujourd/i,
+  
+  // Breaking news (changes daily)
+  breakingNews: /news|update|breaking|announced|confirmed|sign|transfer|injur|out|miss|ruled out|povred/i,
+  
+  // Current status questions
+  currentStatus: /where (does|is|do)|gde igra|koji klub|plays for|current (team|club)|juega en|spielt für/i,
+  
+  // Standings/table (changes weekly)
+  standings: /standing|table|position|rank|top of|lead|tabela|clasificación|classement|tabelle/i,
+  
+  // Lineup/Squad
+  lineup: /lineup|squad|roster|starting|bench|XI|postava|alineación|aufstellung/i,
+};
+
+// Static knowledge that GPT can answer without search
+const GPT_SUFFICIENT = {
+  // Rules never change
+  rules: /what (is|are) (offside|a foul|the rules|handball|penalty|free kick|corner|goal kick)/i,
+  rulesOf: /rules of|pravila|reglas|règles|regeln/i,
+  howMany: /how many (players|substitut|minutes|halves|quarters|periods|sets)/i,
+  explain: /explain .*(rule|offside|foul|tactic|formation|strategy)/i,
+  
+  // Tactical knowledge
+  tactics: /what is (a )?(4-4-2|4-3-3|3-5-2|false.?9|pressing|counter|possession|parking|tiki.?taka)/i,
+  formations: /best formation|how to (play|defend|attack)|tactical|strategically/i,
+  
+  // Historical facts (well-established)
+  allTime: /all.time (record|top|best|most|greatest)|in history|ever (score|won|play)|of all time/i,
+  trophies: /how many (trophies|titles|cups|championships) (has|did|have)/i,
+  
+  // Greetings & meta
+  greetings: /^(hello|hi|hey|thanks|thank you|bye|ok|okay|good|great|nice|cool)[\s!?.]*$/i,
+  meta: /^(who are you|what can you do|help|how does this work)[\s!?.]*$/i,
+  
+  // Hypotheticals
+  hypothetical: /^(what if|imagine|suppose|hypothetically)/i,
+};
+
+// Wikipedia is best for biographical/historical data
+const WIKIPEDIA_PREFERRED = {
+  // Player biography
+  biography: /(who is|tell me about|biography|born|nationality|height|age|career) .* (player|footballer|athlete)/i,
+  playerBio: /when was .* born|where was .* born|how old is|nationality of/i,
+  
+  // Team history
+  teamHistory: /(founded|history|origin|when was .* (formed|founded|created))/i,
+  
+  // All-time records (stable data)
+  records: /(record|most goals in|all.time|career (goals|assists|appearances)|total (goals|trophies))/i,
+  
+  // Trophy/achievement counts (relatively stable)
+  achievements: /how many (champions league|world cup|ballon d'or|mvp)|won the/i,
+};
+
+/**
+ * INTELLIGENT ROUTER - Decides optimal data source
+ */
+function routeQuery(message: string, category: QueryCategory): RoutingDecision {
+  const lower = message.toLowerCase();
+  
+  // 1. Check GPT-ONLY patterns (highest priority for cost savings)
+  for (const [key, pattern] of Object.entries(GPT_SUFFICIENT)) {
+    if (pattern.test(message)) {
+      return {
+        source: 'GPT_ONLY',
+        confidence: 95,
+        reason: `Static knowledge: ${key}`
+      };
+    }
+  }
+  
+  // 2. Check REALTIME triggers (highest priority for accuracy)
+  for (const [key, pattern] of Object.entries(REALTIME_TRIGGERS)) {
+    if (pattern.test(message)) {
+      const recency = key === 'liveData' ? 'hour' : 
+                      key === 'breakingNews' ? 'day' : 'week';
+      return {
+        source: 'REALTIME',
+        recency,
+        confidence: 90,
+        reason: `Real-time needed: ${key}`
+      };
+    }
+  }
+  
+  // 3. Check WIKIPEDIA preference
+  for (const [key, pattern] of Object.entries(WIKIPEDIA_PREFERRED)) {
+    if (pattern.test(message)) {
+      // BUT if also asking about current season, use REALTIME
+      if (REALTIME_TRIGGERS.currentSeason.test(message)) {
+        return {
+          source: 'REALTIME',
+          recency: 'week',
+          confidence: 85,
+          reason: `Biography + current season = real-time`
+        };
+      }
+      return {
+        source: 'WIKIPEDIA',
+        recency: 'month',
+        confidence: 85,
+        reason: `Historical/biographical: ${key}`
+      };
+    }
+  }
+  
+  // 4. Category-based routing
+  const categoryRoutes: Record<QueryCategory, RoutingDecision> = {
+    PLAYER: {
+      source: 'HYBRID', // Wikipedia for bio, real-time for current team
+      recency: 'week',
+      confidence: 75,
+      reason: 'Player query - check if current status or biography'
+    },
+    ROSTER: {
+      source: 'REALTIME',
+      recency: 'week',
+      confidence: 90,
+      reason: 'Rosters change frequently'
+    },
+    FIXTURE: {
+      source: 'REALTIME',
+      recency: 'day',
+      confidence: 95,
+      reason: 'Fixtures are time-sensitive'
+    },
+    RESULT: {
+      source: 'REALTIME',
+      recency: 'hour',
+      confidence: 95,
+      reason: 'Results need real-time data'
+    },
+    STANDINGS: {
+      source: 'REALTIME',
+      recency: 'day',
+      confidence: 90,
+      reason: 'Standings change after each match'
+    },
+    STATS: {
+      source: 'REALTIME',
+      recency: 'week',
+      confidence: 90,
+      reason: 'Current season stats need real-time'
+    },
+    INJURY: {
+      source: 'REALTIME',
+      recency: 'day',
+      confidence: 95,
+      reason: 'Injury status changes daily'
+    },
+    TRANSFER: {
+      source: 'REALTIME',
+      recency: 'day',
+      confidence: 90,
+      reason: 'Transfer news is time-sensitive'
+    },
+    MANAGER: {
+      source: 'REALTIME',
+      recency: 'week',
+      confidence: 80,
+      reason: 'Manager changes are newsworthy'
+    },
+    ODDS: {
+      source: 'REALTIME',
+      recency: 'hour',
+      confidence: 90,
+      reason: 'Odds change frequently'
+    },
+    COMPARISON: {
+      source: 'HYBRID',
+      recency: 'week',
+      confidence: 75,
+      reason: 'Comparisons need both historical and current data'
+    },
+    HISTORY: {
+      source: 'WIKIPEDIA',
+      recency: 'month',
+      confidence: 85,
+      reason: 'Historical data is stable'
+    },
+    BROADCAST: {
+      source: 'REALTIME',
+      recency: 'day',
+      confidence: 85,
+      reason: 'Broadcast info is match-specific'
+    },
+    VENUE: {
+      source: 'WIKIPEDIA',
+      recency: 'month',
+      confidence: 90,
+      reason: 'Stadium info is stable'
+    },
+    PLAYER_PROP: {
+      source: 'REALTIME',
+      recency: 'day',
+      confidence: 95,
+      reason: 'Player props need current stats'
+    },
+    BETTING_ADVICE: {
+      source: 'REALTIME',
+      recency: 'day',
+      confidence: 85,
+      reason: 'Need current form for analysis'
+    },
+    GENERAL: {
+      source: 'REALTIME', // Default to searching for safety
+      recency: 'week',
+      confidence: 60,
+      reason: 'Unknown query type - search to be safe'
+    }
+  };
+  
+  return categoryRoutes[category] || categoryRoutes.GENERAL;
+}
+
 // Keywords that indicate GPT can answer alone (static knowledge ONLY)
 const GPT_ONLY_PATTERNS = [
   // Rules & definitions (never change)
@@ -411,66 +678,81 @@ const GPT_ONLY_PATTERNS = [
 ];
 
 /**
+ * OPTIMIZED ROUTING - Uses intelligent router for decision
+ * Returns detailed routing information
+ */
+function getOptimalRoute(message: string): RoutingDecision & { shouldSearch: boolean } {
+  const category = detectQueryCategory(message);
+  const route = routeQuery(message, category);
+  
+  console.log(`[Router] Category: ${category}, Source: ${route.source}, Confidence: ${route.confidence}%, Reason: ${route.reason}`);
+  
+  return {
+    ...route,
+    shouldSearch: route.source !== 'GPT_ONLY'
+  };
+}
+
+/**
  * Smart detection: Does this query need real-time data?
- * DEFAULT: YES - search unless clearly static
+ * Uses the intelligent routing engine
  */
 function needsRealTimeSearch(message: string): boolean {
-  const lower = message.toLowerCase().trim();
+  const route = getOptimalRoute(message);
+  return route.shouldSearch;
+}
+
+/**
+ * Build optimized search query based on routing decision
+ */
+function buildOptimizedSearchQuery(message: string, route: RoutingDecision): string {
+  const query = message
+    .replace(/\?/g, '')
+    .replace(/please|can you|could you|tell me|what do you think|i want to know/gi, '')
+    .trim();
   
-  // Check if it's a static/greeting question that doesn't need search
-  for (const pattern of GPT_ONLY_PATTERNS) {
-    if (pattern.test(message)) {
-      console.log(`[Router] GPT-only pattern match - skipping search`);
-      return false;
-    }
+  // Extract player/team name for better search
+  const nameMatch = query.match(/([A-Z][a-zćčšžđñü]+(?:\s+[A-Z][a-zćčšžđñü]+)+)|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
+  const extractedName = nameMatch ? nameMatch[0] : null;
+  
+  switch (route.source) {
+    case 'GPT_ONLY':
+      return ''; // No search needed
+      
+    case 'WIKIPEDIA':
+      if (extractedName) {
+        return `"${extractedName}" site:wikipedia.org footballer OR basketball player OR athlete career biography nationality`;
+      }
+      return `${query} site:wikipedia.org`;
+      
+    case 'REALTIME':
+      if (extractedName) {
+        // For current status queries
+        if (REALTIME_TRIGGERS.currentStatus.test(message)) {
+          return `"${extractedName}" 2024-2025 current club team transfermarkt December 2024`;
+        }
+        // For stats queries
+        if (REALTIME_TRIGGERS.currentSeason.test(message)) {
+          return `"${extractedName}" 2024-2025 season stats goals assists current form`;
+        }
+        // For injury queries
+        if (REALTIME_TRIGGERS.breakingNews.test(message)) {
+          return `"${extractedName}" injury news update December 2024`;
+        }
+      }
+      // Default real-time enhancement
+      return `${query} ${route.recency === 'hour' ? 'today' : route.recency === 'day' ? 'December 2024' : '2024-2025'}`;
+      
+    case 'HYBRID':
+      // Use real-time with some Wikipedia context
+      if (extractedName) {
+        return `"${extractedName}" 2024-2025 current team stats career transfermarkt`;
+      }
+      return `${query} 2024-2025`;
+      
+    default:
+      return query;
   }
-  
-  // Check for explicit search requests
-  if (/check|look up|search|find|wikipedia|google|tell me about/i.test(lower)) {
-    console.log('[Router] Explicit search request detected');
-    return true;
-  }
-  
-  // Check for proper nouns (capitalized words that aren't sentence starters)
-  // This catches player names like "Goran Huskic"
-  const hasProperNoun = /\s[A-Z][a-z]{2,}/.test(message) || /^[A-Z][a-z]+\s+[A-Z]/.test(message);
-  if (hasProperNoun) {
-    console.log('[Router] Proper noun detected (likely player/team name) - searching');
-    return true;
-  }
-  
-  // Check for non-English sports queries (common patterns)
-  // Serbian/Croatian: gde, ko, koji, kada
-  // Spanish: donde, quien, cual, cuando
-  // German: wo, wer, welche, wann
-  // French: où, qui, quel, quand
-  if (/\b(gde|ko je|koji|kada|donde|quien|cual|cuando|wo spielt|wer ist|où|qui est|quel)\b/i.test(lower)) {
-    console.log('[Router] Non-English query detected - searching');
-    return true;
-  }
-  
-  // If message contains any word that looks like a name (2+ capitalized words)
-  const capitalizedWords = message.match(/\b[A-Z][a-z]+\b/g) || [];
-  if (capitalizedWords.length >= 2) {
-    console.log('[Router] Multiple capitalized words (likely names) - searching');
-    return true;
-  }
-  
-  // If it's a question (any language), default to searching
-  if (/\?$/.test(message.trim()) || lower.length > 15) {
-    console.log('[Router] Question detected - defaulting to search');
-    return true;
-  }
-  
-  // Very short messages without question marks - probably greetings
-  if (lower.length < 15 && !/\?/.test(message)) {
-    console.log('[Router] Short non-question - skipping search');
-    return false;
-  }
-  
-  // DEFAULT: Search to be safe
-  console.log('[Router] Defaulting to real-time search');
-  return true;
 }
 
 /**
@@ -534,17 +816,25 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
   
   switch (category) {
     case 'PLAYER':
-      // For player lookups - be very specific to avoid confusion
-      // Extract the player name and search for their Wikipedia page directly
-      const playerNameMatch = query.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
+      // For player lookups - check if asking about current team/status or biography
+      const playerNameMatch = query.match(/([A-Z][a-zćčšžđ]+(?:\s+[A-Z][a-zćčšžđ]+)+)|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
+      const asksCurrentTeam = /where (does|do|is)|gde igra|koji klub|current team|current club|plays for|koje igra/i.test(query);
+      
       if (playerNameMatch) {
         const playerName = playerNameMatch[0];
-        // Search Wikipedia specifically for this player
-        query = `"${playerName}" site:wikipedia.org footballer OR basketball player OR athlete career club team nationality born`;
+        if (asksCurrentTeam) {
+          // Asking about current team - search Transfermarkt/FBRef not Wikipedia
+          query = `"${playerName}" 2024-2025 current club team transfermarkt December 2024`;
+          recency = 'week';
+        } else {
+          // General biography question - Wikipedia is fine
+          query = `"${playerName}" site:wikipedia.org footballer OR basketball player OR athlete career club team nationality born`;
+          recency = 'month';
+        }
       } else {
-        query += ' site:wikipedia.org player profile career team nationality born';
+        query += ' 2024-2025 current club team career';
+        recency = 'week';
       }
-      recency = 'month'; // Wikipedia pages don't change hourly
       break;
       
     case 'ROSTER':
@@ -568,7 +858,15 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       break;
       
     case 'STATS':
-      query += ' 2024-2025 season statistics stats goals assists';
+      // Extract player name if mentioned and build better search query
+      const statsPlayerMatch = query.match(/([A-Z][a-zćčšžđ]+(?:\s+[A-Z][a-zćčšžđ]+)+)|Filip\s+\w+|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
+      if (statsPlayerMatch) {
+        const playerName = statsPlayerMatch[0];
+        // Search for current season stats from Transfermarkt, SofaScore, FBRef
+        query = `"${playerName}" 2024-2025 season stats goals assists current club team transfermarkt`;
+      } else {
+        query += ' 2024-2025 season statistics stats goals assists';
+      }
       recency = 'week';
       break;
       
@@ -670,7 +968,10 @@ export async function POST(request: NextRequest) {
 
     let perplexityContext = '';
     let citations: string[] = [];
-    const shouldSearch = needsRealTimeSearch(message);
+    
+    // Use intelligent routing engine
+    const route = getOptimalRoute(message);
+    const shouldSearch = route.shouldSearch;
     
     // Detect category for all queries (for tracking)
     const queryCategory = detectQueryCategory(message);
@@ -681,15 +982,19 @@ export async function POST(request: NextRequest) {
       
       if (perplexity.isConfigured()) {
         console.log('[AI-Chat] Fetching real-time context from Perplexity...');
+        console.log(`[AI-Chat] Route decision: ${route.source} (${route.confidence}% confidence)`);
+        console.log(`[AI-Chat] Reason: ${route.reason}`);
         
-        // Extract optimized search query with category detection
-        const { query: searchQuery, category, recency } = extractSearchQuery(message);
+        // Build optimized search query using new router
+        const searchQuery = buildOptimizedSearchQuery(message, route);
+        const recency = route.recency || 'week';
         
-        console.log(`[AI-Chat] Category: ${category} | Recency: ${recency}`);
-        console.log(`[AI-Chat] Search query: "${searchQuery}"`);
+        console.log(`[AI-Chat] Category: ${queryCategory} | Source: ${route.source} | Recency: ${recency}`);
+        console.log(`[AI-Chat] Optimized search query: "${searchQuery}"`);
         
-        // Use higher token limit for detailed queries like rosters or comparisons
-        const needsMoreTokens = ['PLAYER', 'ROSTER', 'COMPARISON', 'STANDINGS', 'STATS'].includes(category);
+        // Use higher token limit for detailed queries
+        const needsMoreTokens = ['PLAYER', 'ROSTER', 'COMPARISON', 'STANDINGS', 'STATS', 'HYBRID'].includes(queryCategory) ||
+                                route.source === 'HYBRID';
         
         const searchResult = await perplexity.search(searchQuery, {
           recency,
@@ -706,6 +1011,8 @@ export async function POST(request: NextRequest) {
           console.log('[AI-Chat] No Perplexity results:', searchResult.error);
         }
       }
+    } else {
+      console.log(`[AI-Chat] Skipping search - GPT-only (${route.reason})`);
     }
 
     // Step 2: Detect brain mode and build system prompt
