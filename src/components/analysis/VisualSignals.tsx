@@ -12,7 +12,7 @@
 // ============================================
 
 interface FormDotsProps {
-  form: string;        // "WWLDW"
+  form: string;        // "WWLDW" or "-----" for no data
   teamName: string;
   size?: 'sm' | 'md';
 }
@@ -20,15 +20,38 @@ interface FormDotsProps {
 export function FormDots({ form, teamName, size = 'md' }: FormDotsProps) {
   const dots = form.slice(0, 5).split('');
   const dotSize = size === 'sm' ? 'w-2 h-2' : 'w-2.5 h-2.5';
+  const isNoData = form === '-----' || form === 'DDDDD' && !form.includes('W') && !form.includes('L');
   
   const getColor = (result: string) => {
     switch (result.toUpperCase()) {
       case 'W': return 'bg-emerald-500';
       case 'D': return 'bg-zinc-500';
       case 'L': return 'bg-red-500';
+      case '-': return 'bg-zinc-800 border border-zinc-700'; // No data
       default: return 'bg-zinc-700';
     }
   };
+
+  // If no real data, show "No data" message
+  if (isNoData) {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-zinc-500 w-20 truncate">{teamName}</span>
+        <div className="flex items-center gap-1">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className={`${dotSize} rounded-full bg-zinc-800 border border-zinc-700`}
+              title="No data"
+            />
+          ))}
+        </div>
+        <span className="text-[10px] text-zinc-600 italic">
+          No data
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">
@@ -38,7 +61,7 @@ export function FormDots({ form, teamName, size = 'md' }: FormDotsProps) {
           <div
             key={i}
             className={`${dotSize} rounded-full ${getColor(result)} transition-all`}
-            title={result === 'W' ? 'Win' : result === 'D' ? 'Draw' : 'Loss'}
+            title={result === 'W' ? 'Win' : result === 'D' ? 'Draw' : result === 'L' ? 'Loss' : 'No data'}
           />
         ))}
       </div>

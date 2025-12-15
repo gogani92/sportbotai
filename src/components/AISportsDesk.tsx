@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface AgentPost {
@@ -57,12 +57,11 @@ export default function AISportsDesk({ sport, limit = 10, compact = false }: AIS
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [meta, setMeta] = useState<FeedMeta | null>(null);
+  
+  // Track if we've fetched to prevent duplicate fetches on re-renders
+  const hasFetched = useRef(false);
 
-  useEffect(() => {
-    fetchPosts();
-  }, [sport, limit]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -83,7 +82,15 @@ export default function AISportsDesk({ sport, limit = 10, compact = false }: AIS
     } finally {
       setLoading(false);
     }
-  };
+  }, [sport, limit]);
+
+  useEffect(() => {
+    // Only fetch once on mount (or when dependencies change)
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchPosts();
+    }
+  }, [fetchPosts]);
 
   const categories = ['all', ...Array.from(new Set(posts.map(p => p.categoryName)))];
   const filteredPosts = selectedCategory === 'all' 

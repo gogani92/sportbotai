@@ -134,17 +134,21 @@ export class NFLAdapter extends BaseSportAdapter {
   
   /**
    * Get current NFL season year
+   * NFL season naming: "2024 season" runs from Sept 2024 to Feb 2025
+   * So in Dec 2024 - Feb 2025, we're still in the "2024" season
    */
   private getCurrentSeason(): number {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
     
-    // NFL season runs Sept-Feb
+    // NFL season runs Sept-Feb, but is named after the starting year
+    // Sept-Dec = current year's season
+    // Jan-Aug = previous year's season (playoffs end Feb, preseason starts Aug)
     if (month >= 9) {
-      return year;
+      return year; // Sept-Dec: current year's season
     } else {
-      return year - 1;
+      return year - 1; // Jan-Aug: previous year's season
     }
   }
   
@@ -308,11 +312,13 @@ export class NFLAdapter extends BaseSportAdapter {
   
   /**
    * Get recent games for a team
+   * Tries current season first, falls back to previous season if no finished games
    */
   async getRecentGames(teamId: string, limit: number = 5): Promise<DataLayerResponse<NormalizedRecentGames>> {
-    const season = this.getCurrentSeason();
+    let season = this.getCurrentSeason();
     
-    const result = await this.apiProvider.getNFLGames({
+    // Try current season first
+    let result = await this.apiProvider.getNFLGames({
       team: parseInt(teamId),
       league: LEAGUE_IDS.NFL,
       season,
@@ -322,11 +328,29 @@ export class NFLAdapter extends BaseSportAdapter {
       return this.error('FETCH_ERROR', result.error || 'Failed to fetch games');
     }
     
-    // Filter to finished games and sort by date descending
-    const finishedGames = result.data
-      .filter(g => g.game.status.short === 'FT' || g.game.status.short === 'AOT')
-      .sort((a, b) => b.game.date.timestamp - a.game.date.timestamp)
-      .slice(0, limit);
+    // Filter to finished regular season games
+    let finishedGames = result.data
+      .filter(g => (g.game.status.short === 'FT' || g.game.status.short === 'AOT') && g.game.stage === 'Regular Season')
+      .sort((a, b) => b.game.date.timestamp - a.game.date.timestamp);
+    
+    // If no finished regular season games in current season, try previous season
+    if (finishedGames.length === 0 && season > 2020) {
+      console.log(`[NFL] No finished games in ${season}, trying ${season - 1}`);
+      season = season - 1;
+      result = await this.apiProvider.getNFLGames({
+        team: parseInt(teamId),
+        league: LEAGUE_IDS.NFL,
+        season,
+      });
+      
+      if (result.success && result.data) {
+        finishedGames = result.data
+          .filter(g => (g.game.status.short === 'FT' || g.game.status.short === 'AOT') && g.game.stage === 'Regular Season')
+          .sort((a, b) => b.game.date.timestamp - a.game.date.timestamp);
+      }
+    }
+    
+    finishedGames = finishedGames.slice(0, limit);
     
     const matches = finishedGames.map(g => this.transformMatch(g));
     

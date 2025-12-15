@@ -180,9 +180,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Use venue from fixture info if available, fallback to matchInfo
     const venue = fixtureInfo?.venue || matchInfo.venue;
 
-    // Build form strings
-    const homeFormStr = enrichedData.homeForm?.map(m => m.result).join('') || 'DDDDD';
-    const awayFormStr = enrichedData.awayForm?.map(m => m.result).join('') || 'DDDDD';
+    // Check if we have real form data (not just fallback DDDDD)
+    const hasRealFormData = !!(enrichedData.homeForm?.length || enrichedData.awayForm?.length);
+    const dataSource = enrichedData.dataSource || (hasRealFormData ? 'API_SPORTS' : 'UNAVAILABLE');
+
+    // Build form strings - use '-----' to indicate no data instead of fake DDDDD
+    const homeFormStr = enrichedData.homeForm?.map(m => m.result).join('') || (hasRealFormData ? 'DDDDD' : '-----');
+    const awayFormStr = enrichedData.awayForm?.map(m => m.result).join('') || (hasRealFormData ? 'DDDDD' : '-----');
 
     // Calculate wins/draws/losses from form
     const countForm = (form: string) => ({
@@ -445,6 +449,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         scoringUnit: sportConfig.scoringUnit,
         kickoff: matchInfo.kickoff,
         venue: venue,
+      },
+      // Data availability info - helps UI show proper messages
+      dataAvailability: {
+        source: dataSource,
+        hasFormData: hasRealFormData,
+        hasH2H: !!(enrichedData.headToHead?.length),
+        hasInjuries: !!(injuries.home.length || injuries.away.length),
+        message: !hasRealFormData 
+          ? `Historical data not available for ${matchInfo.sport.toUpperCase()}. Analysis based on AI estimation.`
+          : undefined,
       },
       story: {
         ...aiAnalysis.story,

@@ -20,6 +20,8 @@ const SPORT_MAP: Record<string, Sport> = {
   'soccer_france_ligue_one': 'soccer',
   'basketball': 'basketball',
   'basketball_nba': 'basketball',
+  'basketball_euroleague': 'basketball',
+  'euroleague': 'basketball',
   'nba': 'basketball',
   'hockey': 'hockey',
   'icehockey': 'hockey',
@@ -37,6 +39,14 @@ const SPORT_MAP: Record<string, Sport> = {
 export function normalizeSport(sport: string): Sport {
   const lower = sport.toLowerCase();
   return SPORT_MAP[lower] || 'soccer';
+}
+
+/**
+ * Detect if sport is Euroleague
+ */
+function isEuroleague(sport: string): boolean {
+  const lower = sport.toLowerCase();
+  return lower.includes('euroleague') || lower === 'basketball_euroleague';
 }
 
 /**
@@ -62,6 +72,17 @@ export async function getEnrichedMatchDataV2(
   const dataLayer = getDataLayer();
   const normalizedSport = normalizeSport(sport);
   console.log(`[Bridge] Normalized sport: ${normalizedSport}`);
+  
+  // Configure basketball league if needed
+  if (normalizedSport === 'basketball') {
+    if (isEuroleague(sport)) {
+      dataLayer.setBasketballLeague('euroleague');
+      console.log(`[Bridge] Set basketball league to Euroleague`);
+    } else {
+      dataLayer.setBasketballLeague('nba');
+      console.log(`[Bridge] Set basketball league to NBA`);
+    }
+  }
   
   try {
     console.log(`[Bridge] Calling dataLayer.getEnrichedMatchData...`);

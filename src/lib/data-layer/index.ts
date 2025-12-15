@@ -32,10 +32,11 @@ import {
 import { theOddsClient } from '@/lib/theOdds';
 
 import { ISportAdapter, AdapterRegistry } from './adapters/base';
-import { getBasketballAdapter } from './adapters/basketball';
+import { getBasketballAdapter, BasketballAdapter } from './adapters/basketball';
 import { getHockeyAdapter } from './adapters/hockey';
 import { getNFLAdapter } from './adapters/nfl';
 import { getSoccerAdapter } from './adapters/soccer';
+import { LEAGUE_IDS } from './providers/api-sports';
 
 /**
  * Data Layer Configuration
@@ -76,6 +77,19 @@ export class DataLayer {
     this.registry.register(getBasketballAdapter());
     this.registry.register(getHockeyAdapter());
     this.registry.register(getNFLAdapter());
+  }
+  
+  /**
+   * Configure basketball league (NBA, Euroleague, etc.)
+   * Call this before making basketball-related requests
+   */
+  setBasketballLeague(league: 'nba' | 'euroleague'): void {
+    const adapter = this.getAdapter('basketball') as BasketballAdapter | undefined;
+    if (adapter) {
+      const leagueId = league === 'euroleague' ? LEAGUE_IDS.EUROLEAGUE : LEAGUE_IDS.NBA;
+      adapter.setLeague(leagueId);
+      console.log(`[DataLayer] Basketball league set to: ${league.toUpperCase()} (ID: ${leagueId})`);
+    }
   }
   
   /**

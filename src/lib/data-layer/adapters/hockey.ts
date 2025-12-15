@@ -325,11 +325,13 @@ export class HockeyAdapter extends BaseSportAdapter {
   
   /**
    * Get recent games for a team
+   * Tries current season first, falls back to previous season if no finished games
    */
   async getRecentGames(teamId: string, limit: number = 5): Promise<DataLayerResponse<NormalizedRecentGames>> {
-    const season = this.getCurrentSeason();
+    let season = this.getCurrentSeason();
     
-    const result = await this.apiProvider.getHockeyGames({
+    // Try current season first
+    let result = await this.apiProvider.getHockeyGames({
       team: parseInt(teamId),
       league: LEAGUE_IDS.NHL,
       season,
@@ -340,10 +342,28 @@ export class HockeyAdapter extends BaseSportAdapter {
     }
     
     // Filter to finished games and sort by date descending
-    const finishedGames = result.data
+    let finishedGames = result.data
       .filter(g => g.status.short === 'FT' || g.status.short === 'AOT' || g.status.short === 'AP')
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, limit);
+      .sort((a, b) => b.timestamp - a.timestamp);
+    
+    // If no finished games in current season, try previous season
+    if (finishedGames.length === 0 && season > 2020) {
+      console.log(`[NHL] No finished games in ${season}, trying ${season - 1}`);
+      season = season - 1;
+      result = await this.apiProvider.getHockeyGames({
+        team: parseInt(teamId),
+        league: LEAGUE_IDS.NHL,
+        season,
+      });
+      
+      if (result.success && result.data) {
+        finishedGames = result.data
+          .filter(g => g.status.short === 'FT' || g.status.short === 'AOT' || g.status.short === 'AP')
+          .sort((a, b) => b.timestamp - a.timestamp);
+      }
+    }
+    
+    finishedGames = finishedGames.slice(0, limit);
     
     const matches = finishedGames.map(g => this.transformMatch(g));
     

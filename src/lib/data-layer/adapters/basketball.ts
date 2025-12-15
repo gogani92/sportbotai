@@ -140,6 +140,9 @@ export class BasketballAdapter extends BaseSportAdapter {
   
   private apiProvider = getAPISportsProvider();
   
+  // Store the current league context (can be set per-request)
+  private currentLeagueId: number = LEAGUE_IDS.NBA;
+  
   constructor(config: AdapterConfig = {}) {
     super({
       ...config,
@@ -152,18 +155,51 @@ export class BasketballAdapter extends BaseSportAdapter {
   }
   
   /**
-   * Get current NBA season string
+   * Set the league context for subsequent operations
+   */
+  setLeague(leagueId: number): void {
+    this.currentLeagueId = leagueId;
+    console.log(`[Basketball] League set to: ${leagueId} (${leagueId === LEAGUE_IDS.NBA ? 'NBA' : leagueId === LEAGUE_IDS.EUROLEAGUE ? 'Euroleague' : 'Other'})`);
+  }
+  
+  /**
+   * Get current league ID
+   */
+  getLeagueId(): number {
+    return this.currentLeagueId;
+  }
+  
+  /**
+   * Check if current league is Euroleague
+   */
+  private isEuroleague(): boolean {
+    return this.currentLeagueId === LEAGUE_IDS.EUROLEAGUE;
+  }
+  
+  /**
+   * Get current season string based on league
+   * NBA uses YYYY-YYYY format, Euroleague uses single year
    */
   private getCurrentSeason(): string {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
     
-    // NBA season runs Oct-June, use current year if Oct+, else use previous year
-    if (month >= 10) {
-      return `${year}-${year + 1}`;
+    if (this.isEuroleague()) {
+      // Euroleague uses single year format (e.g., "2024" for 2024-2025 season)
+      // Season runs Oct-May
+      if (month >= 10) {
+        return String(year);
+      } else {
+        return String(year - 1);
+      }
     } else {
-      return `${year - 1}-${year}`;
+      // NBA season runs Oct-June, uses YYYY-YYYY format
+      if (month >= 10) {
+        return `${year}-${year + 1}`;
+      } else {
+        return `${year - 1}-${year}`;
+      }
     }
   }
   
@@ -183,7 +219,10 @@ export class BasketballAdapter extends BaseSportAdapter {
     }
     
     const season = this.getCurrentSeason();
-    const leagueId = LEAGUE_IDS.NBA;
+    const leagueId = this.currentLeagueId;
+    const leagueName = this.isEuroleague() ? 'Euroleague' : 'NBA';
+    
+    console.log(`[Basketball] Finding team in ${leagueName} (league: ${leagueId}, season: ${season})`);
     
     // Try by ID first
     if (query.id) {
@@ -210,8 +249,10 @@ export class BasketballAdapter extends BaseSportAdapter {
       });
       
       if (!allTeams.success || !allTeams.data || allTeams.data.length === 0) {
-        return this.error('FETCH_ERROR', 'Could not fetch NBA teams');
+        return this.error('FETCH_ERROR', `Could not fetch ${leagueName} teams`);
       }
+      
+      console.log(`[Basketball] Found ${allTeams.data.length} teams in ${leagueName}`);
       
       // Try each variation
       for (const searchName of searchVariations) {
@@ -272,7 +313,7 @@ export class BasketballAdapter extends BaseSportAdapter {
   async getMatches(query: MatchQuery): Promise<DataLayerResponse<NormalizedMatch[]>> {
     const season = this.getCurrentSeason();
     const params: Record<string, string | number> = {
-      league: LEAGUE_IDS.NBA,
+      league: this.currentLeagueId,
       season,
     };
     
@@ -305,7 +346,7 @@ export class BasketballAdapter extends BaseSportAdapter {
    */
   async getTeamStats(query: StatsQuery): Promise<DataLayerResponse<NormalizedTeamStats>> {
     const season = query.season || this.getCurrentSeason();
-    const leagueId = LEAGUE_IDS.NBA;
+    const leagueId = this.currentLeagueId;
     
     // First try the /statistics endpoint
     const statsResult = await this.apiProvider.getBasketballTeamStats({
@@ -339,14 +380,45 @@ export class BasketballAdapter extends BaseSportAdapter {
   }
   
   /**
+   * Get previous season string based on league
+   */
+  private getPreviousSeason(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    
+    if (this.isEuroleague()) {
+      // Euroleague uses single year format
+      if (month >= 10) {
+        return String(year - 1);
+      } else {
+        return String(year - 2);
+      }
+    } else {
+      // NBA uses YYYY-YYYY format
+      if (month >= 10) {
+        return `${year - 1}-${year}`;
+      } else {
+        return `${year - 2}-${year - 1}`;
+      }
+    }
+  }
+  
+  /**
    * Get recent games for a team
+   * Tries current season first, falls back to previous season if no finished games
    */
   async getRecentGames(teamId: string, limit: number = 5): Promise<DataLayerResponse<NormalizedRecentGames>> {
-    const season = this.getCurrentSeason();
+    let season = this.getCurrentSeason();
+    const leagueId = this.currentLeagueId;
+    const leagueName = this.isEuroleague() ? 'Euroleague' : 'NBA';
     
-    const result = await this.apiProvider.getBasketballGames({
+    console.log(`[Basketball] Getting recent games for team ${teamId} in ${leagueName} (league: ${leagueId}, season: ${season})`);
+    
+    // Try current season first
+    let result = await this.apiProvider.getBasketballGames({
       team: parseInt(teamId),
-      league: LEAGUE_IDS.NBA,
+      league: leagueId,
       season,
     });
     
@@ -355,10 +427,31 @@ export class BasketballAdapter extends BaseSportAdapter {
     }
     
     // Filter to finished games and sort by date descending
-    const finishedGames = result.data
+    let finishedGames = result.data
       .filter(g => g.status.short === 'FT' || g.status.short === 'AOT')
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, limit);
+      .sort((a, b) => b.timestamp - a.timestamp);
+    
+    console.log(`[Basketball] Found ${finishedGames.length} finished games in ${season}`);
+    
+    // If no finished games in current season, try previous season
+    if (finishedGames.length === 0) {
+      console.log(`[${leagueName}] No finished games in ${season}, trying previous season`);
+      season = this.getPreviousSeason();
+      result = await this.apiProvider.getBasketballGames({
+        team: parseInt(teamId),
+        league: leagueId,
+        season,
+      });
+      
+      if (result.success && result.data) {
+        finishedGames = result.data
+          .filter(g => g.status.short === 'FT' || g.status.short === 'AOT')
+          .sort((a, b) => b.timestamp - a.timestamp);
+        console.log(`[Basketball] Found ${finishedGames.length} finished games in ${season}`);
+      }
+    }
+    
+    finishedGames = finishedGames.slice(0, limit);
     
     const matches = finishedGames.map(g => this.transformMatch(g));
     
@@ -415,7 +508,7 @@ export class BasketballAdapter extends BaseSportAdapter {
     
     const result = await this.apiProvider.getBasketballGames({
       h2h: h2hString,
-      league: LEAGUE_IDS.NBA,
+      league: this.currentLeagueId,
       season: this.getCurrentSeason(),
     });
     

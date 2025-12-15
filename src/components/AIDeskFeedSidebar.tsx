@@ -7,7 +7,7 @@
  * Auto-posts that will also sync to X/Twitter.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ChevronDown, ChevronUp, RefreshCw, ExternalLink, Radio } from 'lucide-react';
 
@@ -53,15 +53,11 @@ export default function AIDeskFeedSidebar({ limit = 8 }: { limit?: number }) {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Use ref to track if initial fetch has been done
+  const hasFetched = useRef(false);
 
-  useEffect(() => {
-    fetchPosts();
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(fetchPosts, 60000);
-    return () => clearInterval(interval);
-  }, [limit]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const response = await fetch(`/api/agent?limit=${limit}`);
       const data = await response.json();
@@ -74,7 +70,19 @@ export default function AIDeskFeedSidebar({ limit = 8 }: { limit?: number }) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [limit]);
+
+  useEffect(() => {
+    // Only fetch once on mount, not on every re-render
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchPosts();
+    }
+    
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(fetchPosts, 60000);
+    return () => clearInterval(interval);
+  }, [fetchPosts]);
 
   const handleRefresh = () => {
     setRefreshing(true);

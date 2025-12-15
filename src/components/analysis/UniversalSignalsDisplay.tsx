@@ -30,8 +30,8 @@ export default function UniversalSignalsDisplay({
   signals,
   homeTeam,
   awayTeam,
-  homeForm = 'DDDDD',
-  awayForm = 'DDDDD',
+  homeForm = '-----',
+  awayForm = '-----',
 }: UniversalSignalsDisplayProps) {
   const { display, confidence, clarity_score } = signals;
   

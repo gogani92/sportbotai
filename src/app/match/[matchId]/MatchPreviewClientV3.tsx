@@ -45,6 +45,14 @@ interface MatchPreviewData {
     kickoff: string;
     venue?: string;
   };
+  // Data availability info
+  dataAvailability?: {
+    source: string;
+    hasFormData: boolean;
+    hasH2H: boolean;
+    hasInjuries: boolean;
+    message?: string;
+  };
   story: {
     favored: 'home' | 'away' | 'draw';
     confidence: 'strong' | 'moderate' | 'slight';
@@ -241,6 +249,18 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
           venue={data.matchInfo.venue}
         />
 
+        {/* Data Availability Notice - Show when limited data */}
+        {data.dataAvailability && !data.dataAvailability.hasFormData && (
+          <div className="mt-4 mb-2 p-3 rounded-xl bg-blue-500/5 border border-blue-500/10">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-400 text-sm">ℹ️</span>
+              <p className="text-xs text-blue-400/80">
+                {data.dataAvailability.message || 'Limited historical data available for this sport. Analysis based on AI estimation.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* LAYER 1: Registration Blur - Universal Signals & Risk Factors */}
         <RegistrationBlur 
           isAuthenticated={!!session}
@@ -254,8 +274,8 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
                 signals={data.universalSignals}
                 homeTeam={data.matchInfo.homeTeam}
                 awayTeam={data.matchInfo.awayTeam}
-                homeForm={data.viralStats?.form?.home || 'DDDDD'}
-                awayForm={data.viralStats?.form?.away || 'DDDDD'}
+                homeForm={data.viralStats?.form?.home || '-----'}
+                awayForm={data.viralStats?.form?.away || '-----'}
               />
             </div>
           )}
