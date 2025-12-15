@@ -37,48 +37,58 @@ interface UpcomingMatch {
   kickoff: string;
 }
 
+// Sports to fetch matches from
+const SPORTS_TO_FETCH = [
+  'soccer_epl',
+  'soccer_spain_la_liga', 
+  'basketball_nba',
+  'americanfootball_nfl',
+  'icehockey_nhl',
+];
+
 /**
- * Get upcoming matches from the odds API cache or database
+ * Get upcoming matches from the events API
  */
 async function getUpcomingMatches(): Promise<UpcomingMatch[]> {
-  try {
-    // Try to get from cached match data
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-    
-    const response = await fetch(`${baseUrl}/api/match-data`, {
-      headers: { 'Cache-Control': 'no-cache' },
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      const matches: UpcomingMatch[] = [];
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  
+  const matches: UpcomingMatch[] = [];
+  
+  // Fetch from multiple sports in parallel
+  const fetchPromises = SPORTS_TO_FETCH.map(async (sportKey) => {
+    try {
+      const response = await fetch(`${baseUrl}/api/events/${sportKey}`, {
+        headers: { 'Cache-Control': 'no-cache' },
+        next: { revalidate: 0 },
+      });
       
-      // Parse matches from all sports
-      for (const sport of Object.keys(data)) {
-        const sportMatches = data[sport];
-        if (Array.isArray(sportMatches)) {
-          for (const match of sportMatches.slice(0, 3)) { // Take top 3 per sport
-            if (match.homeTeam && match.awayTeam) {
-              matches.push({
-                homeTeam: match.homeTeam,
-                awayTeam: match.awayTeam,
-                league: match.league || sport,
-                sport: match.sport || sport,
-                kickoff: match.kickoff || new Date().toISOString(),
-              });
-            }
+      if (response.ok) {
+        const data = await response.json();
+        const events = data.events || [];
+        
+        // Take first 3 upcoming matches from each sport
+        for (const event of events.slice(0, 3)) {
+          if (event.home_team && event.away_team) {
+            matches.push({
+              homeTeam: event.home_team,
+              awayTeam: event.away_team,
+              league: event.sport_title || sportKey,
+              sport: sportKey,
+              kickoff: event.commence_time || new Date().toISOString(),
+            });
           }
         }
       }
-      
-      return matches;
+    } catch (error) {
+      console.error(`[Live-Intel-Cron] Failed to fetch ${sportKey}:`, error);
     }
-  } catch (error) {
-    console.error('[Live-Intel-Cron] Failed to fetch matches:', error);
-  }
+  });
   
-  return [];
+  await Promise.all(fetchPromises);
+  
+  console.log(`[Live-Intel-Cron] Fetched ${matches.length} matches from ${SPORTS_TO_FETCH.length} sports`);
+  return matches;
 }
 
 /**
