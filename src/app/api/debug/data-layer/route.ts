@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     
     // Test findTeam
     log(`Finding team: ${homeTeam}`);
-    const teamResult = await dataLayer.findTeam(normalizedSport as any, homeTeam);
+    const teamResult = await dataLayer.findTeam({ sport: normalizedSport as any, name: homeTeam });
     log(`Team result: ${teamResult.success ? `Found: ${teamResult.data?.name} (ID: ${teamResult.data?.externalId})` : `Failed: ${teamResult.error}`}`);
     
     // Test full enriched data
