@@ -726,10 +726,26 @@ CRITICAL RULES:
  * Build goals timing from real API data
  */
 function buildGoalsTimingFromData(
-  goalTimingData: { home: { scoring: Record<string, number>; conceding: Record<string, number>; totalGoals: number }; away: { scoring: Record<string, number>; conceding: Record<string, number>; totalGoals: number } },
+  goalTimingData: { home: { scoring: Record<string, number>; conceding: Record<string, number>; totalGoals: number }; away: { scoring: Record<string, number>; conceding: Record<string, number>; totalGoals: number } } | null,
   homeTeam: string,
   awayTeam: string
 ) {
+  // Return default empty structure if no data (non-soccer sports)
+  if (!goalTimingData || !goalTimingData.home || !goalTimingData.away) {
+    return {
+      home: {
+        scoring: {},
+        conceding: {},
+        insight: null,
+      },
+      away: {
+        scoring: {},
+        conceding: {},
+        insight: null,
+      },
+    };
+  }
+
   // Generate insights based on peak scoring times
   const findPeakPeriod = (scoring: Record<string, number>) => {
     let max = 0;
