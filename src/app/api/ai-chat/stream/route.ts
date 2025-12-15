@@ -23,6 +23,7 @@ import { saveKnowledge, buildLearnedContext, getTerminologyForSport } from '@/li
 import { cacheGet, cacheSet, CACHE_KEYS, hashChatQuery, getChatTTL } from '@/lib/cache';
 import { checkChatRateLimit, getClientIp, CHAT_RATE_LIMITS } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
+import { getEnrichedMatchDataV2, normalizeSport } from '@/lib/data-layer/bridge';
 
 // ============================================
 // TYPES
@@ -156,6 +157,168 @@ function detectSport(message: string): string | undefined {
   if (/tennis|atp|wta|wimbledon|nadal|djokovic/i.test(lower)) return 'tennis';
   if (/nfl|american football|quarterback|touchdown|super bowl/i.test(lower)) return 'american_football';
   return undefined;
+}
+
+// ============================================
+// DATA LAYER INTEGRATION
+// ============================================
+
+/**
+ * Check if query needs structured stats from DataLayer
+ */
+function needsDataLayerStats(message: string, category: QueryCategory): boolean {
+  // Categories that benefit from DataLayer stats
+  const statCategories: QueryCategory[] = ['STATS', 'COMPARISON', 'BETTING_ADVICE', 'PLAYER_PROP', 'RESULT', 'STANDINGS'];
+  if (statCategories.includes(category)) return true;
+  
+  // Patterns that suggest form/H2H needs
+  const statsPatterns = [
+    /form|streak|recent (games|matches|results)/i,
+    /head.to.head|h2h|vs|versus/i,
+    /win.?loss|record|standing/i,
+    /(how|what).*(doing|performing|playing)/i,
+    /compare|better|worse/i,
+    /over|under|points|goals|score/i,
+    /last \d+ (games|matches)/i,
+  ];
+  
+  return statsPatterns.some(p => p.test(message));
+}
+
+/**
+ * Extract team names from message for DataLayer lookup
+ */
+function extractTeamNames(message: string): { homeTeam?: string; awayTeam?: string } {
+  // Common team patterns
+  const vsPattern = /([A-Z][a-zA-Z\s]+?)\s+(?:vs?\.?|versus|@)\s+([A-Z][a-zA-Z\s]+)/i;
+  const match = message.match(vsPattern);
+  
+  if (match) {
+    return {
+      homeTeam: match[1].trim(),
+      awayTeam: match[2].trim(),
+    };
+  }
+  
+  // NBA team names
+  const nbaTeams = [
+    'Lakers', 'Celtics', 'Warriors', 'Heat', 'Bucks', 'Nets', 'Knicks', '76ers', 'Sixers',
+    'Clippers', 'Suns', 'Nuggets', 'Mavericks', 'Mavs', 'Grizzlies', 'Timberwolves', 'Wolves',
+    'Cavaliers', 'Cavs', 'Bulls', 'Hawks', 'Raptors', 'Pacers', 'Magic', 'Hornets', 'Wizards',
+    'Pistons', 'Thunder', 'Trail Blazers', 'Blazers', 'Jazz', 'Kings', 'Spurs', 'Pelicans', 'Rockets'
+  ];
+  
+  // NHL teams
+  const nhlTeams = [
+    'Maple Leafs', 'Canadiens', 'Bruins', 'Rangers', 'Penguins', 'Blackhawks', 'Red Wings',
+    'Oilers', 'Flames', 'Canucks', 'Jets', 'Senators', 'Lightning', 'Panthers', 'Avalanche',
+    'Golden Knights', 'Kraken', 'Stars', 'Blues', 'Wild', 'Predators', 'Hurricanes', 'Devils'
+  ];
+  
+  // NFL teams
+  const nflTeams = [
+    'Chiefs', 'Eagles', 'Bills', 'Cowboys', 'Dolphins', 'Ravens', 'Bengals', '49ers', 'Niners',
+    'Lions', 'Seahawks', 'Packers', 'Vikings', 'Steelers', 'Chargers', 'Broncos', 'Raiders',
+    'Commanders', 'Giants', 'Jets', 'Patriots', 'Titans', 'Jaguars', 'Colts', 'Texans',
+    'Browns', 'Bears', 'Saints', 'Buccaneers', 'Bucs', 'Falcons', 'Panthers', 'Cardinals', 'Rams'
+  ];
+  
+  // Soccer teams (common)
+  const soccerTeams = [
+    'Manchester United', 'Man United', 'Man Utd', 'Liverpool', 'Arsenal', 'Chelsea', 'Man City',
+    'Manchester City', 'Tottenham', 'Spurs', 'Newcastle', 'West Ham', 'Aston Villa', 'Brighton',
+    'Real Madrid', 'Barcelona', 'Barca', 'Atletico Madrid', 'Bayern Munich', 'Bayern', 'Dortmund',
+    'PSG', 'Paris Saint-Germain', 'Juventus', 'Juve', 'Inter Milan', 'AC Milan', 'Napoli'
+  ];
+  
+  const allTeams = [...nbaTeams, ...nhlTeams, ...nflTeams, ...soccerTeams];
+  const foundTeams: string[] = [];
+  
+  for (const team of allTeams) {
+    if (new RegExp(`\\b${team}\\b`, 'i').test(message)) {
+      foundTeams.push(team);
+    }
+  }
+  
+  if (foundTeams.length >= 2) {
+    return { homeTeam: foundTeams[0], awayTeam: foundTeams[1] };
+  } else if (foundTeams.length === 1) {
+    return { homeTeam: foundTeams[0] };
+  }
+  
+  return {};
+}
+
+/**
+ * Fetch stats from DataLayer and format for chat context
+ */
+async function fetchDataLayerContext(
+  teams: { homeTeam?: string; awayTeam?: string },
+  sport: string | undefined
+): Promise<string> {
+  if (!teams.homeTeam || !sport) return '';
+  
+  try {
+    const sportKey = sport === 'football' ? 'soccer' : 
+                     sport === 'american_football' ? 'american_football' :
+                     sport;
+    
+    // If we have two teams, get matchup data
+    if (teams.awayTeam) {
+      const data = await getEnrichedMatchDataV2(
+        teams.homeTeam,
+        teams.awayTeam,
+        sportKey
+      );
+      
+      if (data.dataSource === 'UNAVAILABLE') return '';
+      
+      let context = '\\n\\n=== STRUCTURED STATS (DataLayer) ===\\n';
+      
+      // Home team form
+      if (data.homeForm && data.homeForm.length > 0) {
+        context += `\\n${teams.homeTeam} Recent Form: `;
+        context += data.homeForm.slice(0, 5).map(m => m.result).join('');
+        context += ` (${data.homeForm.filter(m => m.result === 'W').length}W-${data.homeForm.filter(m => m.result === 'L').length}L last ${data.homeForm.length})`;
+      }
+      
+      // Away team form
+      if (data.awayForm && data.awayForm.length > 0) {
+        context += `\\n${teams.awayTeam} Recent Form: `;
+        context += data.awayForm.slice(0, 5).map(m => m.result).join('');
+        context += ` (${data.awayForm.filter(m => m.result === 'W').length}W-${data.awayForm.filter(m => m.result === 'L').length}L last ${data.awayForm.length})`;
+      }
+      
+      // Season stats
+      if (data.homeStats) {
+        context += `\\n${teams.homeTeam} Season: ${data.homeStats.wins}W-${data.homeStats.losses}L`;
+        if (data.homeStats.draws) context += `-${data.homeStats.draws}D`;
+        context += ` | Scored: ${data.homeStats.goalsScored}, Conceded: ${data.homeStats.goalsConceded}`;
+      }
+      
+      if (data.awayStats) {
+        context += `\\n${teams.awayTeam} Season: ${data.awayStats.wins}W-${data.awayStats.losses}L`;
+        if (data.awayStats.draws) context += `-${data.awayStats.draws}D`;
+        context += ` | Scored: ${data.awayStats.goalsScored}, Conceded: ${data.awayStats.goalsConceded}`;
+      }
+      
+      // H2H summary
+      if (data.h2hSummary && data.h2hSummary.totalMatches > 0) {
+        context += `\\nHead-to-Head (${data.h2hSummary.totalMatches} games): `;
+        context += `${teams.homeTeam} ${data.h2hSummary.homeWins}W - ${data.h2hSummary.draws}D - ${data.h2hSummary.awayWins}W ${teams.awayTeam}`;
+      }
+      
+      context += '\\n';
+      return context;
+    }
+    
+    // Single team - just get their form/stats (would need a different endpoint)
+    return '';
+    
+  } catch (error) {
+    console.error('[AI-Chat] DataLayer fetch error:', error);
+    return '';
+  }
 }
 
 // ============================================
@@ -455,6 +618,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Step 1.5: DataLayer stats if needed (form, H2H, season stats)
+    let dataLayerContext = '';
+    if (needsDataLayerStats(searchMessage, queryCategory)) {
+      const teams = extractTeamNames(searchMessage);
+      if (teams.homeTeam) {
+        console.log('[AI-Chat-Stream] Fetching DataLayer stats for:', teams);
+        dataLayerContext = await fetchDataLayerContext(teams, detectedSport);
+        if (dataLayerContext) {
+          console.log('[AI-Chat-Stream] DataLayer context added');
+        }
+      }
+    }
+
     // Step 2: Build system prompt
     const brainMode: BrainMode = 
       (queryCategory === 'BETTING_ADVICE' || queryCategory === 'PLAYER_PROP') 
@@ -464,6 +640,11 @@ export async function POST(request: NextRequest) {
     let systemPrompt = buildSystemPrompt(brainMode, {
       hasRealTimeData: !!perplexityContext,
     });
+    
+    // Enhance system prompt when DataLayer stats are available
+    if (dataLayerContext) {
+      systemPrompt += `\n\nYou have access to VERIFIED STRUCTURED DATA including team form, head-to-head records, and season statistics. Prioritize this data for factual claims about records and stats.`;
+    }
 
     // Add learned context (using detectedSport defined earlier)
     try {
@@ -501,8 +682,20 @@ export async function POST(request: NextRequest) {
 
     // Add user message with context
     let userContent = message;
-    if (perplexityContext) {
-      userContent = `USER QUESTION: ${message}\n\nREAL-TIME DATA:\n${perplexityContext}\n\nUse the real-time data to answer. Be sharp and specific.`;
+    const hasContext = perplexityContext || dataLayerContext;
+    
+    if (hasContext) {
+      userContent = `USER QUESTION: ${message}`;
+      
+      if (dataLayerContext) {
+        userContent += `\n\nSTRUCTURED STATS (verified data):\n${dataLayerContext}`;
+      }
+      
+      if (perplexityContext) {
+        userContent += `\n\nREAL-TIME NEWS & INFO:\n${perplexityContext}`;
+      }
+      
+      userContent += '\n\nUse BOTH the structured stats AND real-time info to give a complete answer. Be sharp and specific.';
     }
     messages.push({ role: 'user', content: userContent });
 
@@ -530,6 +723,7 @@ export async function POST(request: NextRequest) {
             type: 'metadata',
             citations,
             usedRealTimeSearch: !!perplexityContext,
+            usedDataLayer: !!dataLayerContext,
             brainMode,
             followUps,
           };
