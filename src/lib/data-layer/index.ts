@@ -375,6 +375,96 @@ export class DataLayer {
   }
   
   /**
+   * Get upcoming events for a sport from The Odds API
+   * This is a free endpoint (no quota usage)
+   */
+  async getUpcomingEvents(
+    sportKey: string,
+    options: {
+      dateFormat?: string;
+    } = {}
+  ): Promise<DataLayerResponse<Array<{
+    id: string;
+    sport: string;
+    sportKey: string;
+    homeTeam: string;
+    awayTeam: string;
+    commenceTime: string;
+  }>>> {
+    const cacheKey = this.getCacheKey('getUpcomingEvents', { sportKey });
+    const cached = this.getFromCache<DataLayerResponse<Array<{
+      id: string;
+      sport: string;
+      sportKey: string;
+      homeTeam: string;
+      awayTeam: string;
+      commenceTime: string;
+    }>>>(cacheKey);
+    if (cached) return cached;
+    
+    this.log('getUpcomingEvents', { sportKey });
+    
+    // Check if API is configured
+    if (!theOddsClient.isConfigured()) {
+      return {
+        success: false,
+        error: {
+          code: 'API_NOT_CONFIGURED',
+          message: 'The Odds API key is not configured',
+        },
+        metadata: {
+          provider: 'the-odds-api',
+          cached: false,
+          fetchedAt: new Date(),
+        },
+      };
+    }
+    
+    try {
+      const response = await theOddsClient.getEvents(sportKey);
+      
+      const events = response.data.map((event: { id: string; sport_title?: string; home_team: string; away_team: string; commence_time: string }) => ({
+        id: event.id,
+        sport: event.sport_title || sportKey,
+        sportKey: sportKey,
+        homeTeam: event.home_team,
+        awayTeam: event.away_team,
+        commenceTime: event.commence_time,
+      }));
+      
+      const result: DataLayerResponse<typeof events> = {
+        success: true,
+        data: events,
+        metadata: {
+          provider: 'the-odds-api',
+          cached: false,
+          fetchedAt: new Date(),
+          quotaUsed: 0, // Events endpoint is free
+          quotaRemaining: response.requestsRemaining,
+        },
+      };
+      
+      this.setCache(cacheKey, result);
+      return result;
+      
+    } catch (error) {
+      console.error('[DataLayer] Error fetching events:', error);
+      return {
+        success: false,
+        error: {
+          code: 'API_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to fetch events',
+        },
+        metadata: {
+          provider: 'the-odds-api',
+          cached: false,
+          fetchedAt: new Date(),
+        },
+      };
+    }
+  }
+  
+  /**
    * Get odds for a match from The Odds API
    * Maps sport to The Odds API sport key format
    */
@@ -385,6 +475,7 @@ export class DataLayer {
     options: {
       regions?: string[];
       markets?: string[];
+      sportKey?: string; // Optional: pass exact Odds API sport key (e.g., 'soccer_spain_la_liga')
     } = {}
   ): Promise<DataLayerResponse<NormalizedOdds[]>> {
     const opts = {
@@ -392,11 +483,14 @@ export class DataLayer {
       markets: options.markets ?? ['h2h', 'spreads', 'totals'],
     };
     
-    const cacheKey = this.getCacheKey('getOdds', { sport, homeTeam, awayTeam, ...opts });
+    // Use provided sportKey or map from internal sport type
+    const resolvedSportKey = options.sportKey || this.mapSportToOddsKey(sport);
+    
+    const cacheKey = this.getCacheKey('getOdds', { sport: resolvedSportKey, homeTeam, awayTeam, ...opts });
     const cached = this.getFromCache<DataLayerResponse<NormalizedOdds[]>>(cacheKey);
     if (cached) return cached;
     
-    this.log('getOdds', { sport, homeTeam, awayTeam, options: opts });
+    this.log('getOdds', { sport, sportKey: resolvedSportKey, homeTeam, awayTeam, options: opts });
     
     // Check if odds API is configured
     if (!theOddsClient.isConfigured()) {
@@ -415,10 +509,8 @@ export class DataLayer {
     }
     
     try {
-      // Map internal sport to The Odds API sport key
-      const sportKey = this.mapSportToOddsKey(sport);
-      
-      const oddsResponse = await theOddsClient.getOddsForSport(sportKey, {
+      // Use resolved sport key for the API call
+      const oddsResponse = await theOddsClient.getOddsForSport(resolvedSportKey, {
         regions: opts.regions,
         markets: opts.markets,
       });

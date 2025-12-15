@@ -294,7 +294,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         normalizeSport(matchInfo.sport) as 'soccer' | 'basketball' | 'hockey' | 'american_football' | 'baseball' | 'mma' | 'tennis',
         matchInfo.homeTeam,
         matchInfo.awayTeam,
-        { markets: ['h2h'] }
+        { 
+          markets: ['h2h'],
+          sportKey: matchInfo.sport, // Pass original sport key for correct league
+        }
       );
       
       if (oddsResult.success && oddsResult.data && oddsResult.data.length > 0) {
