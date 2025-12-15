@@ -170,6 +170,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       draws: enrichedData.h2hSummary?.draws || 0,
     };
 
+    console.log(`[Match-Preview] Stats prepared, calling AI analysis...`);
+    console.log(`[Match-Preview] homeStats:`, JSON.stringify(homeStats));
+    console.log(`[Match-Preview] awayStats:`, JSON.stringify(awayStats));
+    console.log(`[Match-Preview] h2h:`, JSON.stringify(h2h));
+
     // Generate AI analysis with new comprehensive prompt
     const aiAnalysis = await generateAIAnalysis({
       homeTeam: matchInfo.homeTeam,
@@ -183,6 +188,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       awayStats,
       h2h,
     });
+
+    console.log(`[Match-Preview] AI analysis complete:`, aiAnalysis?.story?.favored || 'no favored');
 
     // Build key absence from injuries data
     const findKeyAbsence = () => {
@@ -348,10 +355,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : '';
-    console.error(`[Match-Preview] Error after ${Date.now() - startTime}ms:`, errorMessage);
+    console.error(`[Match-Preview] FATAL ERROR after ${Date.now() - startTime}ms:`, errorMessage);
     console.error('[Match-Preview] Stack:', errorStack);
+    console.error('[Match-Preview] Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    
+    // Return more details in dev/preview for debugging
+    const isDev = process.env.NODE_ENV !== 'production';
     return NextResponse.json(
-      { error: 'Failed to generate match preview', details: errorMessage },
+      { 
+        error: 'Failed to generate match preview', 
+        details: errorMessage,
+        ...(isDev && { stack: errorStack, timestamp: new Date().toISOString() })
+      },
       { status: 500 }
     );
   }
