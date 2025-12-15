@@ -206,7 +206,7 @@ ${realTimeContext}
 }
 
 // ============================================
-// GET - Get Feed Posts
+// GET - Get Feed Posts from Database
 // ============================================
 
 export async function GET(request: NextRequest) {
@@ -224,85 +224,72 @@ export async function GET(request: NextRequest) {
   const perplexity = getPerplexityClient();
   const perplexityEnabled = perplexity.isConfigured();
 
-  // Example posts showing the feed capability
-  const examplePosts: AgentPost[] = [
-    {
-      id: 'post_example_1',
-      category: 'MARKET_MOVEMENT',
-      categoryName: 'Market Movement',
-      categoryIcon: '📊',
-      content: 'Sharp movement detected on the early Premier League fixture. Market uncertainty elevated after late team news.',
-      matchRef: 'Chelsea vs Everton',
-      sport: 'Soccer',
-      league: 'Premier League',
-      timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
-      confidence: 'MEDIUM',
-    },
-    {
-      id: 'post_example_2',
-      category: 'MOMENTUM_SHIFT',
-      categoryName: 'Momentum & Form',
-      categoryIcon: '📈',
-      content: 'Three consecutive wins have flipped sentiment. The question is whether the underlying metrics support the hype. Spoiler: barely.',
-      matchRef: 'Brentford vs Newcastle',
-      sport: 'Soccer',
-      league: 'Premier League',
-      timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
-      confidence: 'HIGH',
-    },
-    {
-      id: 'post_example_3',
-      category: 'MATCH_COMPLEXITY',
-      categoryName: 'Match Complexity',
-      categoryIcon: '🎯',
-      content: 'High-complexity alert. Both sides showing inconsistent form, similar power ratings, and a history of chaotic encounters. Predictability? Not today.',
-      matchRef: 'Crystal Palace vs Brighton',
-      sport: 'Soccer',
-      league: 'Premier League',
-      timestamp: new Date(Date.now() - 90 * 60000).toISOString(),
-      confidence: 'LOW',
-    },
-    {
-      id: 'post_example_4',
-      category: 'LINEUP_INTEL',
-      categoryName: 'Lineup Intelligence',
-      categoryIcon: '📋',
-      content: 'Key midfielder confirmed out. Model volatility adjusted upward. Classic mid-week rotation chaos.',
-      matchRef: 'Man City vs Man United',
-      sport: 'Soccer',
-      league: 'Premier League',
-      timestamp: new Date(Date.now() - 120 * 60000).toISOString(),
-      confidence: 'HIGH',
-    },
-    {
-      id: 'post_example_5',
-      category: 'AI_INSIGHT',
-      categoryName: 'AI Insight',
-      categoryIcon: '🧠',
-      content: 'Interesting pattern: late-season fixtures in this matchup have historically produced 40% more goals than the league average. Make of that what you will.',
-      matchRef: 'Liverpool vs Tottenham',
-      sport: 'Soccer',
-      league: 'Premier League',
-      timestamp: new Date(Date.now() - 180 * 60000).toISOString(),
-      confidence: 'MEDIUM',
-    },
-  ];
-
-  // Filter by sport if provided
-  const filteredPosts = sport 
-    ? examplePosts.filter(p => p.sport.toLowerCase() === sport.toLowerCase())
-    : examplePosts;
-
-  return NextResponse.json({
-    success: true,
-    posts: filteredPosts.slice(0, limit),
-    meta: {
-      total: filteredPosts.length,
-      limit,
-      sport: sport || 'all',
-      realTimeEnabled: perplexityEnabled,
-    },
-  });
+  try {
+    // Import prisma for database access
+    const { prisma } = await import('@/lib/prisma');
+    
+    // Build query filters
+    const where: { sport?: string } = {};
+    if (sport) {
+      where.sport = sport;
+    }
+    
+    // Fetch real posts from database
+    const dbPosts = await prisma.agentPost.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    
+    // Map database posts to API response format
+    const posts: AgentPost[] = dbPosts.map(post => {
+      const categoryInfo = POST_CATEGORIES[post.category as PostCategory] || POST_CATEGORIES.AI_INSIGHT;
+      return {
+        id: post.id,
+        category: post.category as PostCategory,
+        categoryName: categoryInfo.name,
+        categoryIcon: categoryInfo.icon,
+        content: post.content,
+        matchRef: post.matchRef || `${post.homeTeam || 'Team A'} vs ${post.awayTeam || 'Team B'}`,
+        sport: post.sport || 'Soccer',
+        league: post.league || 'Unknown League',
+        timestamp: post.createdAt.toISOString(),
+        confidence: post.confidence && post.confidence >= 7 ? 'HIGH' : 
+                   post.confidence && post.confidence >= 4 ? 'MEDIUM' : 'LOW',
+        realTimeData: post.realTimeData || false,
+        citations: post.citations as string[] || [],
+      };
+    });
+    
+    // If no posts exist yet, return empty array (no more fake posts)
+    return NextResponse.json({
+      success: true,
+      posts,
+      meta: {
+        total: posts.length,
+        limit,
+        sport: sport || 'all',
+        realTimeEnabled: perplexityEnabled,
+        source: 'database',
+      },
+    });
+    
+  } catch (error) {
+    console.error('[Agent API] Error fetching posts:', error);
+    
+    // Return empty posts on error instead of fake data
+    return NextResponse.json({
+      success: true,
+      posts: [],
+      meta: {
+        total: 0,
+        limit,
+        sport: sport || 'all',
+        realTimeEnabled: perplexityEnabled,
+        error: 'Database unavailable',
+      },
+    });
+  }
 }
 
 // ============================================
