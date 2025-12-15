@@ -50,10 +50,13 @@ export async function getEnrichedMatchDataV2(
   awayStats: { goalsScored: number; goalsConceded: number; cleanSheets: number; wins: number; losses: number; draws?: number } | null;
   dataSource: 'API_SPORTS' | 'CACHE' | 'UNAVAILABLE';
 }> {
+  console.log(`[Bridge] START: ${homeTeam} vs ${awayTeam} (${sport})`);
   const dataLayer = getDataLayer();
   const normalizedSport = normalizeSport(sport);
+  console.log(`[Bridge] Normalized sport: ${normalizedSport}`);
   
   try {
+    console.log(`[Bridge] Calling dataLayer.getEnrichedMatchData...`);
     const result = await dataLayer.getEnrichedMatchData(
       normalizedSport,
       homeTeam,
@@ -68,12 +71,19 @@ export async function getEnrichedMatchDataV2(
       }
     );
     
+    console.log(`[Bridge] Result received:`, { success: result.success, hasData: !!result.data });
+    
     if (!result.success || !result.data) {
-      console.log(`[DataLayer] Failed to fetch data for ${homeTeam} vs ${awayTeam}:`, result.error);
+      console.log(`[Bridge] Failed to fetch data for ${homeTeam} vs ${awayTeam}:`, result.error);
       return createEmptyResponse(sport);
     }
     
     const data = result.data;
+    console.log(`[Bridge] Transforming data...`);
+    console.log(`[Bridge] Home team:`, data.homeTeam?.team?.name);
+    console.log(`[Bridge] Away team:`, data.awayTeam?.team?.name);
+    console.log(`[Bridge] Home recent games:`, data.homeTeam?.recentGames?.games?.length || 0);
+    console.log(`[Bridge] Away recent games:`, data.awayTeam?.recentGames?.games?.length || 0);
     
     // Helper to safely convert date to ISO string
     const toISOString = (date: Date | string | undefined): string => {
@@ -83,7 +93,7 @@ export async function getEnrichedMatchDataV2(
     };
     
     // Transform to old format for backward compatibility
-    return {
+    const transformed = {
       sport: normalizedSport,
       
       homeForm: data.homeTeam.recentGames?.games.map(game => {
@@ -162,8 +172,11 @@ export async function getEnrichedMatchDataV2(
       dataSource: 'API_SPORTS' as const,
     };
     
+    console.log(`[Bridge] SUCCESS: Returning data for ${homeTeam} vs ${awayTeam}`);
+    return transformed;
+    
   } catch (error) {
-    console.error(`[DataLayer Bridge] Error fetching data for ${homeTeam} vs ${awayTeam} (${sport}):`, error);
+    console.error(`[Bridge] ERROR for ${homeTeam} vs ${awayTeam} (${sport}):`, error);
     console.error(`[DataLayer Bridge] Stack:`, error instanceof Error ? error.stack : 'No stack');
     return createEmptyResponse(sport);
   }
