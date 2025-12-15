@@ -90,6 +90,11 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Scroll to top on mount to prevent unwanted scroll position
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   useEffect(() => {
     const fetchMatchPreview = async () => {
       try {
