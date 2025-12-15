@@ -23,6 +23,7 @@ import {
   ShareCard,
   UniversalSignalsDisplay,
   MarketIntelSection,
+  RegistrationBlur,
 } from '@/components/analysis';
 import type { UniversalSignals } from '@/lib/universal-signals';
 import type { MarketIntel, OddsData } from '@/lib/value-detection';
@@ -190,19 +191,73 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
         />
 
         {/* Universal Signals Display - The Core Product */}
-        {data.universalSignals && (
-          <div className="mt-8">
-            <UniversalSignalsDisplay
-              signals={data.universalSignals}
-              homeTeam={data.matchInfo.homeTeam}
-              awayTeam={data.matchInfo.awayTeam}
-              homeForm={data.viralStats?.form?.home || 'DDDDD'}
-              awayForm={data.viralStats?.form?.away || 'DDDDD'}
-            />
-          </div>
-        )}
+        {/* Wrapped in Registration Blur for non-authenticated users */}
+        <RegistrationBlur 
+          isAuthenticated={!!session}
+          title="Unlock Match Signals"
+          description="Create a free account to see our 5 universal match signals, AI insights, and game flow analysis."
+        >
+          {data.universalSignals && (
+            <div className="mt-8">
+              <UniversalSignalsDisplay
+                signals={data.universalSignals}
+                homeTeam={data.matchInfo.homeTeam}
+                awayTeam={data.matchInfo.awayTeam}
+                homeForm={data.viralStats?.form?.home || 'DDDDD'}
+                awayForm={data.viralStats?.form?.away || 'DDDDD'}
+              />
+            </div>
+          )}
 
-        {/* Market Edge - Premium Value Detection */}
+          {/* Match Snapshot - AI Insights */}
+          {snapshot && snapshot.length > 0 && (
+            <div className="mt-6 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
+              <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-4">
+                Match Snapshot
+              </h3>
+              <ul className="space-y-2.5">
+                {snapshot.slice(0, 4).map((insight, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <span className="w-1 h-1 rounded-full bg-white/30 mt-2 flex-shrink-0" />
+                    <span className="text-sm text-zinc-300 leading-relaxed">{insight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Game Flow - How it unfolds */}
+          {gameFlow && (
+            <div className="mt-5 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
+              <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
+                Game Flow
+              </h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                {gameFlow}
+              </p>
+            </div>
+          )}
+
+          {/* Risk Factors */}
+          {riskFactors && riskFactors.length > 0 && (
+            <div className="mt-5 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
+              <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="text-amber-500/80">⚠</span>
+                Risk Factors
+              </h3>
+              <ul className="space-y-2">
+                {riskFactors.map((risk, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <span className="w-1 h-1 rounded-full bg-amber-500/40 mt-2 flex-shrink-0" />
+                    <span className="text-sm text-zinc-500 leading-relaxed">{risk}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </RegistrationBlur>
+
+        {/* Market Edge - Premium Value Detection (Layer 2: Premium Blur) */}
         {data.marketIntel && data.odds && (
           <div className="mt-8">
             <MarketIntelSection
@@ -213,53 +268,6 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
               hasDraw={data.matchInfo.hasDraw}
               isPro={session?.user?.plan === 'PRO' || session?.user?.plan === 'PREMIUM'}
             />
-          </div>
-        )}
-
-        {/* Match Snapshot - AI Insights */}
-        {snapshot && snapshot.length > 0 && (
-          <div className="mt-6 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
-            <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-4">
-              Match Snapshot
-            </h3>
-            <ul className="space-y-2.5">
-              {snapshot.slice(0, 4).map((insight, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <span className="w-1 h-1 rounded-full bg-white/30 mt-2 flex-shrink-0" />
-                  <span className="text-sm text-zinc-300 leading-relaxed">{insight}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Game Flow - How it unfolds */}
-        {gameFlow && (
-          <div className="mt-5 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
-            <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
-              Game Flow
-            </h3>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              {gameFlow}
-            </p>
-          </div>
-        )}
-
-        {/* Risk Factors */}
-        {riskFactors && riskFactors.length > 0 && (
-          <div className="mt-5 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
-            <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <span className="text-amber-500/80">⚠</span>
-              Risk Factors
-            </h3>
-            <ul className="space-y-2">
-              {riskFactors.map((risk, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <span className="w-1 h-1 rounded-full bg-amber-500/40 mt-2 flex-shrink-0" />
-                  <span className="text-sm text-zinc-500 leading-relaxed">{risk}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
 

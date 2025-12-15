@@ -24,3 +24,6 @@ export * from './VisualSignals';
 
 // Premium Edge Features - Value Detection
 export * from './MarketEdge';
+
+// Two-Layer Blur System
+export { RegistrationBlur } from './RegistrationBlur';
