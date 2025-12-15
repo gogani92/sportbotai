@@ -42,13 +42,13 @@ export async function getEnrichedMatchDataV2(
   league?: string
 ): Promise<{
   sport: string;
-  homeForm: Array<{ result: string; opponent: string; score: string; date: string }> | null;
-  awayForm: Array<{ result: string; opponent: string; score: string; date: string }> | null;
+  homeForm: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string; date: string }> | null;
+  awayForm: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string; date: string }> | null;
   headToHead: Array<{ homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; date: string }> | null;
   h2hSummary: { totalMatches: number; homeWins: number; awayWins: number; draws: number } | null;
-  homeStats: { goalsScored: number; goalsConceded: number; wins: number; losses: number; draws?: number } | null;
-  awayStats: { goalsScored: number; goalsConceded: number; wins: number; losses: number; draws?: number } | null;
-  dataSource: string;
+  homeStats: { goalsScored: number; goalsConceded: number; cleanSheets: number; wins: number; losses: number; draws?: number } | null;
+  awayStats: { goalsScored: number; goalsConceded: number; cleanSheets: number; wins: number; losses: number; draws?: number } | null;
+  dataSource: 'API_SPORTS' | 'CACHE' | 'UNAVAILABLE';
 }> {
   const dataLayer = getDataLayer();
   const normalizedSport = normalizeSport(sport);
@@ -137,6 +137,7 @@ export async function getEnrichedMatchDataV2(
       homeStats: data.homeTeam.stats ? {
         goalsScored: data.homeTeam.stats.scoring.totalFor,
         goalsConceded: data.homeTeam.stats.scoring.totalAgainst,
+        cleanSheets: 0, // Not tracked in DataLayer yet
         wins: data.homeTeam.stats.record.wins,
         losses: data.homeTeam.stats.record.losses,
         draws: data.homeTeam.stats.record.draws,
@@ -145,12 +146,13 @@ export async function getEnrichedMatchDataV2(
       awayStats: data.awayTeam.stats ? {
         goalsScored: data.awayTeam.stats.scoring.totalFor,
         goalsConceded: data.awayTeam.stats.scoring.totalAgainst,
+        cleanSheets: 0, // Not tracked in DataLayer yet
         wins: data.awayTeam.stats.record.wins,
         losses: data.awayTeam.stats.record.losses,
         draws: data.awayTeam.stats.record.draws,
       } : null,
       
-      dataSource: 'DATA_LAYER',
+      dataSource: 'API_SPORTS' as const,
     };
     
   } catch (error) {
@@ -159,7 +161,16 @@ export async function getEnrichedMatchDataV2(
   }
 }
 
-function createEmptyResponse(sport: string) {
+function createEmptyResponse(sport: string): {
+  sport: string;
+  homeForm: null;
+  awayForm: null;
+  headToHead: null;
+  h2hSummary: null;
+  homeStats: null;
+  awayStats: null;
+  dataSource: 'UNAVAILABLE';
+} {
   return {
     sport,
     homeForm: null,

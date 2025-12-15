@@ -56,11 +56,10 @@ import {
 } from '@/lib/config/systemPrompt';
 import { canUserAnalyze, incrementAnalysisCount } from '@/lib/auth';
 import { 
-  getMultiSportEnrichedData, 
-  MultiSportEnrichedData, 
-  isSportSupported,
-  getDataSourceLabel 
-} from '@/lib/sports-api';
+  getEnrichedMatchDataV2, 
+  normalizeSport,
+} from '@/lib/data-layer/bridge';
+import { isSportSupported, getDataSourceLabel, type MultiSportEnrichedData } from '@/lib/sports-api';
 import {
   cacheGet,
   cacheSet,
@@ -451,13 +450,14 @@ export async function POST(request: NextRequest) {
     if (isSportSupported(sportInput)) {
       try {
         const dataSource = getDataSourceLabel(sportInput);
-        console.log(`[${dataSource}] Fetching real data for ${sportInput} match...`);
+        const normalizedSport = normalizeSport(sportInput);
+        console.log(`[${dataSource}] Fetching real data via DataLayer for ${sportInput} (normalized: ${normalizedSport})...`);
         console.log(`[${dataSource}] Teams: "${normalizedRequest.matchData.homeTeam}" vs "${normalizedRequest.matchData.awayTeam}"`);
         
-        enrichedData = await getMultiSportEnrichedData(
+        enrichedData = await getEnrichedMatchDataV2(
           normalizedRequest.matchData.homeTeam,
           normalizedRequest.matchData.awayTeam,
-          sportInput,
+          normalizedSport,
           normalizedRequest.matchData.league
         );
         
