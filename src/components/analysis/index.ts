@@ -27,3 +27,4 @@ export * from './MarketEdge';
 
 // Two-Layer Blur System
 export { RegistrationBlur } from './RegistrationBlur';
+export { PremiumBlur } from './PremiumBlur';

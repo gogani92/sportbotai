@@ -3,11 +3,12 @@
  * 
  * Main feature: SportBot Chat - Ask anything about sports
  * Secondary: Live Intel Feed (auto-posts for X/Twitter)
+ * 
+ * Registration required to access features.
  */
 
 import { Metadata } from 'next';
-import AIDeskHeroChat from '@/components/AIDeskHeroChat';
-import AIDeskFeedSidebar from '@/components/AIDeskFeedSidebar';
+import AIDeskClient from './AIDeskClient';
 import { META, SITE_CONFIG, getAIDeskSchema } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -66,27 +67,8 @@ export default function AIDeskPage() {
             </div>
           </div>
 
-          {/* Main Layout: Chat Hero + Feed Sidebar */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* HERO: Chat - Takes 2/3 of the space */}
-            <div className="lg:col-span-2">
-              <AIDeskHeroChat />
-            </div>
-
-            {/* SIDEBAR: Live Intel Feed */}
-            <div className="space-y-4">
-              {/* Feed Component */}
-              <AIDeskFeedSidebar limit={10} />
-
-              {/* Disclaimer */}
-              <div className="bg-yellow-500/5 border border-yellow-500/10 rounded-xl p-4">
-                <p className="text-yellow-500/80 text-xs leading-relaxed">
-                  ⚠️ AI-generated content for informational purposes only. This is not betting advice. 
-                  Please gamble responsibly.
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Main Layout: Chat Hero + Feed Sidebar (with auth gate) */}
+          <AIDeskClient />
 
           {/* Mobile: Feature badges (visible on mobile, hidden on desktop) */}
           <div className="flex flex-wrap gap-2 mt-6 lg:hidden">

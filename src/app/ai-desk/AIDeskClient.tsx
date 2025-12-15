@@ -1,0 +1,170 @@
+/**
+ * AI Desk Client Component
+ * 
+ * Handles authentication check and registration gate for AI Desk features.
+ * Non-authenticated users see a teaser with registration CTA.
+ */
+
+'use client';
+
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import AIDeskHeroChat from '@/components/AIDeskHeroChat';
+import AIDeskFeedSidebar from '@/components/AIDeskFeedSidebar';
+
+export default function AIDeskClient() {
+  const { data: session, status } = useSession();
+  const isLoading = status === 'loading';
+  const isAuthenticated = !!session;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="bg-bg-card border border-border rounded-2xl p-8 animate-pulse">
+            <div className="h-8 bg-white/5 rounded w-1/3 mb-4" />
+            <div className="h-64 bg-white/5 rounded" />
+          </div>
+        </div>
+        <div>
+          <div className="bg-bg-card border border-border rounded-2xl p-4 animate-pulse">
+            <div className="h-6 bg-white/5 rounded w-1/2 mb-4" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-white/5 rounded" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated - show registration gate
+  if (!isAuthenticated) {
+    return (
+      <div className="relative">
+        {/* Blurred Preview */}
+        <div className="blur-[6px] opacity-30 pointer-events-none select-none">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              {/* Fake chat preview */}
+              <div className="bg-bg-card border border-border rounded-2xl overflow-hidden">
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-primary/20 rounded-lg" />
+                    <div className="h-4 bg-white/10 rounded w-32" />
+                  </div>
+                </div>
+                <div className="p-6 space-y-4">
+                  {/* Fake messages */}
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 bg-white/10 rounded-full" />
+                    <div className="flex-1 bg-white/5 rounded-xl p-4 h-20" />
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <div className="flex-1 bg-primary/10 rounded-xl p-4 h-16 max-w-md" />
+                    <div className="w-8 h-8 bg-primary/20 rounded-full" />
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 bg-white/10 rounded-full" />
+                    <div className="flex-1 bg-white/5 rounded-xl p-4 h-32" />
+                  </div>
+                </div>
+                <div className="p-4 border-t border-border">
+                  <div className="h-12 bg-white/5 rounded-xl" />
+                </div>
+              </div>
+            </div>
+            <div>
+              {/* Fake feed preview */}
+              <div className="bg-bg-card border border-border rounded-2xl p-4 space-y-3">
+                <div className="h-6 bg-white/10 rounded w-1/2" />
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white/5 rounded-xl p-3 h-24" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Registration Gate Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-[#0a0a0b]/95 backdrop-blur-md border border-white/10 rounded-2xl p-8 max-w-md text-center shadow-2xl">
+            {/* Icon */}
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-violet-600/10 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-purple-500/20">
+              <span className="text-3xl">🧠</span>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-xl font-bold text-white mb-2">
+              Unlock AI Sports Desk
+            </h2>
+
+            {/* Description */}
+            <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
+              Create a free account to chat with our AI about any sport, get real-time intelligence, and access the live intel feed.
+            </p>
+
+            {/* Features List */}
+            <div className="flex flex-wrap justify-center gap-2 mb-6">
+              <span className="px-3 py-1.5 bg-purple-500/10 text-purple-400 text-xs font-medium rounded-full border border-purple-500/20 flex items-center gap-1.5">
+                <span>💬</span> Ask Anything
+              </span>
+              <span className="px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs font-medium rounded-full border border-blue-500/20 flex items-center gap-1.5">
+                <span>⚡</span> Real-Time Data
+              </span>
+              <span className="px-3 py-1.5 bg-green-500/10 text-green-400 text-xs font-medium rounded-full border border-green-500/20 flex items-center gap-1.5">
+                <span>📡</span> Live Intel
+              </span>
+            </div>
+
+            {/* CTA Button */}
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold rounded-xl hover:from-emerald-400 hover:to-emerald-500 transition-all shadow-lg shadow-emerald-500/20 w-full justify-center"
+            >
+              <span>Create Free Account</span>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+
+            {/* Sign in link */}
+            <p className="mt-4 text-xs text-zinc-500">
+              Already have an account?{' '}
+              <Link href="/login" className="text-emerald-400 hover:text-emerald-300 transition-colors">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Authenticated - show full AI Desk
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* HERO: Chat - Takes 2/3 of the space */}
+      <div className="lg:col-span-2">
+        <AIDeskHeroChat />
+      </div>
+
+      {/* SIDEBAR: Live Intel Feed */}
+      <div className="space-y-4">
+        {/* Feed Component */}
+        <AIDeskFeedSidebar limit={10} />
+
+        {/* Disclaimer */}
+        <div className="bg-yellow-500/5 border border-yellow-500/10 rounded-xl p-4">
+          <p className="text-yellow-500/80 text-xs leading-relaxed">
+            ⚠️ AI-generated content for informational purposes only. This is not betting advice. 
+            Please gamble responsibly.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

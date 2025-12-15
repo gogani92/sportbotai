@@ -24,6 +24,7 @@ import {
   UniversalSignalsDisplay,
   MarketIntelSection,
   RegistrationBlur,
+  PremiumBlur,
 } from '@/components/analysis';
 import type { UniversalSignals } from '@/lib/universal-signals';
 import type { MarketIntel, OddsData } from '@/lib/value-detection';
@@ -190,13 +191,13 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
           venue={data.matchInfo.venue}
         />
 
-        {/* Universal Signals Display - The Core Product */}
-        {/* Wrapped in Registration Blur for non-authenticated users */}
+        {/* LAYER 1: Registration Blur - Universal Signals & Risk Factors */}
         <RegistrationBlur 
           isAuthenticated={!!session}
           title="Unlock Match Signals"
-          description="Create a free account to see our 5 universal match signals, AI insights, and game flow analysis."
+          description="Create a free account to see our 5 universal match signals and risk analysis."
         >
+          {/* Universal Signals Display - Free with registration */}
           {data.universalSignals && (
             <div className="mt-8">
               <UniversalSignalsDisplay
@@ -209,36 +210,7 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
             </div>
           )}
 
-          {/* Match Snapshot - AI Insights */}
-          {snapshot && snapshot.length > 0 && (
-            <div className="mt-6 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
-              <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-4">
-                Match Snapshot
-              </h3>
-              <ul className="space-y-2.5">
-                {snapshot.slice(0, 4).map((insight, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <span className="w-1 h-1 rounded-full bg-white/30 mt-2 flex-shrink-0" />
-                    <span className="text-sm text-zinc-300 leading-relaxed">{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Game Flow - How it unfolds */}
-          {gameFlow && (
-            <div className="mt-5 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
-              <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
-                Game Flow
-              </h3>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                {gameFlow}
-              </p>
-            </div>
-          )}
-
-          {/* Risk Factors */}
+          {/* Risk Factors - Free with registration */}
           {riskFactors && riskFactors.length > 0 && (
             <div className="mt-5 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
               <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -257,19 +229,59 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
           )}
         </RegistrationBlur>
 
-        {/* Market Edge - Premium Value Detection (Layer 2: Premium Blur) */}
-        {data.marketIntel && data.odds && (
-          <div className="mt-8">
-            <MarketIntelSection
-              marketIntel={data.marketIntel}
-              odds={data.odds}
-              homeTeam={data.matchInfo.homeTeam}
-              awayTeam={data.matchInfo.awayTeam}
-              hasDraw={data.matchInfo.hasDraw}
-              isPro={session?.user?.plan === 'PRO' || session?.user?.plan === 'PREMIUM'}
-            />
-          </div>
-        )}
+        {/* LAYER 2: Premium Blur - Match Snapshot, Game Flow, Market Edge */}
+        <PremiumBlur
+          isPro={session?.user?.plan === 'PRO' || session?.user?.plan === 'PREMIUM'}
+          title="Pro Match Analysis"
+          description="Get detailed match insights, game flow predictions, and value detection with Pro."
+        >
+          {/* Match Snapshot - Premium */}
+          {snapshot && snapshot.length > 0 && (
+            <div className="mt-6 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
+              <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="text-violet-400">✦</span>
+                Match Snapshot
+                <span className="ml-auto text-[9px] px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full border border-violet-500/20">PRO</span>
+              </h3>
+              <ul className="space-y-2.5">
+                {snapshot.slice(0, 4).map((insight, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <span className="w-1 h-1 rounded-full bg-white/30 mt-2 flex-shrink-0" />
+                    <span className="text-sm text-zinc-300 leading-relaxed">{insight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Game Flow - Premium */}
+          {gameFlow && (
+            <div className="mt-5 rounded-2xl bg-[#0a0a0b] border border-white/[0.06] p-5">
+              <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="text-violet-400">✦</span>
+                Game Flow
+                <span className="ml-auto text-[9px] px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full border border-violet-500/20">PRO</span>
+              </h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                {gameFlow}
+              </p>
+            </div>
+          )}
+
+          {/* Market Edge - Premium */}
+          {data.marketIntel && data.odds && (
+            <div className="mt-5">
+              <MarketIntelSection
+                marketIntel={data.marketIntel}
+                odds={data.odds}
+                homeTeam={data.matchInfo.homeTeam}
+                awayTeam={data.matchInfo.awayTeam}
+                hasDraw={data.matchInfo.hasDraw}
+                isPro={true}
+              />
+            </div>
+          )}
+        </PremiumBlur>
 
         {/* Headline Quote (if available) */}
         {data.headlines && data.headlines.length > 0 && (
