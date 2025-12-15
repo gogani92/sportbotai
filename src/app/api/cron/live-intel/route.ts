@@ -136,8 +136,14 @@ async function generatePost(match: UpcomingMatch, category: PostCategory): Promi
       temperature: 0.8,
     });
     
-    const rawContent = completion.choices[0]?.message?.content;
+    const rawContent = completion.choices[0]?.message?.content?.trim();
     if (!rawContent) return null;
+    
+    // Check for NO_POST response (AI indicates nothing interesting to post)
+    if (rawContent === 'NO_POST' || rawContent.includes('NO_POST')) {
+      console.log('[Live-Intel-Cron] AI returned NO_POST - skipping');
+      return null;
+    }
     
     const sanitized = sanitizeAgentPost(rawContent);
     const content = sanitized.safe ? sanitized.post : rawContent;

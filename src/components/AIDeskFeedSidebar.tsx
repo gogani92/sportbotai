@@ -11,6 +11,23 @@ import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ChevronDown, ChevronUp, RefreshCw, ExternalLink, Radio } from 'lucide-react';
 
+// Sport emoji mapping for API sport keys
+const sportEmojis: Record<string, string> = {
+  soccer: '⚽', football: '⚽', basketball: '🏀', nba: '🏀',
+  hockey: '🏒', nhl: '🏒', icehockey: '🏒', baseball: '⚾', mlb: '⚾',
+  americanfootball: '🏈', nfl: '🏈', mma: '🥊', ufc: '🥊', default: '🎯',
+};
+
+function getSportEmoji(sport: string): string {
+  if (!sport) return sportEmojis.default;
+  const normalized = sport.toLowerCase();
+  if (sportEmojis[normalized]) return sportEmojis[normalized];
+  for (const key of Object.keys(sportEmojis)) {
+    if (normalized.includes(key)) return sportEmojis[key];
+  }
+  return sportEmojis.default;
+}
+
 interface AgentPost {
   id: string;
   category: string;
@@ -154,7 +171,7 @@ export default function AIDeskFeedSidebar({ limit = 8 }: { limit?: number }) {
                   {/* Match Reference - Teams */}
                   {post.matchRef && (
                     <div className="mt-2 flex items-center gap-1.5">
-                      <span className="text-xs">⚽</span>
+                      <span className="text-xs">{getSportEmoji(post.sport)}</span>
                       <span className="text-xs font-medium text-white/80 truncate">{post.matchRef}</span>
                       <span className="text-[10px] text-text-muted ml-auto">{post.league}</span>
                     </div>

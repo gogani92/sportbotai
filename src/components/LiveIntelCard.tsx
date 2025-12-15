@@ -41,11 +41,36 @@ const sportEmojis: Record<string, string> = {
   soccer: '⚽',
   football: '⚽',
   basketball: '🏀',
+  nba: '🏀',
   hockey: '🏒',
+  nhl: '🏒',
+  icehockey: '🏒',
   baseball: '⚾',
+  mlb: '⚾',
+  americanfootball: '🏈',
+  nfl: '🏈',
   mma: '🥊',
+  ufc: '🥊',
   default: '🎯',
 };
+
+/**
+ * Get sport emoji from sport key (handles API keys like 'basketball_nba', 'americanfootball_nfl')
+ */
+function getSportEmojiFromKey(sport: string): string {
+  if (!sport) return sportEmojis.default;
+  const normalized = sport.toLowerCase();
+  
+  // Direct match first
+  if (sportEmojis[normalized]) return sportEmojis[normalized];
+  
+  // Check for partial matches (americanfootball_nfl -> nfl)
+  for (const key of Object.keys(sportEmojis)) {
+    if (normalized.includes(key)) return sportEmojis[key];
+  }
+  
+  return sportEmojis.default;
+}
 
 export default function LiveIntelCard() {
   const [posts, setPosts] = useState<IntelPost[]>([]);
@@ -78,8 +103,7 @@ export default function LiveIntelCard() {
   }, []);
 
   const getSportEmoji = (sport: string) => {
-    const normalized = sport?.toLowerCase() || '';
-    return sportEmojis[normalized] || sportEmojis.default;
+    return getSportEmojiFromKey(sport);
   };
 
   const formatTime = (timestamp: string) => {
