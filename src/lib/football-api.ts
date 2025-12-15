@@ -309,13 +309,14 @@ async function findTeam(teamName: string, league?: string): Promise<number | nul
 
 /**
  * Get team's last 5 matches form
+ * Tries current season first, falls back to previous season if no data
  */
 async function getTeamForm(teamId: number, leagueId?: number): Promise<TeamForm | null> {
   const cacheKey = `form:${teamId}:${leagueId || 'all'}`;
   const cached = getCached<TeamForm>(cacheKey);
   if (cached) return cached;
 
-  const season = getCurrentSeason();
+  let season = getCurrentSeason();
   
   // If no league provided, try to determine from team info
   if (!leagueId) {
@@ -336,7 +337,14 @@ async function getTeamForm(teamId: number, leagueId?: number): Promise<TeamForm 
   // /teams/statistics requires league parameter
   if (!leagueId) return null;
   
-  const response = await apiRequest<any>(`/teams/statistics?team=${teamId}&season=${season}&league=${leagueId}`);
+  let response = await apiRequest<any>(`/teams/statistics?team=${teamId}&season=${season}&league=${leagueId}`);
+  
+  // If no data for current season, try previous season
+  if (!response?.response || !response.response.form) {
+    console.log(`[Soccer] No stats for season ${season}, trying ${season - 1}`);
+    season = season - 1;
+    response = await apiRequest<any>(`/teams/statistics?team=${teamId}&season=${season}&league=${leagueId}`);
+  }
   
   if (!response?.response) return null;
 
