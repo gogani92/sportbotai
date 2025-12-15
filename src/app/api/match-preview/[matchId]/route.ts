@@ -189,6 +189,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       homeStats,
       awayStats,
       h2h,
+      // NEW: Pass enriched context for richer AI content
+      enrichedContext: {
+        homeFormDetails: enrichedData.homeForm?.map(m => ({
+          result: m.result,
+          opponent: m.opponent || 'Unknown',
+          score: m.score || '0-0',
+        })),
+        awayFormDetails: enrichedData.awayForm?.map(m => ({
+          result: m.result,
+          opponent: m.opponent || 'Unknown',
+          score: m.score || '0-0',
+        })),
+        h2hMatches: enrichedData.headToHead?.map(m => ({
+          homeTeam: m.homeTeam || matchInfo.homeTeam,
+          awayTeam: m.awayTeam || matchInfo.awayTeam,
+          homeScore: m.homeScore ?? 0,
+          awayScore: m.awayScore ?? 0,
+          date: m.date || new Date().toISOString(),
+        })),
+        injuryDetails: {
+          home: injuries.home.map(i => ({
+            player: i.player || 'Unknown player',
+            reason: i.reason,
+          })),
+          away: injuries.away.map(i => ({
+            player: i.player || 'Unknown player',
+            reason: i.reason,
+          })),
+        },
+      },
     });
 
     console.log(`[Match-Preview] AI analysis complete:`, aiAnalysis?.story?.favored || 'no favored');
@@ -652,6 +682,59 @@ function buildContextFactors(
   return factors;
 }
 
+// Format enriched data for AI consumption - the "color" behind the signals
+function formatEnrichedContext(data: {
+  homeTeam: string;
+  awayTeam: string;
+  homeFormDetails?: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string }> | null;
+  awayFormDetails?: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string }> | null;
+  h2hMatches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; date: string }> | null;
+  injuries?: { home: Array<{ player: string; reason?: string }>; away: Array<{ player: string; reason?: string }> };
+}): string {
+  const lines: string[] = [];
+  
+  // Recent Form with actual results
+  if (data.homeFormDetails && data.homeFormDetails.length > 0) {
+    const formResults = data.homeFormDetails.slice(0, 5).map(m => 
+      `${m.result} ${m.score} vs ${m.opponent}`
+    ).join(', ');
+    lines.push(`${data.homeTeam} recent: ${formResults}`);
+  }
+  
+  if (data.awayFormDetails && data.awayFormDetails.length > 0) {
+    const formResults = data.awayFormDetails.slice(0, 5).map(m => 
+      `${m.result} ${m.score} vs ${m.opponent}`
+    ).join(', ');
+    lines.push(`${data.awayTeam} recent: ${formResults}`);
+  }
+  
+  // H2H with actual scores
+  if (data.h2hMatches && data.h2hMatches.length > 0) {
+    const h2hResults = data.h2hMatches.slice(0, 3).map(m => {
+      const date = new Date(m.date);
+      const month = date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
+      return `${m.homeTeam} ${m.homeScore}-${m.awayScore} ${m.awayTeam} (${month})`;
+    }).join(' | ');
+    lines.push(`H2H: ${h2hResults}`);
+  }
+  
+  // Key absences
+  const homeAbsences = data.injuries?.home?.slice(0, 3) || [];
+  const awayAbsences = data.injuries?.away?.slice(0, 3) || [];
+  
+  if (homeAbsences.length > 0) {
+    const names = homeAbsences.map(i => i.player).join(', ');
+    lines.push(`${data.homeTeam} missing: ${names}`);
+  }
+  
+  if (awayAbsences.length > 0) {
+    const names = awayAbsences.map(i => i.player).join(', ');
+    lines.push(`${data.awayTeam} missing: ${names}`);
+  }
+  
+  return lines.length > 0 ? lines.join('\n') : 'No detailed match data available.';
+}
+
 async function generateAIAnalysis(data: {
   homeTeam: string;
   awayTeam: string;
@@ -664,6 +747,13 @@ async function generateAIAnalysis(data: {
   awayStats: { goalsScored: number; goalsConceded: number; played: number; wins: number; draws: number; losses: number };
   h2h: { totalMeetings: number; homeWins: number; awayWins: number; draws: number };
   injuries?: { home: string[]; away: string[] };
+  // NEW: Enriched data for richer AI context
+  enrichedContext?: {
+    homeFormDetails?: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string }> | null;
+    awayFormDetails?: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string }> | null;
+    h2hMatches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; date: string }> | null;
+    injuryDetails?: { home: Array<{ player: string; reason?: string }>; away: Array<{ player: string; reason?: string }> };
+  };
 }) {
   const sportConfig = getSportConfig(data.sport);
   
@@ -706,6 +796,16 @@ async function generateAIAnalysis(data: {
   // For no-draw sports, don't include draw option in prompt
   const favoredOptions = sportConfig.hasDraw ? '"home" | "away" | "draw"' : '"home" | "away"';
   
+  // Build enriched context for richer AI content
+  const enrichedContextStr = formatEnrichedContext({
+    homeTeam: data.homeTeam,
+    awayTeam: data.awayTeam,
+    homeFormDetails: data.enrichedContext?.homeFormDetails,
+    awayFormDetails: data.enrichedContext?.awayFormDetails,
+    h2hMatches: data.enrichedContext?.h2hMatches,
+    injuries: data.enrichedContext?.injuryDetails,
+  });
+  
   // SportBotAgent System Prompt - Confident, data-driven, zero betting advice
   const systemPrompt = `You are SportBotAgent, a confident, data-driven sports analyst.
 
@@ -715,34 +815,39 @@ IDENTITY:
 - You speak with calm authority
 - You never hedge or waffle
 
-INPUT: You receive ONLY normalized signals (not raw stats):
+INPUT - NORMALIZED SIGNALS (how you form your opinion):
 ${formatSignalsForAI(universalSignals)}
 
+INPUT - MATCH CONTEXT (color for your analysis):
+${enrichedContextStr}
+
 YOUR JOB:
-1. Read the 5 signals above
-2. Identify the story they tell
-3. Express it in premium, quotable language
-4. Never mention the signal names directly - translate them into insights
+1. Use the signals to form your analytical opinion
+2. Use the match context to ADD SPECIFIC DETAILS and NAMES
+3. Reference actual scores, player names, and H2H results in your analysis
+4. Never mention signal names directly - translate them into insights with real data
 
 VOICE:
 - Confident, not arrogant
 - Sharp, not wordy
 - Premium, not casual
 - Decisive, not wishy-washy
+- SPECIFIC - use actual names, scores, and dates from the context
 
 NEVER:
 - Give betting advice or tips
 - Mention odds explicitly
-- Use raw stats or percentages
 - Say "this could go either way" without explanation
 - Use emojis or hype language
 - Repeat yourself
+- Be vague when you have specific data
 
 ALWAYS:
 - Lead with the strongest signal
-- Explain WHY, not WHAT
-- Be quotable - your lines should be screenshot-worthy
-- If signals conflict, acknowledge the complexity`;
+- Reference SPECIFIC recent results (e.g., "their 3-1 win over Arsenal")
+- Name players if available (e.g., "without Salah")
+- Cite H2H history with actual scores
+- Be quotable - your lines should be screenshot-worthy`;
 
   const userPrompt = `MATCH: ${data.homeTeam} vs ${data.awayTeam}
 COMPETITION: ${data.league}
