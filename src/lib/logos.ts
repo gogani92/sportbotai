@@ -571,6 +571,7 @@ const SOCCER_TEAM_LOGOS: Record<string, string> = {
   'PSG': 'https://crests.football-data.org/524.png',
   'Paris SG': 'https://crests.football-data.org/524.png',
   'Paris Saint Germain': 'https://crests.football-data.org/524.png',
+  'Paris FC': 'https://media.api-sports.io/football/teams/1063.png',  // Ligue 2 team, NOT PSG
   'Marseille': 'https://crests.football-data.org/516.png',
   'Olympique Marseille': 'https://crests.football-data.org/516.png',
   'Olympique de Marseille': 'https://crests.football-data.org/516.png',
@@ -1047,7 +1048,7 @@ const BASKETBALL_TEAM_LOGOS: Record<string, string> = {
   'ASVEL Lyon-Villeurbanne': 'https://media.api-sports.io/basketball/teams/134.png',
   'ASVEL Lyon Villeurbanne': 'https://media.api-sports.io/basketball/teams/134.png',
   'Paris Basketball': 'https://media.api-sports.io/basketball/teams/2188.png',
-  'Paris': 'https://media.api-sports.io/basketball/teams/2188.png',
+  'Paris BC': 'https://media.api-sports.io/basketball/teams/2188.png',
   'Joventut Badalona': 'https://media.api-sports.io/basketball/teams/119.png',
   'Joventut': 'https://media.api-sports.io/basketball/teams/119.png',
   'CB Gran Canaria': 'https://media.api-sports.io/basketball/teams/126.png',
