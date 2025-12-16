@@ -31,13 +31,6 @@ const LEAGUE_IMPORTANCE: Record<string, number> = {
   // Basketball
   'basketball_nba': 10,
   'basketball_euroleague': 8,
-  'basketball_eurocup': 7,
-  'basketball_acb_spain': 7,
-  'basketball_italy_lega': 6,
-  'basketball_germany_bbl': 6,
-  'basketball_france_pro_a': 6,
-  'basketball_turkey_bsl': 6,
-  'basketball_russia_vtb': 6,
   
   // American Football
   'americanfootball_nfl': 10,
