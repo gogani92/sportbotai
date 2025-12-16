@@ -178,7 +178,7 @@ export class BasketballAdapter extends BaseSportAdapter {
   
   /**
    * Get current season string based on league
-   * NBA uses YYYY-YYYY format, Euroleague uses the ENDING year (e.g., "2025" for 2024-2025 season)
+   * NBA uses YYYY-YYYY format, Euroleague uses the STARTING year (e.g., "2025" for 2025-2026 season)
    */
   private getCurrentSeason(): string {
     const now = new Date();
@@ -186,14 +186,14 @@ export class BasketballAdapter extends BaseSportAdapter {
     const month = now.getMonth() + 1;
     
     if (this.isEuroleague()) {
-      // Euroleague uses the ENDING year format (e.g., "2025" for 2024-2025 season)
+      // Euroleague uses the STARTING year format (e.g., "2025" for 2025-2026 season)
       // Season runs Oct-May
       if (month >= 10) {
-        // Oct-Dec: we're in the season that ENDS next year
-        return String(year + 1);
-      } else {
-        // Jan-Sep: we're in the season that ENDS this year
+        // Oct-Dec: season started this year
         return String(year);
+      } else {
+        // Jan-Sep: season started last year
+        return String(year - 1);
       }
     } else {
       // NBA season runs Oct-June, uses YYYY-YYYY format
@@ -390,14 +390,14 @@ export class BasketballAdapter extends BaseSportAdapter {
     const month = now.getMonth() + 1;
     
     if (this.isEuroleague()) {
-      // Euroleague uses the ENDING year format
-      // Previous season = current season - 1
+      // Euroleague uses the STARTING year format
+      // Previous season = current season starting year - 1
       if (month >= 10) {
-        // Oct-Dec: current season ends year+1, previous ends year
-        return String(year);
-      } else {
-        // Jan-Sep: current season ends year, previous ends year-1
+        // Oct-Dec: current season is year, previous is year-1
         return String(year - 1);
+      } else {
+        // Jan-Sep: current season is year-1, previous is year-2
+        return String(year - 2);
       }
     } else {
       // NBA uses YYYY-YYYY format
