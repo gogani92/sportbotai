@@ -38,6 +38,8 @@ export default async function AdminPage() {
     topTeams,
     recentQueries,
     agentPostsCount,
+    // Prediction stats
+    predictionStats,
   ] = await Promise.all([
     // Total users
     prisma.user.count(),
@@ -104,6 +106,9 @@ export default async function AdminPage() {
     
     // Agent posts count
     getAgentPostsCount(),
+    
+    // Prediction accuracy stats
+    getPredictionStats(),
   ]);
 
   // Calculate MRR (Monthly Recurring Revenue)
@@ -133,6 +138,7 @@ export default async function AdminPage() {
       recentUsers={recentUsers}
       recentAnalyses={recentAnalyses}
       chatAnalytics={chatAnalytics}
+      predictionStats={predictionStats}
     />
   );
 }
@@ -219,5 +225,199 @@ async function getAgentPostsCount() {
     return await prisma.agentPost.count();
   } catch {
     return 0;
+  }
+}
+
+async function getPredictionStats() {
+  try {
+    // Get all predictions with outcomes
+    const [
+      totalPredictions,
+      evaluatedPredictions,
+      accuratePredictions,
+      recentPredictions,
+      byLeague,
+      byConfidence,
+      last30Days,
+      last7Days,
+    ] = await Promise.all([
+      // Total predictions
+      prisma.predictionOutcome.count(),
+      
+      // Evaluated (has wasAccurate set)
+      prisma.predictionOutcome.count({
+        where: { wasAccurate: { not: null } },
+      }),
+      
+      // Accurate predictions
+      prisma.predictionOutcome.count({
+        where: { wasAccurate: true },
+      }),
+      
+      // Recent predictions (last 50)
+      prisma.predictionOutcome.findMany({
+        take: 50,
+        orderBy: { matchDate: 'desc' },
+        select: {
+          id: true,
+          matchRef: true,
+          league: true,
+          matchDate: true,
+          narrativeAngle: true,
+          predictedScenario: true,
+          confidenceLevel: true,
+          actualResult: true,
+          actualScore: true,
+          wasAccurate: true,
+          learningNote: true,
+          createdAt: true,
+        },
+      }),
+      
+      // Accuracy by league
+      prisma.predictionOutcome.groupBy({
+        by: ['league'],
+        where: { 
+          wasAccurate: { not: null },
+          league: { not: null },
+        },
+        _count: { id: true },
+        _sum: { 
+          // Using a raw approach since Prisma doesn't support conditional sum
+        },
+      }).then(async (leagues) => {
+        // For each league, get accurate count
+        const leagueStats = await Promise.all(
+          leagues.map(async (l) => {
+            const accurate = await prisma.predictionOutcome.count({
+              where: { league: l.league, wasAccurate: true },
+            });
+            return {
+              league: l.league!,
+              total: l._count.id,
+              accurate,
+              accuracy: l._count.id > 0 ? Math.round((accurate / l._count.id) * 100) : 0,
+            };
+          })
+        );
+        return leagueStats.sort((a, b) => b.total - a.total).slice(0, 10);
+      }),
+      
+      // Accuracy by confidence level
+      prisma.predictionOutcome.groupBy({
+        by: ['confidenceLevel'],
+        where: { 
+          wasAccurate: { not: null },
+          confidenceLevel: { not: null },
+        },
+        _count: { id: true },
+      }).then(async (levels) => {
+        const levelStats = await Promise.all(
+          levels.map(async (l) => {
+            const accurate = await prisma.predictionOutcome.count({
+              where: { confidenceLevel: l.confidenceLevel, wasAccurate: true },
+            });
+            return {
+              confidence: l.confidenceLevel!,
+              total: l._count.id,
+              accurate,
+              accuracy: l._count.id > 0 ? Math.round((accurate / l._count.id) * 100) : 0,
+            };
+          })
+        );
+        return levelStats.sort((a, b) => a.confidence - b.confidence);
+      }),
+      
+      // Last 30 days stats
+      prisma.predictionOutcome.findMany({
+        where: {
+          matchDate: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+          wasAccurate: { not: null },
+        },
+        select: { wasAccurate: true, matchDate: true },
+      }),
+      
+      // Last 7 days stats
+      prisma.predictionOutcome.findMany({
+        where: {
+          matchDate: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          wasAccurate: { not: null },
+        },
+        select: { wasAccurate: true },
+      }),
+    ]);
+
+    // Calculate overall accuracy
+    const overallAccuracy = evaluatedPredictions > 0 
+      ? Math.round((accuratePredictions / evaluatedPredictions) * 100) 
+      : 0;
+    
+    // Calculate 30-day accuracy
+    const accurate30d = last30Days.filter(p => p.wasAccurate).length;
+    const accuracy30d = last30Days.length > 0 
+      ? Math.round((accurate30d / last30Days.length) * 100) 
+      : 0;
+    
+    // Calculate 7-day accuracy
+    const accurate7d = last7Days.filter(p => p.wasAccurate).length;
+    const accuracy7d = last7Days.length > 0 
+      ? Math.round((accurate7d / last7Days.length) * 100) 
+      : 0;
+    
+    // Build daily trend for last 30 days
+    const dailyTrend: Array<{ date: string; total: number; accurate: number; accuracy: number }> = [];
+    const dateMap = new Map<string, { total: number; accurate: number }>();
+    
+    for (const pred of last30Days) {
+      const dateKey = pred.matchDate.toISOString().split('T')[0];
+      const existing = dateMap.get(dateKey) || { total: 0, accurate: 0 };
+      existing.total++;
+      if (pred.wasAccurate) existing.accurate++;
+      dateMap.set(dateKey, existing);
+    }
+    
+    // Sort by date
+    const sortedDates = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    for (const [date, stats] of sortedDates) {
+      dailyTrend.push({
+        date,
+        total: stats.total,
+        accurate: stats.accurate,
+        accuracy: stats.total > 0 ? Math.round((stats.accurate / stats.total) * 100) : 0,
+      });
+    }
+
+    return {
+      totalPredictions,
+      evaluatedPredictions,
+      accuratePredictions,
+      pendingEvaluation: totalPredictions - evaluatedPredictions,
+      overallAccuracy,
+      accuracy7d,
+      accuracy30d,
+      total7d: last7Days.length,
+      total30d: last30Days.length,
+      recentPredictions,
+      byLeague,
+      byConfidence,
+      dailyTrend,
+    };
+  } catch (error) {
+    console.error('Error fetching prediction stats:', error);
+    return {
+      totalPredictions: 0,
+      evaluatedPredictions: 0,
+      accuratePredictions: 0,
+      pendingEvaluation: 0,
+      overallAccuracy: 0,
+      accuracy7d: 0,
+      accuracy30d: 0,
+      total7d: 0,
+      total30d: 0,
+      recentPredictions: [],
+      byLeague: [],
+      byConfidence: [],
+      dailyTrend: [],
+    };
   }
 }

@@ -53,20 +53,53 @@ interface ChatAnalytics {
   agentPostsCount: number;
 }
 
+interface PredictionRecord {
+  id: string;
+  matchRef: string;
+  league: string | null;
+  matchDate: Date;
+  narrativeAngle: string | null;
+  predictedScenario: string | null;
+  confidenceLevel: number | null;
+  actualResult: string | null;
+  actualScore: string | null;
+  wasAccurate: boolean | null;
+  learningNote: string | null;
+  createdAt: Date;
+}
+
+interface PredictionStats {
+  totalPredictions: number;
+  evaluatedPredictions: number;
+  accuratePredictions: number;
+  pendingEvaluation: number;
+  overallAccuracy: number;
+  accuracy7d: number;
+  accuracy30d: number;
+  total7d: number;
+  total30d: number;
+  recentPredictions: PredictionRecord[];
+  byLeague: Array<{ league: string; total: number; accurate: number; accuracy: number }>;
+  byConfidence: Array<{ confidence: number; total: number; accurate: number; accuracy: number }>;
+  dailyTrend: Array<{ date: string; total: number; accurate: number; accuracy: number }>;
+}
+
 interface AdminDashboardProps {
   stats: Stats;
   recentUsers: RecentUser[];
   recentAnalyses: RecentAnalysis[];
   chatAnalytics?: ChatAnalytics;
+  predictionStats?: PredictionStats;
 }
 
-type TabType = 'overview' | 'users' | 'analyses' | 'chat' | 'agent';
+type TabType = 'overview' | 'users' | 'analyses' | 'chat' | 'agent' | 'predictions';
 
 export default function AdminDashboard({ 
   stats, 
   recentUsers, 
   recentAnalyses,
-  chatAnalytics 
+  chatAnalytics,
+  predictionStats,
 }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
@@ -113,6 +146,12 @@ export default function AdminDashboard({
             value={chatAnalytics?.agentPostsCount || 0}
             icon={<BotIcon />}
             color="purple"
+          />
+          <StatCard
+            label="Accuracy"
+            value={`${predictionStats?.overallAccuracy || 0}%`}
+            icon={<TargetIcon />}
+            color="green"
           />
         </div>
 
@@ -191,6 +230,9 @@ export default function AdminDashboard({
           </TabButton>
           <TabButton active={activeTab === 'analyses'} onClick={() => setActiveTab('analyses')}>
             Analyses
+          </TabButton>
+          <TabButton active={activeTab === 'predictions'} onClick={() => setActiveTab('predictions')}>
+            Predictions
           </TabButton>
         </div>
 
@@ -476,6 +518,205 @@ export default function AdminDashboard({
             </table>
           </div>
         )}
+
+        {/* Predictions Tab */}
+        {activeTab === 'predictions' && predictionStats && (
+          <div className="space-y-6">
+            {/* Accuracy Overview Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div className="card p-4 border-green-500/30 bg-green-500/5">
+                <div className="text-3xl font-bold text-green-400">{predictionStats.overallAccuracy}%</div>
+                <div className="text-sm text-text-secondary">Overall Accuracy</div>
+                <div className="text-xs text-text-muted mt-1">{predictionStats.evaluatedPredictions} evaluated</div>
+              </div>
+              <div className="card p-4 border-blue-500/30 bg-blue-500/5">
+                <div className="text-3xl font-bold text-blue-400">{predictionStats.accuracy7d}%</div>
+                <div className="text-sm text-text-secondary">Last 7 Days</div>
+                <div className="text-xs text-text-muted mt-1">{predictionStats.total7d} predictions</div>
+              </div>
+              <div className="card p-4 border-purple-500/30 bg-purple-500/5">
+                <div className="text-3xl font-bold text-purple-400">{predictionStats.accuracy30d}%</div>
+                <div className="text-sm text-text-secondary">Last 30 Days</div>
+                <div className="text-xs text-text-muted mt-1">{predictionStats.total30d} predictions</div>
+              </div>
+              <div className="card p-4">
+                <div className="text-3xl font-bold text-text-primary">{predictionStats.totalPredictions}</div>
+                <div className="text-sm text-text-secondary">Total Predictions</div>
+              </div>
+              <div className="card p-4">
+                <div className="text-3xl font-bold text-green-400">{predictionStats.accuratePredictions}</div>
+                <div className="text-sm text-text-secondary">Correct</div>
+              </div>
+              <div className="card p-4">
+                <div className="text-3xl font-bold text-yellow-400">{predictionStats.pendingEvaluation}</div>
+                <div className="text-sm text-text-secondary">Pending</div>
+              </div>
+            </div>
+
+            {/* Accuracy by League & Confidence */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* By League */}
+              <div className="card p-6">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">Accuracy by League</h3>
+                {predictionStats.byLeague.length > 0 ? (
+                  <div className="space-y-3">
+                    {predictionStats.byLeague.map((league) => (
+                      <div key={league.league} className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm text-text-primary">{league.league}</span>
+                            <span className="text-sm font-medium text-text-primary">{league.accuracy}%</span>
+                          </div>
+                          <div className="h-2 bg-bg-tertiary rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full ${league.accuracy >= 60 ? 'bg-green-500' : league.accuracy >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                              style={{ width: `${league.accuracy}%` }}
+                            />
+                          </div>
+                          <div className="text-xs text-text-muted mt-1">{league.accurate}/{league.total} correct</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-text-muted text-sm">No league data yet</p>
+                )}
+              </div>
+
+              {/* By Confidence Level */}
+              <div className="card p-6">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">Accuracy by Confidence</h3>
+                {predictionStats.byConfidence.length > 0 ? (
+                  <div className="space-y-3">
+                    {predictionStats.byConfidence.map((conf) => (
+                      <div key={conf.confidence} className="flex items-center gap-3">
+                        <div className="w-20 text-sm text-text-secondary">
+                          Level {conf.confidence}
+                          <span className="text-xs ml-1">
+                            {conf.confidence <= 3 ? '🔹' : conf.confidence <= 6 ? '🔸' : '🔥'}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between mb-1">
+                            <span className="text-xs text-text-muted">{conf.total} predictions</span>
+                            <span className="text-sm font-medium text-text-primary">{conf.accuracy}%</span>
+                          </div>
+                          <div className="h-2 bg-bg-tertiary rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full ${conf.accuracy >= 60 ? 'bg-green-500' : conf.accuracy >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                              style={{ width: `${conf.accuracy}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-text-muted text-sm">No confidence data yet</p>
+                )}
+              </div>
+            </div>
+
+            {/* Daily Trend */}
+            {predictionStats.dailyTrend.length > 0 && (
+              <div className="card p-6">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">30-Day Trend</h3>
+                <div className="flex items-end gap-1 h-32">
+                  {predictionStats.dailyTrend.map((day, idx) => (
+                    <div key={day.date} className="flex-1 flex flex-col items-center group relative">
+                      <div 
+                        className={`w-full rounded-t ${day.accuracy >= 60 ? 'bg-green-500' : day.accuracy >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ height: `${Math.max(day.accuracy, 5)}%` }}
+                      />
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full mb-2 hidden group-hover:block z-10">
+                        <div className="bg-bg-secondary border border-border-primary rounded px-2 py-1 text-xs whitespace-nowrap">
+                          <div className="font-medium">{day.date}</div>
+                          <div>{day.accuracy}% ({day.accurate}/{day.total})</div>
+                        </div>
+                      </div>
+                      {idx % 5 === 0 && (
+                        <div className="text-[10px] text-text-muted mt-1 -rotate-45 origin-top-left">
+                          {day.date.slice(5)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Predictions Table */}
+            <div className="card overflow-hidden">
+              <div className="px-6 py-4 border-b border-border-primary">
+                <h3 className="text-lg font-semibold text-text-primary">Recent Predictions</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-bg-tertiary">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Match</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">League</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Prediction</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Actual</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Conf</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Result</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-primary">
+                    {predictionStats.recentPredictions.map((pred) => (
+                      <tr key={pred.id} className="hover:bg-bg-tertiary/50">
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-medium text-text-primary">{pred.matchRef}</div>
+                          {pred.narrativeAngle && (
+                            <div className="text-xs text-text-muted truncate max-w-[200px]">{pred.narrativeAngle}</div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-text-secondary">{pred.league || '-'}</td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm text-text-primary">{pred.predictedScenario || '-'}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm text-text-primary">{pred.actualResult || '-'}</div>
+                          {pred.actualScore && <div className="text-xs text-text-muted">{pred.actualScore}</div>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {pred.confidenceLevel && (
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              pred.confidenceLevel >= 7 ? 'bg-green-500/20 text-green-400' :
+                              pred.confidenceLevel >= 4 ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {pred.confidenceLevel}/10
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {pred.wasAccurate === null ? (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-400">Pending</span>
+                          ) : pred.wasAccurate ? (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400">✓ Correct</span>
+                          ) : (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400">✗ Wrong</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-text-secondary">
+                          {formatDate(new Date(pred.matchDate))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {predictionStats.recentPredictions.length === 0 && (
+                <div className="px-6 py-8 text-center text-text-muted">
+                  No predictions recorded yet. Predictions will appear here once the system starts tracking match outcomes.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -640,6 +881,14 @@ function BotIcon() {
   return (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function TargetIcon() {
+  return (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   );
 }
