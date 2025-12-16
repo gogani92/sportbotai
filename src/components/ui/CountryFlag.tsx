@@ -68,7 +68,7 @@ const COUNTRY_CODES: Record<string, string> = {
   'fifa': 'un',
 };
 
-// League to country mapping
+// League to country mapping (only domestic leagues, not international competitions)
 const LEAGUE_COUNTRY: Record<string, string> = {
   // Soccer
   'premier league': 'england',
@@ -81,14 +81,13 @@ const LEAGUE_COUNTRY: Record<string, string> = {
   'pro league': 'belgium',
   'super lig': 'turkey',
   'scottish premiership': 'scotland',
-  // Basketball
+  // Basketball - only domestic
   'nba': 'usa',
-  'euroleague': 'europe',
   // American Football
   'nfl': 'usa',
   'ncaa football': 'usa',
   'ncaaf': 'usa',
-  // Hockey
+  // Hockey - only domestic
   'nhl': 'usa',
   'shl': 'sweden',
   'khl': 'russia',
