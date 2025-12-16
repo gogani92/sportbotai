@@ -178,7 +178,7 @@ export class BasketballAdapter extends BaseSportAdapter {
   
   /**
    * Get current season string based on league
-   * NBA uses YYYY-YYYY format, Euroleague uses single year
+   * NBA uses YYYY-YYYY format, Euroleague uses the ENDING year (e.g., "2025" for 2024-2025 season)
    */
   private getCurrentSeason(): string {
     const now = new Date();
@@ -186,12 +186,14 @@ export class BasketballAdapter extends BaseSportAdapter {
     const month = now.getMonth() + 1;
     
     if (this.isEuroleague()) {
-      // Euroleague uses single year format (e.g., "2024" for 2024-2025 season)
+      // Euroleague uses the ENDING year format (e.g., "2025" for 2024-2025 season)
       // Season runs Oct-May
       if (month >= 10) {
-        return String(year);
+        // Oct-Dec: we're in the season that ENDS next year
+        return String(year + 1);
       } else {
-        return String(year - 1);
+        // Jan-Sep: we're in the season that ENDS this year
+        return String(year);
       }
     } else {
       // NBA season runs Oct-June, uses YYYY-YYYY format
@@ -388,11 +390,14 @@ export class BasketballAdapter extends BaseSportAdapter {
     const month = now.getMonth() + 1;
     
     if (this.isEuroleague()) {
-      // Euroleague uses single year format
+      // Euroleague uses the ENDING year format
+      // Previous season = current season - 1
       if (month >= 10) {
-        return String(year - 1);
+        // Oct-Dec: current season ends year+1, previous ends year
+        return String(year);
       } else {
-        return String(year - 2);
+        // Jan-Sep: current season ends year, previous ends year-1
+        return String(year - 1);
       }
     } else {
       // NBA uses YYYY-YYYY format
