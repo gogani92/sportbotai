@@ -75,9 +75,17 @@ export default function LeagueLogo({
     </div>
   );
 
+  // Dark logos that need a light background
+  const needsLightBackground = (name: string) => {
+    const darkLogos = ['ligue 1', 'champions league', 'ucl'];
+    return darkLogos.some(dark => name.toLowerCase().includes(dark));
+  };
+
   if (hasError || isFallback) {
     return <FallbackLogo />;
   }
+
+  const hasDarkLogo = needsLightBackground(leagueName);
 
   return (
     <div className={`${sizeClasses[size]} relative flex-shrink-0 ${className}`}>
@@ -88,12 +96,12 @@ export default function LeagueLogo({
           style={{ backgroundColor: `${getColor(leagueName)}40` }}
         />
       )}
-      {/* Light background for dark logos visibility */}
-      <div className="absolute inset-0 bg-white/90 rounded-lg" />
+      {/* Light background only for dark logos (Ligue 1, Champions League) */}
+      {hasDarkLogo && <div className="absolute inset-0 bg-white/90 rounded-lg" />}
       <img
         src={logoUrl}
         alt={`${leagueName} logo`}
-        className={`relative w-full h-full object-contain p-0.5 transition-opacity duration-300 ${
+        className={`${hasDarkLogo ? 'relative p-0.5' : ''} w-full h-full object-contain transition-opacity duration-300 ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         onLoad={() => setIsLoaded(true)}
