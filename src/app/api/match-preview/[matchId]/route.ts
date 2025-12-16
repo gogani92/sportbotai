@@ -1007,7 +1007,7 @@ RULES:
       signals: {
         formLabel: universalSignals.form,
         strengthEdgeLabel: universalSignals.strength_edge,
-        strengthEdgeDirection: universalSignals.display.edge.direction,
+        strengthEdgeDirection: universalSignals.display?.edge?.direction || 'even',
         tempoLabel: universalSignals.tempo,
         efficiencyLabel: universalSignals.efficiency_edge,
         availabilityLabel: universalSignals.availability_impact,
@@ -1017,9 +1017,9 @@ RULES:
     console.error('AI generation failed:', error);
     
     // Fallback using Universal Signals
-    const favored = universalSignals.display.edge.direction === 'even' 
+    const favored = universalSignals.display?.edge?.direction === 'even' 
       ? (sportConfig.hasDraw ? 'draw' : 'home')
-      : universalSignals.display.edge.direction;
+      : (universalSignals.display?.edge?.direction || 'home');
 
     return {
       story: {
@@ -1041,7 +1041,7 @@ RULES:
       signals: {
         formLabel: universalSignals.form,
         strengthEdgeLabel: universalSignals.strength_edge,
-        strengthEdgeDirection: universalSignals.display.edge.direction,
+        strengthEdgeDirection: universalSignals.display?.edge?.direction || 'even',
         tempoLabel: universalSignals.tempo,
         efficiencyLabel: universalSignals.efficiency_edge,
         availabilityLabel: universalSignals.availability_impact,

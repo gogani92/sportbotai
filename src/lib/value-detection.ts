@@ -125,9 +125,9 @@ export function calculateModelProbability(
   let awayBase = hasDraw ? 30 : 50;  // Base away probability
   let drawBase = hasDraw ? 30 : 0;   // Base draw probability
   
-  // 1. Apply Strength Edge (biggest factor)
-  const edgeDir = signals.display.edge.direction;
-  const edgePct = signals.display.edge.percentage;
+  // 1. Apply Strength Edge (biggest factor) - with null safety
+  const edgeDir = signals.display?.edge?.direction || 'even';
+  const edgePct = signals.display?.edge?.percentage || 50;
   
   if (edgeDir === 'home') {
     homeBase += edgePct * 0.8;  // 80% of edge goes to win prob

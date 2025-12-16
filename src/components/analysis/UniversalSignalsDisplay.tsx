@@ -33,11 +33,21 @@ export default function UniversalSignalsDisplay({
   homeForm = '-----',
   awayForm = '-----',
 }: UniversalSignalsDisplayProps) {
+  // Guard against undefined signals or display
+  if (!signals || !signals.display) {
+    return (
+      <div className="p-4 bg-zinc-900/50 rounded-xl border border-zinc-800 text-center text-zinc-500 text-sm">
+        Loading match signals...
+      </div>
+    );
+  }
+  
   const { display, confidence, clarity_score } = signals;
   
-  // Determine the favored side
-  const favoredSide = display.edge.direction === 'home' ? homeTeam
-    : display.edge.direction === 'away' ? awayTeam
+  // Determine the favored side with null check
+  const edgeDirection = display.edge?.direction;
+  const favoredSide = edgeDirection === 'home' ? homeTeam
+    : edgeDirection === 'away' ? awayTeam
     : null;
 
   return (
@@ -76,8 +86,8 @@ export default function UniversalSignalsDisplay({
         <SignalCard icon="⚡" label="Strength Edge">
           <div className="mt-3">
             <EdgeBar
-              direction={display.edge.direction}
-              percentage={display.edge.percentage}
+              direction={display.edge?.direction || 'even'}
+              percentage={display.edge?.percentage || 50}
               homeTeam={homeTeam}
               awayTeam={awayTeam}
             />
@@ -184,17 +194,21 @@ function SignalCard({
 export function SignalPills({ signals }: { signals: UniversalSignals }) {
   const { display, confidence } = signals;
   
+  // Handle undefined display or edge
+  const edgeDirection = display?.edge?.direction || 'even';
+  const tempoLevel = display?.tempo?.level || 'medium';
+  
   return (
     <div className="flex flex-wrap gap-2">
       <Pill 
         label="Edge" 
         value={signals.strength_edge}
-        color={display.edge.direction === 'home' ? 'emerald' : display.edge.direction === 'away' ? 'blue' : 'zinc'}
+        color={edgeDirection === 'home' ? 'emerald' : edgeDirection === 'away' ? 'blue' : 'zinc'}
       />
       <Pill 
         label="Tempo" 
         value={signals.tempo}
-        color={display.tempo.level === 'high' ? 'amber' : 'zinc'}
+        color={tempoLevel === 'high' ? 'amber' : 'zinc'}
       />
       <Pill 
         label="Conf." 
