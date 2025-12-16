@@ -111,22 +111,28 @@ const NBA_MAPPINGS: Record<string, string> = {
   'nuggets': 'Denver Nuggets',
   'pistons': 'Detroit Pistons',
   'warriors': 'Golden State Warriors',
+  'dubs': 'Golden State Warriors',
   'rockets': 'Houston Rockets',
   'pacers': 'Indiana Pacers',
   'clippers': 'Los Angeles Clippers',
   'lakers': 'Los Angeles Lakers',
   'grizzlies': 'Memphis Grizzlies',
+  'grizz': 'Memphis Grizzlies',
   'heat': 'Miami Heat',
   'bucks': 'Milwaukee Bucks',
   'timberwolves': 'Minnesota Timberwolves',
   'wolves': 'Minnesota Timberwolves',
+  't-wolves': 'Minnesota Timberwolves',
   'pelicans': 'New Orleans Pelicans',
+  'pels': 'New Orleans Pelicans',
   'knicks': 'New York Knicks',
   'thunder': 'Oklahoma City Thunder',
+  'okc': 'Oklahoma City Thunder',
   'okc thunder': 'Oklahoma City Thunder',
   'magic': 'Orlando Magic',
   '76ers': 'Philadelphia 76ers',
   'sixers': 'Philadelphia 76ers',
+  'philly': 'Philadelphia 76ers',
   'suns': 'Phoenix Suns',
   'trail blazers': 'Portland Trail Blazers',
   'blazers': 'Portland Trail Blazers',
@@ -135,6 +141,86 @@ const NBA_MAPPINGS: Record<string, string> = {
   'raptors': 'Toronto Raptors',
   'jazz': 'Utah Jazz',
   'wizards': 'Washington Wizards',
+  'wiz': 'Washington Wizards',
+};
+
+/**
+ * Euroleague Basketball Team Mappings
+ */
+const EUROLEAGUE_MAPPINGS: Record<string, string> = {
+  // Turkish teams
+  'fenerbahce': 'Fenerbahce',
+  'fenerbahce beko': 'Fenerbahce',
+  'fenerbahce beko istanbul': 'Fenerbahce',
+  'anadolu efes': 'Anadolu Efes',
+  'anadolu efes istanbul': 'Anadolu Efes',
+  'efes': 'Anadolu Efes',
+  
+  // Spanish teams
+  'real madrid': 'Real Madrid',
+  'real madrid baloncesto': 'Real Madrid',
+  'barcelona': 'Barcelona',
+  'fc barcelona': 'Barcelona',
+  'barca': 'Barcelona',
+  'baskonia': 'Baskonia',
+  'saski baskonia': 'Baskonia',
+  'td systems baskonia': 'Baskonia',
+  'gran canaria': 'Gran Canaria',
+  'dreamland gran canaria': 'Gran Canaria',
+  'unicaja': 'Unicaja',
+  'unicaja malaga': 'Unicaja',
+  
+  // Greek teams
+  'olympiacos': 'Olympiacos',
+  'olympiacos piraeus': 'Olympiacos',
+  'panathinaikos': 'Panathinaikos',
+  'panathinaikos athens': 'Panathinaikos',
+  'pao': 'Panathinaikos',
+  
+  // Italian teams
+  'olimpia milano': 'Olimpia Milano',
+  'ea7 emporio armani milano': 'Olimpia Milano',
+  'armani milano': 'Olimpia Milano',
+  'ax armani exchange milano': 'Olimpia Milano',
+  'milano': 'Olimpia Milano',
+  'virtus bologna': 'Virtus Bologna',
+  'virtus segafredo bologna': 'Virtus Bologna',
+  
+  // French teams
+  'asvel': 'ASVEL',
+  'ldlc asvel': 'ASVEL',
+  'asvel villeurbanne': 'ASVEL',
+  'lyon-villeurbanne': 'ASVEL',
+  'paris basketball': 'Paris Basketball',
+  'paris': 'Paris Basketball',
+  'monaco': 'Monaco',
+  'as monaco': 'Monaco',
+  
+  // German teams
+  'bayern munich': 'Bayern Munich',
+  'fc bayern munich': 'Bayern Munich',
+  'bayern munchen': 'Bayern Munich',
+  'alba berlin': 'Alba Berlin',
+  'alba': 'Alba Berlin',
+  
+  // Lithuanian teams
+  'zalgiris': 'Zalgiris',
+  'zalgiris kaunas': 'Zalgiris',
+  
+  // Israeli teams
+  'maccabi tel aviv': 'Maccabi Tel Aviv',
+  'maccabi': 'Maccabi Tel Aviv',
+  
+  // Serbian teams
+  'partizan': 'Partizan',
+  'partizan mozzart bet belgrade': 'Partizan',
+  'partizan belgrade': 'Partizan',
+  'crvena zvezda': 'Crvena Zvezda',
+  'red star': 'Crvena Zvezda',
+  'red star belgrade': 'Crvena Zvezda',
+  
+  // Other teams
+  'olympia milano': 'Olimpia Milano',
 };
 
 /**
@@ -525,7 +611,7 @@ const SOCCER_MAPPINGS: Record<string, string> = {
 // TEAM RESOLVER CLASS
 // ============================================================================
 
-type Sport = 'soccer' | 'basketball' | 'hockey' | 'american_football';
+type Sport = 'soccer' | 'basketball' | 'basketball_euroleague' | 'hockey' | 'american_football';
 
 /**
  * Cache for successful team lookups
@@ -538,6 +624,7 @@ const resolvedCache = new Map<string, string>();
  */
 const ALL_TEAMS: Record<Sport, string[]> = {
   basketball: Object.values(NBA_MAPPINGS).filter((v, i, a) => a.indexOf(v) === i),
+  basketball_euroleague: Object.values(EUROLEAGUE_MAPPINGS).filter((v, i, a) => a.indexOf(v) === i),
   hockey: Object.values(NHL_MAPPINGS).filter((v, i, a) => a.indexOf(v) === i),
   american_football: Object.values(NFL_MAPPINGS).filter((v, i, a) => a.indexOf(v) === i),
   soccer: Object.values(SOCCER_MAPPINGS).filter((v, i, a) => a.indexOf(v) === i),
@@ -549,6 +636,7 @@ const ALL_TEAMS: Record<Sport, string[]> = {
 function getMappings(sport: Sport): Record<string, string> {
   switch (sport) {
     case 'basketball': return NBA_MAPPINGS;
+    case 'basketball_euroleague': return EUROLEAGUE_MAPPINGS;
     case 'hockey': return NHL_MAPPINGS;
     case 'american_football': return NFL_MAPPINGS;
     case 'soccer': return SOCCER_MAPPINGS;

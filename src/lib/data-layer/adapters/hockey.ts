@@ -72,12 +72,13 @@ const NHL_TEAM_MAPPINGS: Record<string, string> = {
   'oilers': 'Oilers',
   'kings': 'Kings',
   'ducks': 'Ducks',
-  'coyotes': 'Coyotes',
   'sharks': 'Sharks',
   'kraken': 'Kraken',
   'canucks': 'Canucks',
   'golden knights': 'Golden Knights',
   'knights': 'Golden Knights',
+  'utah hockey club': 'Utah Hockey Club',
+  'utah hc': 'Utah Hockey Club',
   
   // City mappings
   'boston': 'Bruins',
@@ -112,7 +113,7 @@ const NHL_TEAM_MAPPINGS: Record<string, string> = {
   'los angeles': 'Kings',
   'la kings': 'Kings',
   'anaheim': 'Ducks',
-  'arizona': 'Coyotes',
+  'utah': 'Utah Hockey Club',
   'san jose': 'Sharks',
   'seattle': 'Kraken',
   'vancouver': 'Canucks',
