@@ -15,7 +15,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
@@ -28,6 +28,35 @@ import {
 } from '@/components/analysis';
 import type { UniversalSignals } from '@/lib/universal-signals';
 import type { MarketIntel, OddsData } from '@/lib/value-detection';
+
+// Parse matchId on client to show header immediately
+function parseMatchIdClient(matchId: string): { homeTeam: string; awayTeam: string; league: string; sport: string; kickoff: string } | null {
+  try {
+    // Try base64 decode first
+    const decoded = atob(matchId);
+    const parsed = JSON.parse(decoded);
+    return {
+      homeTeam: parsed.homeTeam || 'Home Team',
+      awayTeam: parsed.awayTeam || 'Away Team',
+      league: parsed.league || '',
+      sport: parsed.sport || 'soccer',
+      kickoff: parsed.kickoff || new Date().toISOString(),
+    };
+  } catch {
+    // Fallback: parse underscore-separated format
+    const parts = matchId.split('_');
+    if (parts.length >= 3) {
+      return {
+        homeTeam: parts[0].replace(/-/g, ' '),
+        awayTeam: parts[1].replace(/-/g, ' '),
+        league: parts[2].replace(/-/g, ' '),
+        sport: 'soccer',
+        kickoff: parts[3] ? new Date(parseInt(parts[3])).toISOString() : new Date().toISOString(),
+      };
+    }
+    return null;
+  }
+}
 
 interface MatchPreviewClientProps {
   matchId: string;
@@ -108,6 +137,9 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
   const [data, setData] = useState<MatchPreviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Parse matchId immediately to show header while loading
+  const parsedMatch = useMemo(() => parseMatchIdClient(matchId), [matchId]);
 
   // Scroll to top on mount to prevent unwanted scroll position
   useEffect(() => {
@@ -138,6 +170,57 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
     fetchMatchPreview();
   }, [matchId]);
 
+  // Show header immediately with skeleton content while loading
+  if (loading && parsedMatch) {
+    return (
+      <div className="min-h-screen bg-[#050506]">
+        <div className="fixed inset-0 bg-gradient-to-b from-white/[0.01] via-transparent to-transparent pointer-events-none" />
+        
+        <div className="relative max-w-2xl mx-auto px-4 py-6 sm:py-10">
+          {/* Back navigation */}
+          <Link 
+            href="/matches"
+            className="inline-flex items-center gap-2 text-zinc-600 hover:text-zinc-400 transition-colors mb-8"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-sm">All Matches</span>
+          </Link>
+
+          {/* Show real match header immediately */}
+          <PremiumMatchHeader 
+            homeTeam={parsedMatch.homeTeam}
+            awayTeam={parsedMatch.awayTeam}
+            league={parsedMatch.league}
+            sport={parsedMatch.sport}
+            kickoff={parsedMatch.kickoff}
+          />
+
+          {/* Loading indicator */}
+          <div className="mt-6 flex items-center justify-center gap-2 text-zinc-500">
+            <div className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin" />
+            <span className="text-sm">Loading analysis...</span>
+          </div>
+
+          {/* Skeleton for signals */}
+          <div className="mt-8 space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-16 bg-white/5 rounded-xl animate-pulse" />
+            ))}
+          </div>
+
+          {/* Skeleton for content sections */}
+          <div className="mt-6 space-y-4">
+            <div className="h-32 bg-white/5 rounded-2xl animate-pulse" />
+            <div className="h-24 bg-white/5 rounded-2xl animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback skeleton if we can't parse matchId
   if (loading) {
     return <PremiumSkeleton />;
   }
