@@ -200,6 +200,30 @@ model TrendingTopic {
   @@index([isSpike])
 }
 
+model ChatFeedback {
+  id                 String   @id @default(cuid())
+  messageId          String
+  queryHash          String
+  query              String
+  response           String
+  rating             Int      // 1 = thumbs down, 5 = thumbs up
+  feedback           String?
+  sport              String?
+  category           String?
+  brainMode          String?
+  usedRealTimeSearch Boolean  @default(false)
+  fromCache          Boolean  @default(false)
+  userId             String?
+  userPlan           String?
+  createdAt          DateTime @default(now())
+
+  @@index([messageId])
+  @@index([queryHash])
+  @@index([rating])
+  @@index([userId])
+  @@index([createdAt])
+}
+
 model AgentPost {
   id             String   @id @default(cuid())
   content        String
