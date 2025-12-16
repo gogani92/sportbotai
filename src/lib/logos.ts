@@ -1339,11 +1339,11 @@ const LEAGUE_LOGOS: Record<string, string> = {
   'WNBA': 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
   'basketball_wnba': 'https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png',
   
-  // EuroLeague Basketball
-  'EuroLeague': 'https://media.api-sports.io/basketball/leagues/120.png',
-  'basketball_euroleague': 'https://media.api-sports.io/basketball/leagues/120.png',
-  'Euroleague': 'https://media.api-sports.io/basketball/leagues/120.png',
-  'Turkish Airlines EuroLeague': 'https://media.api-sports.io/basketball/leagues/120.png',
+  // EuroLeague Basketball (official logo from euroleaguebasketball.net)
+  'EuroLeague': 'https://media-cdn.cortextech.io/c6ac6e02-a4f7-4377-9fed-2926f640c345.svg',
+  'basketball_euroleague': 'https://media-cdn.cortextech.io/c6ac6e02-a4f7-4377-9fed-2926f640c345.svg',
+  'Euroleague': 'https://media-cdn.cortextech.io/c6ac6e02-a4f7-4377-9fed-2926f640c345.svg',
+  'Turkish Airlines EuroLeague': 'https://media-cdn.cortextech.io/c6ac6e02-a4f7-4377-9fed-2926f640c345.svg',
   
   // EuroCup Basketball
   'EuroCup': 'https://media.api-sports.io/basketball/leagues/202.png',
