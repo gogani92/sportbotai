@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,25 +8,20 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ============================================
-// NEXTAUTH MODELS
-// ============================================
-
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -46,32 +38,25 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?   // For credentials auth
-  
-  // Subscription & Plan
-  plan          Plan      @default(FREE)
-  stripeCustomerId    String?   @unique
-  stripeSubscriptionId String?  @unique
-  stripePriceId       String?
+  id                     String         @id @default(cuid())
+  name                   String?
+  email                  String?        @unique
+  emailVerified          DateTime?
+  image                  String?
+  password               String?
+  plan                   Plan           @default(FREE)
+  stripeCustomerId       String?        @unique
+  stripeSubscriptionId   String?        @unique
+  stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
-  
-  // Usage tracking
-  analysisCount Int       @default(0)
-  lastAnalysisDate DateTime?
-  
-  // Relations
-  accounts      Account[]
-  sessions      Session[]
-  analyses      Analysis[]
-  favoriteTeams FavoriteTeam[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  analysisCount          Int            @default(0)
+  lastAnalysisDate       DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  accounts               Account[]
+  analyses               Analysis[]
+  favoriteTeams          FavoriteTeam[]
+  sessions               Session[]
 }
 
 model VerificationToken {
@@ -82,234 +67,111 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ============================================
-// SUBSCRIPTION PLANS
-// ============================================
-
-enum Plan {
-  FREE      // 1 analysis trial
-  PRO       // 30 analyses per day
-  PREMIUM   // Unlimited analyses
-}
-
-// ============================================
-// ANALYSIS HISTORY
-// ============================================
-
 model Analysis {
-  id              String   @id @default(cuid())
-  userId          String
-  
-  // Match info
-  sport           String
-  league          String
-  homeTeam        String
-  awayTeam        String
-  matchDate       DateTime?
-  
-  // User input
-  userPick        String?
-  userStake       Float?
-  
-  // AI result summary
-  homeWinProb     Float?
-  drawProb        Float?
-  awayWinProb     Float?
-  riskLevel       String?
-  bestValueSide   String?
-  
-  // Full response (JSON)
-  fullResponse    Json?
-  
-  // Metadata
-  createdAt       DateTime @default(now())
-  
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id            String    @id @default(cuid())
+  userId        String
+  sport         String
+  league        String
+  homeTeam      String
+  awayTeam      String
+  matchDate     DateTime?
+  userPick      String?
+  userStake     Float?
+  homeWinProb   Float?
+  drawProb      Float?
+  awayWinProb   Float?
+  riskLevel     String?
+  bestValueSide String?
+  fullResponse  Json?
+  createdAt     DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([createdAt])
 }
 
-// ============================================
-// BLOG SYSTEM - Automated SEO Content
-// ============================================
-
 model BlogKeyword {
-  id              String   @id @default(cuid())
-  keyword         String   @unique // The keyword/topic to write about
+  id              String        @id @default(cuid())
+  keyword         String        @unique
   status          KeywordStatus @default(PENDING)
   lastGeneratedAt DateTime?
-  generationCount Int      @default(0)
-  
-  // SEO metrics (optional, can be added later)
+  generationCount Int           @default(0)
   searchVolume    Int?
   difficulty      Int?
-  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   posts           BlogPost[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+
   @@index([status])
   @@index([lastGeneratedAt])
 }
 
 model BlogPost {
-  id              String   @id @default(cuid())
-  
-  // Content
+  id              String       @id @default(cuid())
   title           String
-  slug            String   @unique
-  excerpt         String   @db.Text
-  content         String   @db.Text // Full HTML/markdown content
-  
-  // SEO
+  slug            String       @unique
+  excerpt         String
+  content         String
   metaTitle       String?
   metaDescription String?
   focusKeyword    String?
-  
-  // Media
-  featuredImage   String?  // Vercel Blob URL
+  featuredImage   String?
   imageAlt        String?
-  
-  // Categorization
   category        String?
-  tags            String[] // Array of tags
-  
-  // Publishing
-  status          PostStatus @default(DRAFT)
+  tags            String[]
+  status          PostStatus   @default(DRAFT)
   publishedAt     DateTime?
-  
-  // AI Generation metadata
   keywordId       String?
+  aiModel         String?
+  generationCost  Float?
+  views           Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   keyword         BlogKeyword? @relation(fields: [keywordId], references: [id])
-  aiModel         String?      // e.g., "gpt-4o-mini", "perplexity"
-  generationCost  Float?       // Cost in USD
-  
-  // Engagement (for future analytics)
-  views           Int      @default(0)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+
   @@index([slug])
   @@index([status])
   @@index([publishedAt])
   @@index([keywordId])
 }
 
-// ============================================
-// FAVORITE TEAMS (My Teams)
-// ============================================
-
 model FavoriteTeam {
-  id          String   @id @default(cuid())
-  userId      String
-  
-  // Team identification
-  teamName    String   // Exact team name from API
-  teamSlug    String   // Normalized slug for matching
-  sport       String   // e.g., "soccer", "basketball", "americanfootball"
-  league      String?  // e.g., "Premier League", "NBA"
-  sportKey    String?  // API sport key for lookups
-  
-  // Optional metadata
-  teamLogo    String?  // Cached logo URL
-  country     String?  // Country/region
-  
-  // Notification preferences (for future)
-  notifyMatches    Boolean @default(true)
-  notifyInjuries   Boolean @default(false)
-  
-  createdAt   DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, teamSlug, sport]) // Prevent duplicates
+  id             String   @id @default(cuid())
+  userId         String
+  teamName       String
+  teamSlug       String
+  sport          String
+  league         String?
+  sportKey       String?
+  teamLogo       String?
+  country        String?
+  notifyMatches  Boolean  @default(true)
+  notifyInjuries Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamSlug, sport])
   @@index([userId])
   @@index([teamSlug])
   @@index([sport])
 }
 
-enum KeywordStatus {
-  PENDING     // Not yet used
-  ACTIVE      // In rotation
-  EXHAUSTED   // Too many posts generated
-  DISABLED    // Manually disabled
-}
-
-enum PostStatus {
-  DRAFT       // Not published
-  PUBLISHED   // Live on site
-  SCHEDULED   // Will publish at scheduledAt
-  ARCHIVED    // Hidden from public
-}
-
-// ============================================
-// SPORTBOT AGENT MEMORY SYSTEM
-// ============================================
-
-// Chat feedback for response quality tracking
-model ChatFeedback {
-  id              String   @id @default(cuid())
-  
-  // Feedback details
-  messageId       String               // Frontend message ID
-  queryHash       String?              // Hash of the original query
-  query           String   @db.Text    // The user's question
-  response        String   @db.Text    // The AI response
-  
-  // Rating
-  rating          Int                  // 1 = thumbs down, 5 = thumbs up
-  feedback        String?  @db.Text    // Optional text feedback
-  
-  // Context
-  sport           String?
-  category        String?              // Query category
-  brainMode       String?
-  usedRealTimeSearch Boolean @default(false)
-  fromCache       Boolean  @default(false)
-  
-  // User info (optional for anonymous)
-  userId          String?
-  userPlan        String?
-  
-  createdAt       DateTime @default(now())
-  
-  @@index([rating])
-  @@index([queryHash])
-  @@index([sport])
-  @@index([category])
-  @@index([createdAt])
-}
-
-// Track all chat queries for learning
 model ChatQuery {
-  id              String   @id @default(cuid())
-  
-  // Query content
-  query           String   @db.Text      // The user's question
-  queryNormalized String?  @db.Text      // Lowercase, cleaned version
-  category        String?               // ROSTER, FIXTURE, INJURY, etc.
-  brainMode       String?               // agent, data, analysis
-  
-  // Context
-  sport           String?               // Detected sport
-  team            String?               // Primary team mentioned
-  league          String?               // League if detected
-  
-  // Response metadata
-  usedRealTimeSearch Boolean @default(false)
-  responseLength  Int?                  // Character count
-  hadCitations    Boolean @default(false)
-  
-  // Frequency tracking
-  queryHash       String?               // Hash for deduplication
-  similarCount    Int      @default(1)  // How many similar queries
-  
-  // Timestamps
-  createdAt       DateTime @default(now())
-  
+  id                 String   @id @default(cuid())
+  query              String
+  queryNormalized    String?
+  category           String?
+  brainMode          String?
+  sport              String?
+  team               String?
+  league             String?
+  usedRealTimeSearch Boolean  @default(false)
+  responseLength     Int?
+  hadCitations       Boolean  @default(false)
+  queryHash          String?
+  similarCount       Int      @default(1)
+  createdAt          DateTime @default(now())
+
   @@index([category])
   @@index([sport])
   @@index([team])
@@ -317,70 +179,49 @@ model ChatQuery {
   @@index([createdAt])
 }
 
-// Track popular topics and trending queries
 model TrendingTopic {
-  id              String   @id @default(cuid())
-  
-  topic           String   @unique      // e.g., "arsenal injuries", "lakers roster"
-  category        String?               // ROSTER, INJURY, TRANSFER, etc.
+  id              String    @id @default(cuid())
+  topic           String    @unique
+  category        String?
   sport           String?
-  
-  // Metrics
-  queryCount      Int      @default(1)  // Total queries about this topic
-  last24hCount    Int      @default(0)  // Queries in last 24 hours
-  last7dCount     Int      @default(0)  // Queries in last 7 days
-  
-  // Spike detection
-  isSpike         Boolean  @default(false)  // Unusual interest
+  queryCount      Int       @default(1)
+  last24hCount    Int       @default(0)
+  last7dCount     Int       @default(0)
+  isSpike         Boolean   @default(false)
   spikeDetectedAt DateTime?
-  
-  // For pre-fetching/caching
   lastFetchedAt   DateTime?
-  cachedResponse  String?  @db.Text     // Cached answer for fast responses
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  cachedResponse  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
   @@index([queryCount])
   @@index([last24hCount])
   @@index([sport])
   @@index([isSpike])
 }
 
-// Agent posts history for context/memory
 model AgentPost {
-  id              String   @id @default(cuid())
-  
-  // Content
-  content         String   @db.Text
-  category        String               // MARKET_MOVEMENT, LINEUP_INTEL, etc.
-  
-  // Match context
-  homeTeam        String?
-  awayTeam        String?
-  matchRef        String?              // "Team A vs Team B"
-  league          String?
-  sport           String?
-  
-  // Signals at time of generation
-  narrativeAngle  String?              // CHAOS, CONTROL, etc.
-  publicMismatch  String?              // ALIGNED, OVERHYPED, etc.
-  clarityLevel    Int?
-  confidence      Int?
-  severity        Int?
-  
-  // Metadata
-  realTimeData    Boolean  @default(false)
-  citations       String[]             // Source URLs
-  
-  // Engagement (for future X integration)
-  postedToX       Boolean  @default(false)
-  xPostId         String?
-  impressions     Int      @default(0)
-  engagement      Int      @default(0)
-  
-  createdAt       DateTime @default(now())
-  
+  id             String   @id @default(cuid())
+  content        String
+  category       String
+  homeTeam       String?
+  awayTeam       String?
+  matchRef       String?
+  league         String?
+  sport          String?
+  narrativeAngle String?
+  publicMismatch String?
+  clarityLevel   Int?
+  confidence     Int?
+  severity       Int?
+  realTimeData   Boolean  @default(false)
+  citations      String[]
+  postedToX      Boolean  @default(false)
+  xPostId        String?
+  impressions    Int      @default(0)
+  engagement     Int      @default(0)
+  createdAt      DateTime @default(now())
+
   @@index([category])
   @@index([homeTeam])
   @@index([awayTeam])
@@ -388,64 +229,40 @@ model AgentPost {
   @@index([postedToX])
 }
 
-// Learning from outcomes (post-match validation)
 model PredictionOutcome {
-  id              String   @id @default(cuid())
-  
-  // The prediction
-  matchRef        String               // "Team A vs Team B"
-  league          String?
-  matchDate       DateTime
-  
-  // What we said
-  narrativeAngle  String?
-  predictedScenario String?            // Brief summary of prediction
-  confidenceLevel Int?
-  
-  // What happened
-  actualResult    String?              // "home_win", "away_win", "draw"
-  actualScore     String?              // "2-1"
-  keyFactor       String?              // What drove the result
-  
-  // Learning
-  wasAccurate     Boolean?
-  learningNote    String?  @db.Text    // What to learn from this
-  
-  createdAt       DateTime @default(now())
-  
+  id                String   @id @default(cuid())
+  matchRef          String
+  league            String?
+  matchDate         DateTime
+  narrativeAngle    String?
+  predictedScenario String?
+  confidenceLevel   Int?
+  actualResult      String?
+  actualScore       String?
+  keyFactor         String?
+  wasAccurate       Boolean?
+  learningNote      String?
+  createdAt         DateTime @default(now())
+
   @@index([matchRef])
   @@index([wasAccurate])
   @@index([matchDate])
 }
 
-// ============================================
-// AGENT KNOWLEDGE BASE - Self-Learning System
-// ============================================
-
-// Store successful Q&A pairs for retrieval and learning
 model KnowledgeBase {
   id              String   @id @default(cuid())
-  
-  // The Q&A pair
-  question        String   @db.Text
-  answer          String   @db.Text
-  
-  // Categorization
-  sport           String?              // football, basketball, tennis, etc.
-  category        String?              // ROSTER, INJURY, FIXTURE, etc.
-  team            String?              // Primary team mentioned
-  
-  // Quality & Usage
-  quality         Int      @default(3) // 1-5 rating
-  useCount        Int      @default(1) // Times this answer was reused
-  
-  // Source tracking
-  citations       String[]             // Original source URLs
+  question        String
+  answer          String
+  sport           String?
+  category        String?
+  team            String?
+  quality         Int      @default(3)
+  useCount        Int      @default(1)
+  citations       String[]
   hadRealTimeData Boolean  @default(true)
-  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   @@index([sport])
   @@index([category])
   @@index([team])
@@ -453,65 +270,42 @@ model KnowledgeBase {
   @@index([useCount])
 }
 
-// Track learned patterns per sport (aggregated insights)
 model SportExpertise {
   id              String   @id @default(cuid())
-  sport           String   @unique     // football, basketball, etc.
-  
-  // Learned patterns
-  topCategories   String[]             // Most asked categories
-  commonQuestions String[]             // Frequently asked question patterns
-  keyTerminology  String[]             // Sport-specific terms learned
-  learnedFacts    String[] @db.Text    // Key facts extracted from answers
-  
-  // Stats
+  sport           String   @unique
+  topCategories   String[]
+  commonQuestions String[]
+  keyTerminology  String[]
+  learnedFacts    String[]
   totalQueries    Int      @default(0)
   lastUpdated     DateTime @default(now())
-  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   @@index([sport])
 }
 
-// ============================================
-// SPORTBOT TWITTER INTEGRATION
-// ============================================
-
-// Predictions made by SportBot
 model Prediction {
-  id              String            @id @default(cuid())
-  
-  // Match info
-  matchId         String
-  matchName       String            // "Arsenal vs Chelsea"
-  sport           String            // football, basketball
-  league          String
-  kickoff         DateTime
-  
-  // The prediction
-  type            CallType
-  prediction      String            // "Arsenal Win", "Over 2.5", etc.
-  reasoning       String            @db.Text
-  conviction      Int               // 1-5 (fire level)
-  
-  // Odds at time of prediction
-  odds            Float?
-  impliedProb     Float?            // Calculated from odds
-  
-  // Tweet tracking
-  tweetId         String?           // Original prediction tweet
-  validationTweetId String?         // "Called it" tweet
-  
-  // Outcome
-  outcome         CallOutcome       @default(PENDING)
-  actualResult    String?           // "Arsenal 2-1 Chelsea"
-  validatedAt     DateTime?
-  
-  // Meta
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  
+  id                String      @id @default(cuid())
+  matchId           String
+  matchName         String
+  sport             String
+  league            String
+  kickoff           DateTime
+  type              CallType
+  prediction        String
+  reasoning         String
+  conviction        Int
+  odds              Float?
+  impliedProb       Float?
+  tweetId           String?
+  validationTweetId String?
+  outcome           CallOutcome @default(PENDING)
+  actualResult      String?
+  validatedAt       DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
   @@index([matchId])
   @@index([outcome])
   @@index([sport])
@@ -519,103 +313,94 @@ model Prediction {
   @@index([conviction])
 }
 
-// Scheduled posts for Twitter
 model ScheduledPost {
-  id              String            @id @default(cuid())
-  
-  // Content
-  content         String            @db.Text
-  contentType     PostCategory
-  
-  // Scheduling
-  scheduledFor    DateTime
-  timezone        String            @default("UTC")
-  
-  // Related entities
-  matchId         String?
-  predictionId    String?
-  
-  // Status
-  posted          Boolean           @default(false)
-  postedAt        DateTime?
-  tweetId         String?
-  error           String?           // If posting failed
-  
-  // Meta
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  
+  id           String       @id @default(cuid())
+  content      String
+  contentType  PostCategory
+  scheduledFor DateTime
+  timezone     String       @default("UTC")
+  matchId      String?
+  predictionId String?
+  posted       Boolean      @default(false)
+  postedAt     DateTime?
+  tweetId      String?
+  error        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
   @@index([scheduledFor])
   @@index([posted])
   @@index([contentType])
 }
 
-// Twitter posting history
 model TwitterPost {
-  id              String            @id @default(cuid())
-  
-  // Tweet info
-  tweetId         String            @unique
-  content         String            @db.Text
-  category        PostCategory
-  
-  // Thread info (if part of thread)
-  threadId        String?           // First tweet ID of thread
-  threadPosition  Int?              // Position in thread (1, 2, 3...)
-  
-  // Performance (can be updated later via API)
-  likes           Int               @default(0)
-  retweets        Int               @default(0)
-  replies         Int               @default(0)
-  impressions     Int               @default(0)
-  
-  // Meta
-  postedAt        DateTime          @default(now())
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  
+  id             String       @id @default(cuid())
+  tweetId        String       @unique
+  content        String
+  category       PostCategory
+  threadId       String?
+  threadPosition Int?
+  likes          Int          @default(0)
+  retweets       Int          @default(0)
+  replies        Int          @default(0)
+  impressions    Int          @default(0)
+  postedAt       DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
   @@index([category])
   @@index([postedAt])
   @@index([threadId])
 }
 
-// Daily stats snapshot for tracking performance
 model DailyStats {
-  id              String            @id @default(cuid())
-  date            DateTime          @unique @db.Date
-  
-  // Prediction stats
-  totalPredictions Int              @default(0)
-  hits            Int               @default(0)
-  misses          Int               @default(0)
-  pushes          Int               @default(0)
-  hitRate         Float             @default(0)
-  
-  // By conviction
-  conv1Hits       Int               @default(0)
-  conv1Total      Int               @default(0)
-  conv2Hits       Int               @default(0)
-  conv2Total      Int               @default(0)
-  conv3Hits       Int               @default(0)
-  conv3Total      Int               @default(0)
-  conv4Hits       Int               @default(0)
-  conv4Total      Int               @default(0)
-  conv5Hits       Int               @default(0)
-  conv5Total      Int               @default(0)
-  
-  // Twitter engagement
-  postsCount      Int               @default(0)
-  totalLikes      Int               @default(0)
-  totalRetweets   Int               @default(0)
-  totalImpressions Int              @default(0)
-  
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  
+  id               String   @id @default(cuid())
+  date             DateTime @unique @db.Date
+  totalPredictions Int      @default(0)
+  hits             Int      @default(0)
+  misses           Int      @default(0)
+  pushes           Int      @default(0)
+  hitRate          Float    @default(0)
+  conv1Hits        Int      @default(0)
+  conv1Total       Int      @default(0)
+  conv2Hits        Int      @default(0)
+  conv2Total       Int      @default(0)
+  conv3Hits        Int      @default(0)
+  conv3Total       Int      @default(0)
+  conv4Hits        Int      @default(0)
+  conv4Total       Int      @default(0)
+  conv5Hits        Int      @default(0)
+  conv5Total       Int      @default(0)
+  postsCount       Int      @default(0)
+  totalLikes       Int      @default(0)
+  totalRetweets    Int      @default(0)
+  totalImpressions Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   @@index([date])
 }
 
-// Enums for Twitter/Prediction system
+enum Plan {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum KeywordStatus {
+  PENDING
+  ACTIVE
+  EXHAUSTED
+  DISABLED
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
 enum CallType {
   MATCH_RESULT
   OVER_UNDER
