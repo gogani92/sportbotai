@@ -571,7 +571,7 @@ const SOCCER_TEAM_LOGOS: Record<string, string> = {
   'PSG': 'https://crests.football-data.org/524.png',
   'Paris SG': 'https://crests.football-data.org/524.png',
   'Paris Saint Germain': 'https://crests.football-data.org/524.png',
-  'Paris FC': 'https://media.api-sports.io/football/teams/1063.png',  // Ligue 2 team, NOT PSG
+  'Paris FC': 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9f/Paris_FC_logo.svg/330px-Paris_FC_logo.svg.png',  // Ligue 2 team, NOT PSG
   'Marseille': 'https://crests.football-data.org/516.png',
   'Olympique Marseille': 'https://crests.football-data.org/516.png',
   'Olympique de Marseille': 'https://crests.football-data.org/516.png',
