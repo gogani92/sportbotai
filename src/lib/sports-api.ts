@@ -3,7 +3,7 @@
  * 
  * Unified client for API-Sports family:
  * - API-Football (Soccer)
- * - API-Basketball (NBA, EuroLeague, EuroCup, ACB, NCAAB)
+ * - API-Basketball (NBA, EuroLeague, EuroCup, ACB, Lega, BBL, Pro A, BSL, VTB)
  * - API-American-Football (NFL)
  * - API-Hockey (NHL)
  * - API-MMA (UFC, Bellator)

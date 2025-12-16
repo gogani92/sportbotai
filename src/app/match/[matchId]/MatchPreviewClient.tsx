@@ -465,7 +465,12 @@ function MatchHeader({
                        sportLower.includes('basketball') ||
                        leagueLower.includes('nba') ||
                        leagueLower.includes('euroleague') ||
-                       leagueLower.includes('ncaa basketball');
+                       leagueLower.includes('eurocup') ||
+                       leagueLower.includes('acb') ||
+                       leagueLower.includes('lega') ||
+                       leagueLower.includes('bbl') ||
+                       leagueLower.includes('bsl') ||
+                       leagueLower.includes('vtb');
                        
   const isAmericanFootball = sportLower === 'americanfootball' ||
                              sportLower.includes('american') ||

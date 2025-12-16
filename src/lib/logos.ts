@@ -1849,9 +1849,12 @@ export function getTeamLogo(teamName: string, sport: string, league?: string): s
     }
   }
   
-  // Try basketball team logos for Euroleague and NCAA Basketball
+  // Try basketball team logos for European basketball leagues
   if (normalizedSport === 'nba' || sport.toLowerCase().includes('euroleague') || 
-      sport.toLowerCase().includes('basketball') || sport.toLowerCase().includes('ncaa')) {
+      sport.toLowerCase().includes('basketball') || sport.toLowerCase().includes('eurocup') ||
+      sport.toLowerCase().includes('acb') || sport.toLowerCase().includes('lega') ||
+      sport.toLowerCase().includes('bbl') || sport.toLowerCase().includes('bsl') ||
+      sport.toLowerCase().includes('vtb')) {
     // Try exact match
     if (BASKETBALL_TEAM_LOGOS[cleanName]) {
       return BASKETBALL_TEAM_LOGOS[cleanName];

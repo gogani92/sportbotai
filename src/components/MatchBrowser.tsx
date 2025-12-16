@@ -40,7 +40,13 @@ const SPORTS = [
     leagues: [
       { key: 'basketball_nba', name: 'NBA' },
       { key: 'basketball_euroleague', name: 'EuroLeague' },
-      { key: 'basketball_ncaab', name: 'NCAA Basketball' },
+      { key: 'basketball_eurocup', name: 'EuroCup' },
+      { key: 'basketball_acb_spain', name: 'ACB Spain' },
+      { key: 'basketball_italy_lega', name: 'Lega Basket Italy' },
+      { key: 'basketball_germany_bbl', name: 'BBL Germany' },
+      { key: 'basketball_france_pro_a', name: 'Pro A France' },
+      { key: 'basketball_turkey_bsl', name: 'BSL Turkey' },
+      { key: 'basketball_russia_vtb', name: 'VTB Russia' },
     ],
   },
   {
