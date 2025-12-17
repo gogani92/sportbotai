@@ -670,6 +670,75 @@ export async function POST(request: NextRequest) {
       console.error('[History] Failed to save analysis:', historyError);
     }
 
+    // ========================================
+    // SAVE PREDICTION FOR TRACKING
+    // ========================================
+    try {
+      // Determine the best value prediction (what the AI recommends)
+      const bestValue = analysis.valueAnalysis.bestValueSide;
+      let predictionText = 'No clear value';
+      let conviction = 50;
+      
+      if (bestValue && bestValue !== 'NONE') {
+        // Map best value side to prediction text
+        const bestValueMap: Record<string, string> = {
+          'HOME': `${normalizedRequest.matchData.homeTeam} to win`,
+          'AWAY': `${normalizedRequest.matchData.awayTeam} to win`,
+          'DRAW': 'Draw',
+          'OVER': 'Over goals',
+          'UNDER': 'Under goals',
+          'BTTS_YES': 'Both teams to score',
+          'BTTS_NO': 'Clean sheet likely',
+        };
+        predictionText = bestValueMap[bestValue] || bestValue;
+        
+        // Calculate conviction from probabilities
+        const probs = analysis.probabilities;
+        const homeProb = probs.homeWin ?? 0;
+        const awayProb = probs.awayWin ?? 0;
+        const drawProb = probs.draw ?? 0;
+        const maxProb = Math.max(homeProb, awayProb, drawProb);
+        conviction = Math.min(95, Math.round(maxProb));
+      }
+      
+      // Build match ID from teams and date
+      const matchDate = normalizedRequest.matchData.matchDate 
+        ? new Date(normalizedRequest.matchData.matchDate) 
+        : new Date();
+      const matchId = `${normalizedRequest.matchData.homeTeam}_${normalizedRequest.matchData.awayTeam}_${matchDate.toISOString().split('T')[0]}`.toLowerCase().replace(/\s+/g, '_');
+      
+      // Build reasoning from value analysis comment
+      const reasoning = analysis.valueAnalysis.valueCommentShort || 
+        `AI analysis of ${normalizedRequest.matchData.homeTeam} vs ${normalizedRequest.matchData.awayTeam}`;
+      
+      // Get implied probability for the prediction
+      let impliedProb: number | null = null;
+      if (bestValue === 'HOME') impliedProb = analysis.probabilities.homeWin;
+      else if (bestValue === 'AWAY') impliedProb = analysis.probabilities.awayWin;
+      else if (bestValue === 'DRAW') impliedProb = analysis.probabilities.draw;
+
+      await prisma.prediction.create({
+        data: {
+          matchId,
+          matchName: `${normalizedRequest.matchData.homeTeam} vs ${normalizedRequest.matchData.awayTeam}`,
+          sport: sportInput,
+          league: normalizedRequest.matchData.league,
+          kickoff: matchDate,
+          type: 'MATCH_RESULT',
+          prediction: predictionText,
+          reasoning,
+          conviction,
+          odds: null,
+          impliedProb,
+          outcome: 'PENDING',
+        },
+      });
+      console.log('[Prediction] Prediction saved for tracking:', predictionText);
+    } catch (predictionError) {
+      // Don't fail the request if prediction save fails
+      console.error('[Prediction] Failed to save prediction:', predictionError);
+    }
+
     // Log final response data
     console.log('[Response] Final momentum/form data:', {
       hasHomeForm: !!analysis.momentumAndForm.homeForm,
