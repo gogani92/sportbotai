@@ -60,9 +60,9 @@ const confidenceColors = {
 };
 
 const confidenceLabels = {
-  LOW: 'Uncertain',
-  MEDIUM: 'Moderate',
-  HIGH: 'Confident',
+  LOW: 'Limited Data',
+  MEDIUM: 'Mixed Signals',
+  HIGH: 'Strong Signal',
 };
 
 export default function AISportsDesk({ sport, limit = 10, compact = false }: AISportsDeskProps) {

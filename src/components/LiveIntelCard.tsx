@@ -32,9 +32,9 @@ const confidenceStyles = {
 };
 
 const confidenceLabels = {
-  LOW: 'Uncertain',
-  MEDIUM: 'Moderate',
-  HIGH: 'Confident',
+  LOW: 'Limited Data',
+  MEDIUM: 'Mixed Signals',
+  HIGH: 'Strong Signal',
 };
 
 const sportEmojis: Record<string, string> = {

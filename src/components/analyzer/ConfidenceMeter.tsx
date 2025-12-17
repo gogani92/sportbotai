@@ -108,18 +108,18 @@ function getConfidenceLevel(score: number): {
 } {
   if (score >= 80) {
     return {
-      label: 'Very High',
+      label: 'Strong Data',
       color: 'text-success',
       bgColor: 'bg-success',
-      description: 'Strong confidence in this analysis',
+      description: 'Rich data available for this matchup',
     };
   }
   if (score >= 65) {
     return {
-      label: 'High',
+      label: 'Good Coverage',
       color: 'text-accent',
       bgColor: 'bg-accent',
-      description: 'Good confidence, solid data foundation',
+      description: 'Solid data foundation for analysis',
     };
   }
   if (score >= 50) {
@@ -127,22 +127,22 @@ function getConfidenceLevel(score: number): {
       label: 'Moderate',
       color: 'text-warning',
       bgColor: 'bg-warning',
-      description: 'Reasonable confidence, some uncertainty',
+      description: 'Some data gaps in the analysis',
     };
   }
   if (score >= 35) {
     return {
-      label: 'Low',
+      label: 'Limited',
       color: 'text-orange-400',
       bgColor: 'bg-orange-400',
-      description: 'Limited confidence, proceed with caution',
+      description: 'Sparse data available, interpret carefully',
     };
   }
   return {
-    label: 'Very Low',
+    label: 'Incomplete',
     color: 'text-danger',
     bgColor: 'bg-danger',
-    description: 'Low confidence, high uncertainty',
+    description: 'Significant data gaps, limited analysis',
   };
 }
 

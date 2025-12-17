@@ -40,9 +40,9 @@ export default function SignalAnalysis({
   const favoredTeam = favored === 'home' ? homeTeam : favored === 'away' ? awayTeam : 'Draw';
   
   const confidenceConfig = {
-    high: { label: 'High Confidence', color: 'text-emerald-400', ring: 'ring-emerald-500/30' },
-    medium: { label: 'Medium Confidence', color: 'text-amber-400', ring: 'ring-amber-500/30' },
-    low: { label: 'Low Confidence', color: 'text-zinc-400', ring: 'ring-zinc-500/30' },
+    high: { label: 'Strong Signal', color: 'text-emerald-400', ring: 'ring-emerald-500/30' },
+    medium: { label: 'Mixed Signals', color: 'text-amber-400', ring: 'ring-amber-500/30' },
+    low: { label: 'Limited Data', color: 'text-zinc-400', ring: 'ring-zinc-500/30' },
   }[confidence];
 
   return (
