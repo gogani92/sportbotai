@@ -142,7 +142,7 @@ export default function AccountDashboard({ user, recentAnalyses }: Props) {
                   {limit === -1 ? '∞' : remaining}
                 </span>
                 <span className="text-text-muted text-sm">
-                  {limit === -1 ? 'unlimited' : `of ${limit} left`}
+                  {limit === -1 ? 'unlimited' : `of ${limit} remaining`}
                 </span>
               </div>
               
