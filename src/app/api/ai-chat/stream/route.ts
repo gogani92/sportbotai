@@ -524,7 +524,7 @@ function generateFollowUps(
   }
   
   // Return max 3 unique suggestions
-  return [...new Set(suggestions)].slice(0, 3);
+  return Array.from(new Set(suggestions)).slice(0, 3);
 }
 
 // ============================================
