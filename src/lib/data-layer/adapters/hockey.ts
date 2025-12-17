@@ -166,12 +166,15 @@ export class HockeyAdapter extends BaseSportAdapter {
    * Tries current season first, falls back to previous season if no teams found
    */
   async findTeam(query: TeamQuery): Promise<DataLayerResponse<NormalizedTeam>> {
+    console.log(`[Hockey] findTeam called with:`, { name: query.name, id: query.id, sport: query.sport });
+    
     if (!query.name && !query.id) {
       return this.error('INVALID_QUERY', 'Team name or ID required');
     }
     
     let season = this.getCurrentSeason();
     const leagueId = LEAGUE_IDS.NHL;
+    console.log(`[Hockey] Using season=${season}, leagueId=${leagueId}`);
     
     // Try by ID first
     if (query.id) {

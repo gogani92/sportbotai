@@ -163,12 +163,15 @@ export class NFLAdapter extends BaseSportAdapter {
    * Find an NFL team with improved fuzzy matching
    */
   async findTeam(query: TeamQuery): Promise<DataLayerResponse<NormalizedTeam>> {
+    console.log(`[NFL] findTeam called with:`, { name: query.name, id: query.id, sport: query.sport });
+    
     if (!query.name && !query.id) {
       return this.error('INVALID_QUERY', 'Team name or ID required');
     }
     
     const season = this.getCurrentSeason();
     const leagueId = LEAGUE_IDS.NFL;
+    console.log(`[NFL] Using season=${season}, leagueId=${leagueId}`);
     
     // Try by ID first
     if (query.id) {
@@ -194,7 +197,10 @@ export class NFLAdapter extends BaseSportAdapter {
         season,
       });
       
+      console.log(`[NFL] All teams fetch: success=${allTeams.success}, count=${allTeams.data?.length || 0}`);
+      
       if (!allTeams.success || !allTeams.data || allTeams.data.length === 0) {
+        console.error(`[NFL] Failed to fetch teams list: ${allTeams.error}`);
         return this.error('FETCH_ERROR', 'Could not fetch NFL teams');
       }
       
@@ -316,6 +322,7 @@ export class NFLAdapter extends BaseSportAdapter {
    */
   async getRecentGames(teamId: string, limit: number = 5): Promise<DataLayerResponse<NormalizedRecentGames>> {
     let season = this.getCurrentSeason();
+    console.log(`[NFL] getRecentGames: teamId=${teamId}, season=${season}, limit=${limit}`);
     
     // Try current season first
     let result = await this.apiProvider.getNFLGames({
@@ -324,7 +331,10 @@ export class NFLAdapter extends BaseSportAdapter {
       season,
     });
     
+    console.log(`[NFL] Games API response: success=${result.success}, count=${result.data?.length || 0}`);
+    
     if (!result.success || !result.data) {
+      console.error(`[NFL] Failed to fetch games: ${result.error}`);
       return this.error('FETCH_ERROR', result.error || 'Failed to fetch games');
     }
     
@@ -332,6 +342,8 @@ export class NFLAdapter extends BaseSportAdapter {
     let finishedGames = result.data
       .filter(g => (g.game.status.short === 'FT' || g.game.status.short === 'AOT') && g.game.stage === 'Regular Season')
       .sort((a, b) => b.game.date.timestamp - a.game.date.timestamp);
+    
+    console.log(`[NFL] Finished games after filter: ${finishedGames.length}`);
     
     // If no finished regular season games in current season, try previous season
     if (finishedGames.length === 0 && season > 2020) {
