@@ -422,7 +422,7 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
           )}
 
           {/* Market Edge - Premium */}
-          {data.marketIntel && data.odds && (
+          {data.marketIntel && data.odds ? (
             <div className="mt-5">
               <MarketIntelSection
                 marketIntel={data.marketIntel}
@@ -432,6 +432,20 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
                 hasDraw={data.matchInfo.hasDraw}
                 isPro={true}
               />
+            </div>
+          ) : (
+            <div className="mt-5 p-5 rounded-2xl bg-[#0a0a0b] border border-white/[0.06]">
+              <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="text-violet-400">✦</span>
+                Market Edge
+                <span className="ml-auto text-[9px] px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full border border-violet-500/20">PRO</span>
+              </h3>
+              <div className="flex items-center gap-3 text-zinc-400 text-sm">
+                <svg className="w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Odds data temporarily unavailable for this match</span>
+              </div>
             </div>
           )}
         </PremiumBlur>
