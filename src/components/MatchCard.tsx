@@ -44,6 +44,14 @@ export default function MatchCard({
   const [liveScore, setLiveScore] = useState<LiveScore | null>(null);
   const [isLive, setIsLive] = useState(false);
 
+  // Detect sport type for live scores API
+  const getSportType = (sport: string): string => {
+    const s = sport.toLowerCase();
+    if (s.includes('nba') || s === 'basketball_nba') return 'nba';
+    if (s.includes('basketball')) return 'basketball';
+    return 'soccer';
+  };
+
   // Check if match might be live
   useEffect(() => {
     const kickoff = new Date(commenceTime);
@@ -54,7 +62,8 @@ export default function MatchCard({
     if (kickoff <= now && kickoff >= threeHoursAgo) {
       const checkLive = async () => {
         try {
-          const res = await fetch(`/api/live-scores?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`);
+          const sportType = getSportType(sportKey);
+          const res = await fetch(`/api/live-scores?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}&sport=${sportType}`);
           if (!res.ok) return;
           const data = await res.json();
           if (data.status === 'live' && data.match) {
@@ -72,7 +81,7 @@ export default function MatchCard({
       const interval = setInterval(checkLive, 60000);
       return () => clearInterval(interval);
     }
-  }, [homeTeam, awayTeam, commenceTime]);
+  }, [homeTeam, awayTeam, commenceTime, sportKey]);
 
   // Generate match preview URL
   // Encode match info into URL-safe format

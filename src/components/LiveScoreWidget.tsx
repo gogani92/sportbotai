@@ -3,12 +3,14 @@
  * 
  * Displays real-time score for a match when it's live.
  * Auto-updates every 30 seconds.
- * Shows match status (1H, HT, 2H, FT, etc.)
+ * Shows match status (1H, HT, 2H, FT for soccer, Q1-Q4 for basketball, etc.)
  */
 
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
+type SportType = 'soccer' | 'basketball' | 'nba';
 
 interface LiveMatch {
   fixtureId: number;
@@ -25,15 +27,22 @@ interface LiveMatch {
   leagueLogo: string;
   homeTeamLogo: string;
   awayTeamLogo: string;
+  sport?: SportType;
   events: Array<{
     time: number;
-    type: 'Goal' | 'Card' | 'Subst' | 'Var';
+    type: 'Goal' | 'Card' | 'Subst' | 'Var' | 'Score';
     team: 'home' | 'away';
     player: string;
     detail: string;
   }>;
   venue: string;
   startTime: string;
+  // Basketball specific
+  quarter?: number;
+  quarterScores?: {
+    home: number[];
+    away: number[];
+  };
 }
 
 interface LiveScoreResponse {
@@ -46,11 +55,13 @@ interface LiveScoreWidgetProps {
   awayTeam: string;
   kickoff?: string;
   compact?: boolean;
+  sport?: SportType;
   onStatusChange?: (status: 'live' | 'upcoming' | 'finished' | 'not_found') => void;
 }
 
-// Status badge styling
+// Status badge styling - includes basketball statuses
 const statusStyles: Record<string, { bg: string; text: string; pulse?: boolean }> = {
+  // Soccer
   '1H': { bg: 'bg-red-500', text: 'text-white', pulse: true },
   '2H': { bg: 'bg-red-500', text: 'text-white', pulse: true },
   'HT': { bg: 'bg-yellow-500', text: 'text-black' },
@@ -61,6 +72,15 @@ const statusStyles: Record<string, { bg: string; text: string; pulse?: boolean }
   'PEN': { bg: 'bg-gray-600', text: 'text-white' },
   'NS': { bg: 'bg-blue-500', text: 'text-white' },
   'LIVE': { bg: 'bg-red-500', text: 'text-white', pulse: true },
+  // Basketball
+  'Q1': { bg: 'bg-red-500', text: 'text-white', pulse: true },
+  'Q2': { bg: 'bg-red-500', text: 'text-white', pulse: true },
+  'Q3': { bg: 'bg-red-500', text: 'text-white', pulse: true },
+  'Q4': { bg: 'bg-red-500', text: 'text-white', pulse: true },
+  'OT': { bg: 'bg-orange-500', text: 'text-white', pulse: true },
+  'BT': { bg: 'bg-yellow-500', text: 'text-black' }, // Break Time
+  'AOT': { bg: 'bg-gray-600', text: 'text-white' }, // After Overtime
+  'POST': { bg: 'bg-gray-600', text: 'text-white' }, // Game Over
 };
 
 export default function LiveScoreWidget({ 
@@ -68,6 +88,7 @@ export default function LiveScoreWidget({
   awayTeam, 
   kickoff,
   compact = false,
+  sport = 'soccer',
   onStatusChange 
 }: LiveScoreWidgetProps) {
   const [data, setData] = useState<LiveScoreResponse | null>(null);
@@ -78,7 +99,7 @@ export default function LiveScoreWidget({
   const fetchLiveScore = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/live-scores?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`
+        `/api/live-scores?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}&sport=${sport}`
       );
       
       if (!response.ok) throw new Error('Failed to fetch');
@@ -97,7 +118,7 @@ export default function LiveScoreWidget({
     } finally {
       setLoading(false);
     }
-  }, [homeTeam, awayTeam, onStatusChange]);
+  }, [homeTeam, awayTeam, sport, onStatusChange]);
 
   // Initial fetch
   useEffect(() => {

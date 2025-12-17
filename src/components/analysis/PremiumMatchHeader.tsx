@@ -59,11 +59,20 @@ export default function PremiumMatchHeader({
     minute: '2-digit',
   });
 
+  // Detect sport type for live scores API
+  const getSportType = (sportName: string): string => {
+    const s = sportName.toLowerCase();
+    if (s.includes('nba') || s === 'basketball_nba') return 'nba';
+    if (s.includes('basketball')) return 'basketball';
+    return 'soccer';
+  };
+
   // Fetch live score
   const fetchLiveScore = useCallback(async () => {
     try {
+      const sportType = getSportType(sport);
       const response = await fetch(
-        `/api/live-scores?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`
+        `/api/live-scores?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}&sport=${sportType}`
       );
       if (!response.ok) return;
       
@@ -81,7 +90,7 @@ export default function PremiumMatchHeader({
     } catch {
       // Silent fail - live score is optional
     }
-  }, [homeTeam, awayTeam]);
+  }, [homeTeam, awayTeam, sport]);
 
   // Check for live score on mount and periodically
   useEffect(() => {
