@@ -771,36 +771,69 @@ function buildContextFactors(
 function formatEnrichedContext(data: {
   homeTeam: string;
   awayTeam: string;
+  homeStats?: { goalsScored: number; goalsConceded: number; played: number; wins: number; draws: number; losses: number };
+  awayStats?: { goalsScored: number; goalsConceded: number; played: number; wins: number; draws: number; losses: number };
+  homeForm?: string;
+  awayForm?: string;
   homeFormDetails?: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string }> | null;
   awayFormDetails?: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string }> | null;
+  h2h?: { totalMeetings: number; homeWins: number; awayWins: number; draws: number };
   h2hMatches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; date: string }> | null;
   injuries?: { home: Array<{ player: string; reason?: string }>; away: Array<{ player: string; reason?: string }> };
 }): string {
   const lines: string[] = [];
   
-  // Recent Form with actual results
+  // SEASON STATS - actual numbers the AI can cite
+  if (data.homeStats && data.homeStats.played > 0) {
+    const hs = data.homeStats;
+    const ppg = (hs.goalsScored / hs.played).toFixed(1);
+    const cpg = (hs.goalsConceded / hs.played).toFixed(1);
+    lines.push(`${data.homeTeam} season: ${hs.wins}W-${hs.draws}D-${hs.losses}L (${ppg} scored, ${cpg} conceded per game)`);
+  }
+  
+  if (data.awayStats && data.awayStats.played > 0) {
+    const as = data.awayStats;
+    const ppg = (as.goalsScored / as.played).toFixed(1);
+    const cpg = (as.goalsConceded / as.played).toFixed(1);
+    lines.push(`${data.awayTeam} season: ${as.wins}W-${as.draws}D-${as.losses}L (${ppg} scored, ${cpg} conceded per game)`);
+  }
+  
+  // FORM STRING - last 5 results
+  if (data.homeForm) {
+    lines.push(`${data.homeTeam} form (last 5): ${data.homeForm}`);
+  }
+  if (data.awayForm) {
+    lines.push(`${data.awayTeam} form (last 5): ${data.awayForm}`);
+  }
+  
+  // Recent Form with actual results (if available)
   if (data.homeFormDetails && data.homeFormDetails.length > 0) {
     const formResults = data.homeFormDetails.slice(0, 5).map(m => 
       `${m.result} ${m.score} vs ${m.opponent}`
     ).join(', ');
-    lines.push(`${data.homeTeam} recent: ${formResults}`);
+    lines.push(`${data.homeTeam} recent matches: ${formResults}`);
   }
   
   if (data.awayFormDetails && data.awayFormDetails.length > 0) {
     const formResults = data.awayFormDetails.slice(0, 5).map(m => 
       `${m.result} ${m.score} vs ${m.opponent}`
     ).join(', ');
-    lines.push(`${data.awayTeam} recent: ${formResults}`);
+    lines.push(`${data.awayTeam} recent matches: ${formResults}`);
   }
   
-  // H2H with actual scores
+  // H2H SUMMARY - actual numbers
+  if (data.h2h && data.h2h.totalMeetings > 0) {
+    lines.push(`H2H record (${data.h2h.totalMeetings} meetings): ${data.homeTeam} ${data.h2h.homeWins}W, Draws ${data.h2h.draws}, ${data.awayTeam} ${data.h2h.awayWins}W`);
+  }
+  
+  // H2H with actual scores (if available)
   if (data.h2hMatches && data.h2hMatches.length > 0) {
     const h2hResults = data.h2hMatches.slice(0, 3).map(m => {
       const date = new Date(m.date);
       const month = date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
       return `${m.homeTeam} ${m.homeScore}-${m.awayScore} ${m.awayTeam} (${month})`;
     }).join(' | ');
-    lines.push(`H2H: ${h2hResults}`);
+    lines.push(`Recent H2H: ${h2hResults}`);
   }
   
   // Key absences
@@ -885,54 +918,56 @@ async function generateAIAnalysis(data: {
   const enrichedContextStr = formatEnrichedContext({
     homeTeam: data.homeTeam,
     awayTeam: data.awayTeam,
+    homeStats: data.homeStats,
+    awayStats: data.awayStats,
+    homeForm: data.homeForm,
+    awayForm: data.awayForm,
     homeFormDetails: data.enrichedContext?.homeFormDetails,
     awayFormDetails: data.enrichedContext?.awayFormDetails,
+    h2h: data.h2h,
     h2hMatches: data.enrichedContext?.h2hMatches,
     injuries: data.enrichedContext?.injuryDetails,
   });
   
-  // SportBotAgent System Prompt - Confident, data-driven, zero betting advice
-  const systemPrompt = `You are SportBotAgent, a confident, data-driven sports analyst.
+  // SportBotAgent System Prompt - Data-driven, zero betting advice
+  const systemPrompt = `You are SportBotAgent, a data-driven sports analyst.
 
 IDENTITY:
-- You're the sharpest analyst in the room
-- You see patterns others miss
-- You speak with calm authority
-- You never hedge or waffle
+- You analyze patterns in data
+- You speak with measured authority
+- You cite specific numbers to support every claim
+- You acknowledge uncertainty when data is limited
 
-INPUT - NORMALIZED SIGNALS (how you form your opinion):
+INPUT - NORMALIZED SIGNALS (your analytical framework):
 ${formatSignalsForAI(universalSignals)}
 
-INPUT - MATCH CONTEXT (color for your analysis):
+INPUT - MATCH CONTEXT (the actual data you MUST cite):
 ${enrichedContextStr}
 
 YOUR JOB:
-1. Use the signals to form your analytical opinion
-2. Use the match context to ADD SPECIFIC DETAILS and NAMES
-3. Reference actual scores, player names, and H2H results in your analysis
-4. Never mention signal names directly - translate them into insights with real data
+1. Use the signals to structure your analysis
+2. EVERY insight must include a specific number or stat from the match context
+3. Reference W-D-L records, scoring/conceding rates, and H2H results
+4. If data is missing, say "limited data" rather than making generic claims
 
-VOICE:
-- Confident, not arrogant
-- Sharp, not wordy
-- Premium, not casual
-- Decisive, not wishy-washy
-- SPECIFIC - use actual names, scores, and dates from the context
+WRITING RULES:
+- Include at least ONE specific number in each snapshot bullet (e.g., "2.3 goals per game", "4W-1D-0L form")
+- Reference actual match scores when available (e.g., "3-1 win over Arsenal")
+- Cite H2H records with actual numbers (e.g., "5-2 in last 7 meetings")
+- For gameFlow, describe HOW based on scoring/defensive stats
 
 NEVER:
 - Give betting advice or tips
-- Mention odds explicitly
-- Say "this could go either way" without explanation
-- Use emojis or hype language
-- Repeat yourself
+- Make generic claims like "likely to dominate" without data backing
+- Say "expected to be fast-paced" without citing scoring rates
+- Use hollow phrases: "capitalize on weaknesses", "clinical finishing"
 - Be vague when you have specific data
 
 ALWAYS:
-- Lead with the strongest signal
-- Reference SPECIFIC recent results (e.g., "their 3-1 win over Arsenal")
-- Name players if available (e.g., "without Salah")
-- Cite H2H history with actual scores
-- Be quotable - your lines should be screenshot-worthy`;
+- Lead with the most significant statistical edge
+- Include at least one number per sentence
+- If no enriched context, be honest: "Based on available signals..."
+- Be analytical, not promotional`;
 
   const userPrompt = `MATCH: ${data.homeTeam} vs ${data.awayTeam}
 COMPETITION: ${data.league}
@@ -949,21 +984,21 @@ Generate JSON:
     "favored": ${favoredOptions},
     "confidence": "${universalSignals.confidence}",
     "snapshot": [
-      "First insight (most important signal)",
-      "Second insight (supporting signal)", 
-      "Third insight (context or tempo)",
-      "Fourth insight (risk or opportunity)"
+      "First insight WITH A NUMBER (e.g., '4W-1L form, averaging 2.1 goals/game')",
+      "Second insight WITH A NUMBER (e.g., 'Conceding just 0.8/game at home')", 
+      "Third insight WITH A NUMBER (e.g., 'H2H: 5-2 in last 7 meetings')",
+      "Fourth insight (risk or gap in data)"
     ],
-    "gameFlow": "2-3 sentences on HOW the game will unfold. What will each team try to do? Where will the battle be won/lost?",
-    "riskFactors": ["Key risk 1", "Key risk 2 (optional)"]
+    "gameFlow": "2-3 sentences describing expected game dynamics. Reference scoring rates and defensive records.",
+    "riskFactors": ["Key risk with context", "Secondary risk (optional)"]
   },
-  "headline": "One sharp, quotable line that captures the match story"
+  "headline": "One analytical line with a stat (e.g., 'Arsenal's 2.4 goals/game meets Chelsea's leaky defense')"
 }
 
 RULES:
-- Maximum 4 snapshot bullets
-- Each bullet = ONE distinct insight
-- If confidence is LOW, say so directly: "Signals point nowhere clearly."
+- EVERY snapshot bullet must contain at least one specific number from the context
+- gameFlow must reference actual scoring/conceding rates
+- If no detailed stats available, be honest: "Limited data available"
 - ${!sportConfig.hasDraw ? 'This sport has NO DRAWS - pick a winner.' : 'Draw is possible.'}`;
 
   const prompt = `${systemPrompt}\n\n${userPrompt}`;
