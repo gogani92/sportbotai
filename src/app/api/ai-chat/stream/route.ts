@@ -715,8 +715,8 @@ export async function POST(request: NextRequest) {
       if (cached) {
         console.log(`[AI-Chat-Stream] Cache HIT for: "${message.slice(0, 50)}..."`);
         
-        // Generate follow-up suggestions
-        const followUps = generateFollowUps(message, queryCategory, detectedSport);
+        // Generate follow-up suggestions based on cached response
+        const followUps = generateQuickFollowUps(message, queryCategory, detectedSport);
         
         // Return cached response as a streaming-like response
         const encoder = new TextEncoder();
