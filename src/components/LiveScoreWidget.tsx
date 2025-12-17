@@ -3,14 +3,14 @@
  * 
  * Displays real-time score for a match when it's live.
  * Auto-updates every 30 seconds.
- * Shows match status (1H, HT, 2H, FT for soccer, Q1-Q4 for basketball, etc.)
+ * Shows match status (1H, HT, 2H, FT for soccer, Q1-Q4 for basketball/NFL, P1-P3 for hockey)
  */
 
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 
-type SportType = 'soccer' | 'basketball' | 'nba';
+type SportType = 'soccer' | 'basketball' | 'nba' | 'nfl' | 'american_football' | 'nhl' | 'hockey';
 
 interface LiveMatch {
   fixtureId: number;
@@ -30,16 +30,22 @@ interface LiveMatch {
   sport?: SportType;
   events: Array<{
     time: number;
-    type: 'Goal' | 'Card' | 'Subst' | 'Var' | 'Score';
+    type: 'Goal' | 'Card' | 'Subst' | 'Var' | 'Score' | 'Touchdown' | 'FieldGoal';
     team: 'home' | 'away';
     player: string;
     detail: string;
   }>;
   venue: string;
   startTime: string;
-  // Basketball specific
+  // Basketball/NFL specific
   quarter?: number;
   quarterScores?: {
+    home: number[];
+    away: number[];
+  };
+  // Hockey specific
+  period?: number;
+  periodScores?: {
     home: number[];
     away: number[];
   };
@@ -59,7 +65,7 @@ interface LiveScoreWidgetProps {
   onStatusChange?: (status: 'live' | 'upcoming' | 'finished' | 'not_found') => void;
 }
 
-// Status badge styling - includes basketball statuses
+// Status badge styling - includes all sports
 const statusStyles: Record<string, { bg: string; text: string; pulse?: boolean }> = {
   // Soccer
   '1H': { bg: 'bg-red-500', text: 'text-white', pulse: true },
@@ -72,7 +78,7 @@ const statusStyles: Record<string, { bg: string; text: string; pulse?: boolean }
   'PEN': { bg: 'bg-gray-600', text: 'text-white' },
   'NS': { bg: 'bg-blue-500', text: 'text-white' },
   'LIVE': { bg: 'bg-red-500', text: 'text-white', pulse: true },
-  // Basketball
+  // Basketball / NFL (Quarters)
   'Q1': { bg: 'bg-red-500', text: 'text-white', pulse: true },
   'Q2': { bg: 'bg-red-500', text: 'text-white', pulse: true },
   'Q3': { bg: 'bg-red-500', text: 'text-white', pulse: true },
@@ -81,6 +87,12 @@ const statusStyles: Record<string, { bg: string; text: string; pulse?: boolean }
   'BT': { bg: 'bg-yellow-500', text: 'text-black' }, // Break Time
   'AOT': { bg: 'bg-gray-600', text: 'text-white' }, // After Overtime
   'POST': { bg: 'bg-gray-600', text: 'text-white' }, // Game Over
+  // Hockey (Periods)
+  'P1': { bg: 'bg-red-500', text: 'text-white', pulse: true },
+  'P2': { bg: 'bg-red-500', text: 'text-white', pulse: true },
+  'P3': { bg: 'bg-red-500', text: 'text-white', pulse: true },
+  'PT': { bg: 'bg-yellow-500', text: 'text-black' }, // Period Time (intermission)
+  'AP': { bg: 'bg-gray-600', text: 'text-white' }, // After Penalties/Shootout
 };
 
 export default function LiveScoreWidget({ 

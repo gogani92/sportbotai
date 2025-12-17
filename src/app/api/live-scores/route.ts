@@ -4,6 +4,8 @@
  * Fetches live match scores from API-Sports family:
  * - API-Football (Soccer)
  * - API-Basketball (NBA, EuroLeague, etc.)
+ * - API-American-Football (NFL, NCAAF)
+ * - API-Hockey (NHL)
  * 
  * Supports querying specific matches or all live matches.
  * 
@@ -11,6 +13,8 @@
  * - GET /api/live-scores - All live soccer matches
  * - GET /api/live-scores?sport=basketball - All live basketball matches
  * - GET /api/live-scores?sport=nba - All live NBA games
+ * - GET /api/live-scores?sport=nfl - All live NFL games
+ * - GET /api/live-scores?sport=nhl - All live NHL games
  * - GET /api/live-scores?teams=Knicks,Spurs&sport=nba - Specific NBA game
  * - GET /api/live-scores?teams=Liverpool,Manchester - Specific soccer match
  */
@@ -21,18 +25,22 @@ import { NextRequest, NextResponse } from 'next/server';
 const API_BASES = {
   soccer: 'https://v3.football.api-sports.io',
   basketball: 'https://v1.basketball.api-sports.io',
+  american_football: 'https://v1.american-football.api-sports.io',
+  hockey: 'https://v1.hockey.api-sports.io',
 };
 
 const API_KEY = process.env.API_FOOTBALL_KEY; // Same key works for all API-Sports
 
-// NBA League IDs in Basketball API (includes NBA Cup, In-Season Tournament)
+// League IDs for major leagues
 const NBA_LEAGUE_IDS = [12, 404, 422]; // 12=NBA, 404=In-Season Tournament, 422=NBA Cup
+const NFL_LEAGUE_ID = 1; // NFL
+const NHL_LEAGUE_ID = 57; // NHL
 
 // Cache for live scores (short TTL - 30 seconds)
 const liveCache = new Map<string, { data: any; timestamp: number }>();
 const LIVE_CACHE_TTL = 30 * 1000; // 30 seconds
 
-export type SportType = 'soccer' | 'basketball' | 'nba';
+export type SportType = 'soccer' | 'basketball' | 'nba' | 'nfl' | 'american_football' | 'nhl' | 'hockey';
 
 export interface LiveMatch {
   fixtureId: number;
@@ -41,8 +49,8 @@ export interface LiveMatch {
   homeScore: number;
   awayScore: number;
   status: {
-    short: string; // 1H, HT, 2H, FT, Q1, Q2, Q3, Q4, etc.
-    long: string;  // First Half, Halftime, Quarter 1, etc.
+    short: string; // 1H, HT, 2H, FT, Q1, Q2, Q3, Q4, P1, P2, P3, etc.
+    long: string;  // First Half, Halftime, Quarter 1, Period 1, etc.
     elapsed: number | null; // Minutes played
   };
   league: string;
@@ -52,7 +60,7 @@ export interface LiveMatch {
   sport: SportType;
   events: Array<{
     time: number;
-    type: 'Goal' | 'Card' | 'Subst' | 'Var' | 'Score';
+    type: 'Goal' | 'Card' | 'Subst' | 'Var' | 'Score' | 'Touchdown' | 'FieldGoal';
     team: 'home' | 'away';
     player: string;
     detail: string;
@@ -62,6 +70,12 @@ export interface LiveMatch {
   // Basketball-specific
   quarter?: number;
   quarterScores?: {
+    home: number[];
+    away: number[];
+  };
+  // Hockey-specific
+  period?: number;
+  periodScores?: {
     home: number[];
     away: number[];
   };
@@ -246,6 +260,337 @@ async function fetchTodaysBasketball(nbaOnly: boolean = false): Promise<LiveMatc
     return matches;
   } catch (error) {
     console.error('[Live-Scores] Error fetching today basketball:', error);
+    return [];
+  }
+}
+
+// =============================================
+// NFL (AMERICAN FOOTBALL) LIVE SCORES
+// =============================================
+
+/**
+ * Fetch all currently live NFL games
+ */
+async function fetchLiveNFL(nflOnly: boolean = true): Promise<LiveMatch[]> {
+  const cacheKey = nflOnly ? 'live-nfl' : 'live-american-football';
+  const cached = getCached<LiveMatch[]>(cacheKey);
+  if (cached) return cached;
+
+  if (!API_KEY) {
+    console.error('[Live-Scores] API_FOOTBALL_KEY not configured');
+    return [];
+  }
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const url = `${API_BASES.american_football}/games?date=${today}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-rapidapi-key': API_KEY,
+        'x-rapidapi-host': 'v1.american-football.api-sports.io',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('[Live-Scores] NFL API error:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    let games = data.response || [];
+    
+    // Filter for live games (Q1, Q2, Q3, Q4, OT, HT)
+    const liveStatuses = ['Q1', 'Q2', 'Q3', 'Q4', 'OT', 'HT'];
+    games = games.filter((g: any) => liveStatuses.includes(g.game?.status?.short));
+    
+    // If NFL only, filter by NFL league ID
+    if (nflOnly) {
+      games = games.filter((g: any) => g.league?.id === NFL_LEAGUE_ID);
+    }
+
+    const liveMatches: LiveMatch[] = games.map((game: any) => ({
+      fixtureId: game.game.id,
+      homeTeam: game.teams.home.name,
+      awayTeam: game.teams.away.name,
+      homeScore: game.scores.home.total ?? 0,
+      awayScore: game.scores.away.total ?? 0,
+      status: {
+        short: game.game.status.short,
+        long: game.game.status.long,
+        elapsed: game.game.status.timer ? parseInt(game.game.status.timer) : null,
+      },
+      league: game.league.name,
+      leagueLogo: game.league.logo,
+      homeTeamLogo: game.teams.home.logo,
+      awayTeamLogo: game.teams.away.logo,
+      sport: game.league.id === NFL_LEAGUE_ID ? 'nfl' : 'american_football',
+      events: [],
+      venue: game.game.venue?.name || '',
+      startTime: game.game.date.date,
+      quarter: game.game.status.short === 'Q1' ? 1 
+             : game.game.status.short === 'Q2' ? 2 
+             : game.game.status.short === 'Q3' ? 3 
+             : game.game.status.short === 'Q4' ? 4 
+             : game.game.status.short === 'OT' ? 5 
+             : undefined,
+      quarterScores: {
+        home: [
+          game.scores.home.quarter_1 ?? 0,
+          game.scores.home.quarter_2 ?? 0,
+          game.scores.home.quarter_3 ?? 0,
+          game.scores.home.quarter_4 ?? 0,
+        ],
+        away: [
+          game.scores.away.quarter_1 ?? 0,
+          game.scores.away.quarter_2 ?? 0,
+          game.scores.away.quarter_3 ?? 0,
+          game.scores.away.quarter_4 ?? 0,
+        ],
+      },
+    }));
+
+    setCache(cacheKey, liveMatches);
+    return liveMatches;
+  } catch (error) {
+    console.error('[Live-Scores] NFL fetch error:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch today's NFL games
+ */
+async function fetchTodaysNFL(nflOnly: boolean = true): Promise<LiveMatch[]> {
+  const cacheKey = nflOnly ? 'nfl-today' : 'american-football-today';
+  const cached = getCached<LiveMatch[]>(cacheKey);
+  if (cached) return cached;
+
+  if (!API_KEY) return [];
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const url = `${API_BASES.american_football}/games?date=${today}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-rapidapi-key': API_KEY,
+        'x-rapidapi-host': 'v1.american-football.api-sports.io',
+      },
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    let games = data.response || [];
+    
+    // If NFL only, filter by NFL league ID
+    if (nflOnly) {
+      games = games.filter((g: any) => g.league?.id === NFL_LEAGUE_ID);
+    }
+
+    const matches: LiveMatch[] = games.map((game: any) => ({
+      fixtureId: game.game.id,
+      homeTeam: game.teams.home.name,
+      awayTeam: game.teams.away.name,
+      homeScore: game.scores.home.total ?? 0,
+      awayScore: game.scores.away.total ?? 0,
+      status: {
+        short: game.game.status.short,
+        long: game.game.status.long,
+        elapsed: game.game.status.timer ? parseInt(game.game.status.timer) : null,
+      },
+      league: game.league.name,
+      leagueLogo: game.league.logo,
+      homeTeamLogo: game.teams.home.logo,
+      awayTeamLogo: game.teams.away.logo,
+      sport: game.league.id === NFL_LEAGUE_ID ? 'nfl' : 'american_football',
+      events: [],
+      venue: game.game.venue?.name || '',
+      startTime: game.game.date.date,
+      quarterScores: {
+        home: [
+          game.scores.home.quarter_1 ?? 0,
+          game.scores.home.quarter_2 ?? 0,
+          game.scores.home.quarter_3 ?? 0,
+          game.scores.home.quarter_4 ?? 0,
+        ],
+        away: [
+          game.scores.away.quarter_1 ?? 0,
+          game.scores.away.quarter_2 ?? 0,
+          game.scores.away.quarter_3 ?? 0,
+          game.scores.away.quarter_4 ?? 0,
+        ],
+      },
+    }));
+
+    setCache(cacheKey, matches);
+    return matches;
+  } catch (error) {
+    console.error('[Live-Scores] Error fetching today NFL:', error);
+    return [];
+  }
+}
+
+// =============================================
+// NHL (HOCKEY) LIVE SCORES
+// =============================================
+
+/**
+ * Fetch all currently live NHL games
+ */
+async function fetchLiveNHL(nhlOnly: boolean = true): Promise<LiveMatch[]> {
+  const cacheKey = nhlOnly ? 'live-nhl' : 'live-hockey';
+  const cached = getCached<LiveMatch[]>(cacheKey);
+  if (cached) return cached;
+
+  if (!API_KEY) {
+    console.error('[Live-Scores] API_FOOTBALL_KEY not configured');
+    return [];
+  }
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const url = `${API_BASES.hockey}/games?date=${today}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-rapidapi-key': API_KEY,
+        'x-rapidapi-host': 'v1.hockey.api-sports.io',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('[Live-Scores] NHL API error:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    let games = data.response || [];
+    
+    // Filter for live games (P1, P2, P3, OT, BT, PT)
+    const liveStatuses = ['P1', 'P2', 'P3', 'OT', 'BT', 'PT'];
+    games = games.filter((g: any) => liveStatuses.includes(g.status?.short));
+    
+    // If NHL only, filter by NHL league ID
+    if (nhlOnly) {
+      games = games.filter((g: any) => g.league?.id === NHL_LEAGUE_ID);
+    }
+
+    const liveMatches: LiveMatch[] = games.map((game: any) => ({
+      fixtureId: game.id,
+      homeTeam: game.teams.home.name,
+      awayTeam: game.teams.away.name,
+      homeScore: game.scores.home ?? 0,
+      awayScore: game.scores.away ?? 0,
+      status: {
+        short: game.status.short,
+        long: game.status.long,
+        elapsed: game.timer ? parseInt(game.timer) : null,
+      },
+      league: game.league.name,
+      leagueLogo: game.league.logo,
+      homeTeamLogo: game.teams.home.logo,
+      awayTeamLogo: game.teams.away.logo,
+      sport: game.league.id === NHL_LEAGUE_ID ? 'nhl' : 'hockey',
+      events: [],
+      venue: '',
+      startTime: game.date,
+      period: game.status.short === 'P1' ? 1 
+            : game.status.short === 'P2' ? 2 
+            : game.status.short === 'P3' ? 3 
+            : game.status.short === 'OT' ? 4 
+            : undefined,
+      periodScores: game.periods ? {
+        home: [
+          game.periods.first?.home ?? 0,
+          game.periods.second?.home ?? 0,
+          game.periods.third?.home ?? 0,
+        ],
+        away: [
+          game.periods.first?.away ?? 0,
+          game.periods.second?.away ?? 0,
+          game.periods.third?.away ?? 0,
+        ],
+      } : undefined,
+    }));
+
+    setCache(cacheKey, liveMatches);
+    return liveMatches;
+  } catch (error) {
+    console.error('[Live-Scores] NHL fetch error:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch today's NHL games
+ */
+async function fetchTodaysNHL(nhlOnly: boolean = true): Promise<LiveMatch[]> {
+  const cacheKey = nhlOnly ? 'nhl-today' : 'hockey-today';
+  const cached = getCached<LiveMatch[]>(cacheKey);
+  if (cached) return cached;
+
+  if (!API_KEY) return [];
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const url = `${API_BASES.hockey}/games?date=${today}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-rapidapi-key': API_KEY,
+        'x-rapidapi-host': 'v1.hockey.api-sports.io',
+      },
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    let games = data.response || [];
+    
+    // If NHL only, filter by NHL league ID
+    if (nhlOnly) {
+      games = games.filter((g: any) => g.league?.id === NHL_LEAGUE_ID);
+    }
+
+    const matches: LiveMatch[] = games.map((game: any) => ({
+      fixtureId: game.id,
+      homeTeam: game.teams.home.name,
+      awayTeam: game.teams.away.name,
+      homeScore: game.scores.home ?? 0,
+      awayScore: game.scores.away ?? 0,
+      status: {
+        short: game.status.short,
+        long: game.status.long,
+        elapsed: game.timer ? parseInt(game.timer) : null,
+      },
+      league: game.league.name,
+      leagueLogo: game.league.logo,
+      homeTeamLogo: game.teams.home.logo,
+      awayTeamLogo: game.teams.away.logo,
+      sport: game.league.id === NHL_LEAGUE_ID ? 'nhl' : 'hockey',
+      events: [],
+      venue: '',
+      startTime: game.date,
+      periodScores: game.periods ? {
+        home: [
+          game.periods.first?.home ?? 0,
+          game.periods.second?.home ?? 0,
+          game.periods.third?.home ?? 0,
+        ],
+        away: [
+          game.periods.first?.away ?? 0,
+          game.periods.second?.away ?? 0,
+          game.periods.third?.away ?? 0,
+        ],
+      } : undefined,
+    }));
+
+    setCache(cacheKey, matches);
+    return matches;
+  } catch (error) {
+    console.error('[Live-Scores] Error fetching today NHL:', error);
     return [];
   }
 }
@@ -452,6 +797,64 @@ async function getMatchStatus(
     return { status: 'not_found' };
   }
 
+  // NFL/American Football flow
+  if (sport === 'nfl' || sport === 'american_football') {
+    const nflOnly = sport === 'nfl';
+    const liveGames = await fetchLiveNFL(nflOnly);
+    const liveMatch = findMatch(liveGames);
+    
+    if (liveMatch) {
+      return { status: 'live', match: liveMatch };
+    }
+
+    const todaysGames = await fetchTodaysNFL(nflOnly);
+    const todayMatch = findMatch(todaysGames);
+
+    if (todayMatch) {
+      const finishedStatuses = ['FT', 'AOT', 'POST', 'CANC', 'PST'];
+      const liveStatuses = ['Q1', 'Q2', 'Q3', 'Q4', 'OT', 'HT'];
+      
+      if (finishedStatuses.includes(todayMatch.status.short)) {
+        return { status: 'finished', match: todayMatch };
+      }
+      if (liveStatuses.includes(todayMatch.status.short)) {
+        return { status: 'live', match: todayMatch };
+      }
+      return { status: 'upcoming', match: todayMatch };
+    }
+
+    return { status: 'not_found' };
+  }
+
+  // NHL/Hockey flow
+  if (sport === 'nhl' || sport === 'hockey') {
+    const nhlOnly = sport === 'nhl';
+    const liveGames = await fetchLiveNHL(nhlOnly);
+    const liveMatch = findMatch(liveGames);
+    
+    if (liveMatch) {
+      return { status: 'live', match: liveMatch };
+    }
+
+    const todaysGames = await fetchTodaysNHL(nhlOnly);
+    const todayMatch = findMatch(todaysGames);
+
+    if (todayMatch) {
+      const finishedStatuses = ['FT', 'AOT', 'POST', 'CANC', 'PST', 'AP'];
+      const liveStatuses = ['P1', 'P2', 'P3', 'OT', 'BT', 'PT'];
+      
+      if (finishedStatuses.includes(todayMatch.status.short)) {
+        return { status: 'finished', match: todayMatch };
+      }
+      if (liveStatuses.includes(todayMatch.status.short)) {
+        return { status: 'live', match: todayMatch };
+      }
+      return { status: 'upcoming', match: todayMatch };
+    }
+
+    return { status: 'not_found' };
+  }
+
   // Soccer flow (default)
   const liveMatch = await fetchMatchByTeams(homeTeam, awayTeam);
   if (liveMatch) {
@@ -485,6 +888,10 @@ function normalizeSport(input: string | null): SportType {
   const s = input.toLowerCase();
   if (s === 'nba' || s === 'basketball_nba') return 'nba';
   if (s.includes('basketball')) return 'basketball';
+  if (s === 'nfl' || s === 'americanfootball_nfl') return 'nfl';
+  if (s.includes('american') || s.includes('ncaaf')) return 'american_football';
+  if (s === 'nhl' || s === 'hockey_nhl') return 'nhl';
+  if (s.includes('hockey')) return 'hockey';
   return 'soccer';
 }
 
@@ -519,6 +926,14 @@ export async function GET(request: NextRequest) {
       liveMatches = await fetchLiveBasketball(true);
     } else if (sport === 'basketball') {
       liveMatches = await fetchLiveBasketball(false);
+    } else if (sport === 'nfl') {
+      liveMatches = await fetchLiveNFL(true);
+    } else if (sport === 'american_football') {
+      liveMatches = await fetchLiveNFL(false);
+    } else if (sport === 'nhl') {
+      liveMatches = await fetchLiveNHL(true);
+    } else if (sport === 'hockey') {
+      liveMatches = await fetchLiveNHL(false);
     } else {
       liveMatches = await fetchLiveMatches();
     }

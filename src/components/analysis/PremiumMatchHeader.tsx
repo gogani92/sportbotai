@@ -64,6 +64,10 @@ export default function PremiumMatchHeader({
     const s = sportName.toLowerCase();
     if (s.includes('nba') || s === 'basketball_nba') return 'nba';
     if (s.includes('basketball')) return 'basketball';
+    if (s.includes('nfl') || s === 'americanfootball_nfl') return 'nfl';
+    if (s.includes('american') || s.includes('ncaaf')) return 'american_football';
+    if (s.includes('nhl') || s === 'hockey_nhl') return 'nhl';
+    if (s.includes('hockey')) return 'hockey';
     return 'soccer';
   };
 
