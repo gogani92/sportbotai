@@ -51,6 +51,26 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
   const [showDeepDive, setShowDeepDive] = useState(false);
   const [showQuickBriefing, setShowQuickBriefing] = useState(true);
   
+  // Guard against missing essential data (older/malformed analyses)
+  if (!result || !result.matchInfo || !result.probabilities) {
+    return (
+      <div className="bg-[#0F1114] rounded-2xl border border-warning/30 shadow-card p-6 sm:p-8 max-w-2xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          <div className="flex-shrink-0 w-14 h-14 bg-warning/15 rounded-xl flex items-center justify-center">
+            <span className="text-2xl">📋</span>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white mb-2">Legacy Analysis</h3>
+            <p className="text-text-secondary leading-relaxed">
+              This analysis was saved in an older format and cannot be displayed in full. 
+              The data structure has been updated since this analysis was created.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   // Error state
   if (!result.success && result.error) {
     return (
