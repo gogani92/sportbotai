@@ -87,6 +87,7 @@ export const CACHE_TTL = {
   
   // AI Analysis
   ANALYSIS: 60 * 60,        // 1 hour (same inputs = same analysis)
+  MATCH_PREVIEW: 60 * 60,   // 1 hour (match preview page)
   
   // Chat responses (category-based TTL)
   CHAT_STANDINGS: 5 * 60,   // 5 minutes (standings change after matches)
@@ -127,6 +128,10 @@ export const CACHE_KEYS = {
   // Analysis
   analysis: (homeTeam: string, awayTeam: string, sport: string, oddsHash: string) => 
     `analysis:${sport}:${homeTeam.toLowerCase()}:${awayTeam.toLowerCase()}:${oddsHash}`,
+  
+  // Match Preview (shared across users)
+  matchPreview: (homeTeam: string, awayTeam: string, sport: string, date: string) => 
+    `preview:${sport}:${homeTeam.toLowerCase().replace(/\s+/g, '_')}:${awayTeam.toLowerCase().replace(/\s+/g, '_')}:${date}`,
   
   // Chat responses
   chat: (queryHash: string) => `chat:${queryHash}`,

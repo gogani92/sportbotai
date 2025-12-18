@@ -23,6 +23,7 @@ import { normalizeToUniversalSignals, formatSignalsForAI, getSignalSummary, type
 import { analyzeMarket, type MarketIntel, type OddsData } from '@/lib/value-detection';
 import { getDataLayer } from '@/lib/data-layer';
 import { findMatchingDemo, getRandomFeaturedDemo, type DemoMatch } from '@/lib/demo-matches';
+import { cacheGet, cacheSet, CACHE_TTL, CACHE_KEYS } from '@/lib/cache';
 import { ANALYSIS_PERSONALITY } from '@/lib/sportbot-brain';
 import OpenAI from 'openai';
 
@@ -108,6 +109,35 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // REGISTERED USER - Full API analysis
     // ==========================================
     console.log(`[Match-Preview] Registered user: ${session.user.email} - proceeding with live analysis`);
+
+    // ==========================================
+    // CHECK CACHE FIRST (shared across all users)
+    // Skip cache if match starts within 30 minutes (need fresh data)
+    // ==========================================
+    const matchDate = matchInfo.kickoff ? new Date(matchInfo.kickoff).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    const cacheKey = CACHE_KEYS.matchPreview(matchInfo.homeTeam, matchInfo.awayTeam, matchInfo.sport, matchDate);
+    
+    const kickoffTime = matchInfo.kickoff ? new Date(matchInfo.kickoff).getTime() : 0;
+    const minutesUntilKickoff = kickoffTime ? (kickoffTime - Date.now()) / 60000 : Infinity;
+    const shouldSkipCache = minutesUntilKickoff < 30; // Skip cache if match starts within 30 min
+    
+    if (!shouldSkipCache) {
+      const cachedPreview = await cacheGet<any>(cacheKey);
+      if (cachedPreview) {
+        console.log(`[Match-Preview] Cache HIT for ${matchInfo.homeTeam} vs ${matchInfo.awayTeam} (${Date.now() - startTime}ms)`);
+        return NextResponse.json({
+          ...cachedPreview,
+          fromCache: true,
+        }, {
+          headers: {
+            'Cache-Control': 'private, max-age=1800', // 30 min browser cache
+          }
+        });
+      }
+      console.log(`[Match-Preview] Cache MISS - generating fresh analysis`);
+    } else {
+      console.log(`[Match-Preview] Skipping cache - match starts in ${Math.round(minutesUntilKickoff)} min`);
+    }
 
     // Determine if this is a non-soccer sport
     const isNonSoccer = ['basketball', 'basketball_nba', 'basketball_euroleague', 'euroleague', 'nba', 'americanfootball', 'americanfootball_nfl', 'nfl', 'icehockey', 'icehockey_nhl', 'nhl', 'hockey', 'baseball', 'mlb', 'mma', 'ufc']
@@ -605,6 +635,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     } catch (saveError) {
       // Don't fail the request if save fails
       console.error('[Match-Preview] Failed to save analysis/prediction:', saveError);
+    }
+
+    // ==========================================
+    // CACHE THE RESPONSE (for other users)
+    // Don't cache if match is very soon
+    // ==========================================
+    if (!shouldSkipCache) {
+      try {
+        await cacheSet(cacheKey, response, CACHE_TTL.MATCH_PREVIEW);
+        console.log(`[Match-Preview] Cached for 1 hour: ${cacheKey}`);
+      } catch (cacheError) {
+        console.error('[Match-Preview] Failed to cache:', cacheError);
+      }
     }
 
     console.log(`[Match-Preview] Completed in ${Date.now() - startTime}ms`);
