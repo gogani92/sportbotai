@@ -282,9 +282,6 @@ async function getPredictionStats() {
           league: { not: null },
         },
         _count: { id: true },
-        _sum: { 
-          // Using a raw approach since Prisma doesn't support conditional sum
-        },
       }).then(async (leagues) => {
         // For each league, get accurate count
         const leagueStats = await Promise.all(
