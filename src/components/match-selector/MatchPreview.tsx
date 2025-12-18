@@ -23,6 +23,7 @@ interface MatchPreviewProps {
   onAnalyze: () => void;
   loading?: boolean;
   loadingOdds?: boolean;
+  disabled?: boolean;
 }
 
 export default function MatchPreview({
@@ -31,6 +32,7 @@ export default function MatchPreview({
   onAnalyze,
   loading = false,
   loadingOdds = false,
+  disabled = false,
 }: MatchPreviewProps) {
   const hasDraw = sportConfig?.hasDraw ?? true;
   const hasOdds = match.odds && match.odds.home > 0;
@@ -205,6 +207,7 @@ export default function MatchPreview({
           onClick={onAnalyze}
           loading={loading}
           hasOdds={hasOdds}
+          disabled={disabled}
           size="lg"
         />
       </div>

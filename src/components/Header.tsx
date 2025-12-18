@@ -137,49 +137,70 @@ export default function Header() {
                 Analyze Match
               </Link>
               
-              {/* Divider - User Section */}
-              <div className="my-2 border-t border-divider" />
-              <p className="px-4 py-2 text-xs text-text-muted uppercase tracking-wider">Your Account</p>
+              {/* User Section - Only show to logged in users */}
+              {session && (
+                <>
+                  <div className="my-2 border-t border-divider" />
+                  <p className="px-4 py-2 text-xs text-text-muted uppercase tracking-wider">Your Account</p>
+                  
+                  <Link
+                    href="/my-teams"
+                    className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    My Teams
+                  </Link>
+                  <Link
+                    href="/history"
+                    className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    History
+                  </Link>
+                  <Link
+                    href="/market-alerts"
+                    className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <span className="text-lg">📊</span>
+                    Market Alerts
+                    <span className="text-[10px] font-semibold bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded ml-auto">PREMIUM</span>
+                  </Link>
+                  <Link
+                    href="/account"
+                    className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Account Settings
+                  </Link>
+                </>
+              )}
               
-              <Link
-                href="/my-teams"
-                className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                My Teams
-              </Link>
-              <Link
-                href="/history"
-                className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                History
-              </Link>
-              <Link
-                href="/market-alerts"
-                className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <span className="text-lg">📊</span>
-                Market Alerts
-                <span className="text-[10px] font-semibold bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded ml-auto">PREMIUM</span>
-              </Link>
-              <Link
-                href="/account"
-                className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Account Settings
-              </Link>
+              {/* Sign In for guests */}
+              {!session && (
+                <>
+                  <div className="my-2 border-t border-divider" />
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-3 text-accent hover:text-accent/80 hover:bg-accent/10 font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    Sign In
+                  </Link>
+                </>
+              )}
               
               {/* Admin Section - Only show to admins */}
               {isAdmin && (

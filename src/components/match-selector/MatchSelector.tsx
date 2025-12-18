@@ -11,11 +11,14 @@
  * - Trending/HOT matches section
  * - Global search functionality
  * - Mobile-first responsive design
+ * - Usage limit enforcement (checks before analysis)
  */
 
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { MatchData, AnalyzeRequest, AnalyzeResponse } from '@/types';
 import { SPORTS_CONFIG, SportConfig, getSportsGroupedByCategory } from '@/lib/config/sportsConfig';
 import SportTabs from './SportTabs';
@@ -26,15 +29,31 @@ import { TrendingMatches } from './TrendingMatches';
 import { groupMatchesByLeague, filterLeagueGroupsBySearch, LeagueGroup } from './utils';
 import { getTrendingMatches, TrendingMatch } from './trending';
 
+interface UsageInfo {
+  authenticated: boolean;
+  plan: string;
+  used: number;
+  limit: number;
+  remaining: number;
+  canAnalyze: boolean;
+  message: string | null;
+}
+
 interface MatchSelectorProps {
   onResult: (result: AnalyzeResponse) => void;
   onLoading: (loading: boolean) => void;
 }
 
 export default function MatchSelector({ onResult, onLoading }: MatchSelectorProps) {
+  const { data: session, status } = useSession();
+  
   // API state
   const [apiConfigured, setApiConfigured] = useState(true);
   const [manualMode, setManualMode] = useState(false);
+
+  // Usage limits state
+  const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
+  const [loadingUsage, setLoadingUsage] = useState(true);
 
   // Sport selection state
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -104,6 +123,26 @@ export default function MatchSelector({ onResult, onLoading }: MatchSelectorProp
   // ============================================
   // API CALLS
   // ============================================
+
+  // Fetch usage limits on mount and when session changes
+  useEffect(() => {
+    async function fetchUsage() {
+      try {
+        setLoadingUsage(true);
+        const response = await fetch('/api/usage');
+        if (response.ok) {
+          const data = await response.json();
+          setUsageInfo(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch usage:', error);
+      } finally {
+        setLoadingUsage(false);
+      }
+    }
+    
+    fetchUsage();
+  }, [session]);
 
   // Check if API is configured on mount
   useEffect(() => {
@@ -240,6 +279,17 @@ export default function MatchSelector({ onResult, onLoading }: MatchSelectorProp
   const handleAnalyze = async () => {
     if (!selectedEvent) return;
 
+    // Check usage limits BEFORE attempting analysis
+    if (!usageInfo?.authenticated) {
+      setError('Please sign in to analyze matches');
+      return;
+    }
+    
+    if (!usageInfo?.canAnalyze) {
+      setError(usageInfo?.message || 'Daily limit reached. Upgrade for more analyses.');
+      return;
+    }
+
     setLoadingAnalysis(true);
     onLoading(true);
     setError(null);
@@ -277,6 +327,15 @@ export default function MatchSelector({ onResult, onLoading }: MatchSelectorProp
         throw new Error(result.error || 'Analysis failed');
       }
 
+      // Refresh usage info after successful analysis
+      try {
+        const usageResponse = await fetch('/api/usage');
+        if (usageResponse.ok) {
+          const usageData = await usageResponse.json();
+          setUsageInfo(usageData);
+        }
+      } catch {}
+
       onResult(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unexpected error');
@@ -299,8 +358,66 @@ export default function MatchSelector({ onResult, onLoading }: MatchSelectorProp
     );
   }
 
+  // Compute if analyze button should be disabled
+  const canAnalyze = usageInfo?.canAnalyze ?? false;
+  const isAuthenticated = usageInfo?.authenticated ?? false;
+
   return (
     <div className="space-y-6">
+      {/* Usage Limit Warning */}
+      {usageInfo && !usageInfo.canAnalyze && usageInfo.authenticated && (
+        <div className="bg-red-950/50 border border-red-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-red-400 mb-1">Daily Limit Reached</h4>
+              <p className="text-sm text-red-300/80 mb-3">
+                You've used your {usageInfo.limit} {usageInfo.plan === 'FREE' ? 'free' : ''} analysis{usageInfo.limit !== 1 ? 'es' : ''} for today.
+                {usageInfo.plan === 'FREE' && ' Upgrade for 30 analyses per day.'}
+              </p>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Upgrade to Pro
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Not Signed In Warning */}
+      {usageInfo && !usageInfo.authenticated && (
+        <div className="bg-amber-950/30 border border-amber-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-amber-400 mb-1">Sign In Required</h4>
+              <p className="text-sm text-amber-300/80 mb-3">
+                Please sign in to analyze matches. Free users get 1 analysis per day.
+              </p>
+              <Link
+                href="/login?callbackUrl=/analyzer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Sign In
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Step 1: Sport Selection */}
       <div>
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">
@@ -451,6 +568,7 @@ export default function MatchSelector({ onResult, onLoading }: MatchSelectorProp
                     onAnalyze={handleAnalyze}
                     loading={loadingAnalysis}
                     loadingOdds={loadingOdds}
+                    disabled={!canAnalyze}
                   />
                 ) : (
                   <div className="bg-gradient-to-br from-bg-card to-bg-hover border-2 border-dashed border-divider rounded-card p-8 text-center">
