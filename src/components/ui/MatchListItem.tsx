@@ -38,7 +38,7 @@ export default function MatchListItem({
   isHot = false,
   className = '',
 }: MatchListItemProps) {
-  // Generate match preview URL
+  // Generate match preview URL (btoa works in browsers, Buffer is Node.js only)
   const matchData = {
     homeTeam,
     awayTeam,
@@ -46,7 +46,9 @@ export default function MatchListItem({
     sport: sportKey,
     kickoff: commenceTime,
   };
-  const encodedMatchId = Buffer.from(JSON.stringify(matchData)).toString('base64');
+  const encodedMatchId = typeof window !== 'undefined' 
+    ? btoa(unescape(encodeURIComponent(JSON.stringify(matchData))))
+    : Buffer.from(JSON.stringify(matchData)).toString('base64');
 
   // Format time until match
   const getTimeDisplay = () => {

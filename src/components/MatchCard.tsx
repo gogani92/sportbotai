@@ -88,7 +88,7 @@ export default function MatchCard({
   }, [homeTeam, awayTeam, commenceTime, sportKey]);
 
   // Generate match preview URL
-  // Encode match info into URL-safe format
+  // Encode match info into URL-safe format (btoa works in browsers, Buffer is Node.js only)
   const matchData = {
     homeTeam,
     awayTeam,
@@ -96,7 +96,9 @@ export default function MatchCard({
     sport: sportKey,
     kickoff: commenceTime,
   };
-  const encodedMatchId = Buffer.from(JSON.stringify(matchData)).toString('base64');
+  const encodedMatchId = typeof window !== 'undefined' 
+    ? btoa(unescape(encodeURIComponent(JSON.stringify(matchData))))
+    : Buffer.from(JSON.stringify(matchData)).toString('base64');
 
   // Format match date
   const formatMatchDate = (dateString: string) => {
