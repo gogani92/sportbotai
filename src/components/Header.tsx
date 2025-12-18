@@ -66,6 +66,14 @@ export default function Header() {
               AI Desk
             </Link>
             <Link 
+              href="/market-alerts" 
+              className="text-text-secondary hover:text-text-primary font-medium transition-colors text-sm flex items-center gap-1.5"
+            >
+              <span className="text-base">📊</span>
+              Alerts
+              <span className="text-[10px] font-semibold bg-accent/20 text-accent px-1.5 py-0.5 rounded">PRO</span>
+            </Link>
+            <Link 
               href="/pricing" 
               className="text-text-secondary hover:text-text-primary font-medium transition-colors text-sm"
             >
@@ -152,6 +160,15 @@ export default function Header() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 History
+              </Link>
+              <Link
+                href="/market-alerts"
+                className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="text-lg">📊</span>
+                Market Alerts
+                <span className="text-[10px] font-semibold bg-accent/20 text-accent px-1.5 py-0.5 rounded ml-auto">PRO</span>
               </Link>
               <Link
                 href="/account"

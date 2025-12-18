@@ -467,3 +467,57 @@ enum PostCategory {
   WEEKLY_STATS
   THREAD
 }
+
+// ============================================
+// MARKET ALERTS - Odds Tracking System
+// ============================================
+
+model OddsSnapshot {
+  id            String   @id @default(cuid())
+  matchRef      String   // "Team A vs Team B"
+  sport         String   // "basketball_nba", "soccer_epl"
+  league        String
+  homeTeam      String
+  awayTeam      String
+  matchDate     DateTime
+  
+  // Current odds
+  homeOdds      Float
+  awayOdds      Float
+  drawOdds      Float?
+  
+  // Previous odds (for comparison)
+  prevHomeOdds  Float?
+  prevAwayOdds  Float?
+  prevDrawOdds  Float?
+  
+  // Movement detection
+  homeChange    Float?   // Percentage change
+  awayChange    Float?
+  drawChange    Float?
+  
+  // Model edge (our probability vs market implied)
+  modelHomeProb Float?
+  modelAwayProb Float?
+  modelDrawProb Float?
+  homeEdge      Float?   // Positive = value on home
+  awayEdge      Float?
+  drawEdge      Float?
+  
+  // Alert flags
+  hasSteamMove  Boolean  @default(false)
+  hasValueEdge  Boolean  @default(false)
+  alertLevel    String?  // "LOW", "MEDIUM", "HIGH"
+  alertNote     String?  // "Sharp money detected on home"
+  
+  bookmaker     String?  @default("consensus")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([sport])
+  @@index([matchDate])
+  @@index([hasSteamMove])
+  @@index([hasValueEdge])
+  @@index([matchRef])
+  @@unique([matchRef, sport, bookmaker])
+}
