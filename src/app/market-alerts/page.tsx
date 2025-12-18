@@ -13,6 +13,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import { getLeagueLogo } from '@/lib/logos';
 
 // ============================================
 // TYPES
@@ -67,19 +69,27 @@ interface MarketAlertsResponse {
 }
 
 // ============================================
-// SPORT ICONS
+// SPORT & LEAGUE CONFIG
 // ============================================
 
-const sportEmojis: Record<string, string> = {
-  soccer_epl: '⚽',
-  soccer_spain_la_liga: '⚽',
-  soccer_germany_bundesliga: '⚽',
-  soccer_italy_serie_a: '⚽',
-  soccer_france_ligue_one: '⚽',
-  basketball_nba: '🏀',
-  basketball_euroleague: '🏀',
-  icehockey_nhl: '🏒',
-  americanfootball_nfl: '🏈',
+interface LeagueConfig {
+  countryFlag?: string;   // Flag emoji for national leagues
+  isInternational: boolean; // If true, no country flag shown
+}
+
+const leagueConfig: Record<string, LeagueConfig> = {
+  // Soccer - National Leagues
+  soccer_epl: { countryFlag: '🇬🇧', isInternational: false },
+  soccer_spain_la_liga: { countryFlag: '🇪🇸', isInternational: false },
+  soccer_germany_bundesliga: { countryFlag: '🇩🇪', isInternational: false },
+  soccer_italy_serie_a: { countryFlag: '🇮🇹', isInternational: false },
+  soccer_france_ligue_one: { countryFlag: '🇫🇷', isInternational: false },
+  // US Sports - National (but no country flag needed, they're iconic)
+  basketball_nba: { isInternational: false },
+  icehockey_nhl: { isInternational: false },
+  americanfootball_nfl: { isInternational: false },
+  // International Competitions
+  basketball_euroleague: { isInternational: true },
 };
 
 // ============================================
@@ -102,6 +112,47 @@ function AlertBadge({ level }: { level: 'HIGH' | 'MEDIUM' | 'LOW' | null }) {
   );
 }
 
+/**
+ * League Header with logo and optional country flag
+ * - National leagues: Flag + League Logo
+ * - International competitions: Just League Logo
+ * - US Sports: Just League Logo (iconic enough)
+ */
+function LeagueHeader({ sport, sportTitle }: { sport: string; sportTitle: string }) {
+  const config = leagueConfig[sport] || { isInternational: false };
+  const leagueLogo = getLeagueLogo(sport);
+  const [imgError, setImgError] = useState(false);
+  
+  return (
+    <div className="flex items-center gap-2">
+      {/* Country Flag (for national leagues) */}
+      {config.countryFlag && !config.isInternational && (
+        <span className="text-lg">{config.countryFlag}</span>
+      )}
+      
+      {/* League Logo */}
+      {!imgError ? (
+        <Image
+          src={leagueLogo}
+          alt={sportTitle}
+          width={20}
+          height={20}
+          className="w-5 h-5 object-contain"
+          onError={() => setImgError(true)}
+          unoptimized
+        />
+      ) : (
+        <span className="w-5 h-5 rounded-full bg-bg-primary flex items-center justify-center text-xs">
+          {sportTitle.charAt(0)}
+        </span>
+      )}
+      
+      {/* League Name */}
+      <span className="text-text-secondary text-sm font-medium">{sportTitle}</span>
+    </div>
+  );
+}
+
 function EdgeMatchCard({ alert }: { alert: MarketAlert }) {
   const matchTime = new Date(alert.matchDate).toLocaleString('en-US', {
     weekday: 'short',
@@ -111,8 +162,6 @@ function EdgeMatchCard({ alert }: { alert: MarketAlert }) {
     minute: '2-digit',
   });
   
-  const sportEmoji = sportEmojis[alert.sport] || '🎯';
-  
   // Determine which outcome has edge
   const edgeOutcome = alert.bestEdge.outcome;
   const edgePercent = alert.bestEdge.percent;
@@ -121,10 +170,7 @@ function EdgeMatchCard({ alert }: { alert: MarketAlert }) {
     <div className="bg-bg-card border border-divider rounded-xl p-5 hover:border-accent/30 transition-all group">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{sportEmoji}</span>
-          <span className="text-text-secondary text-sm font-medium">{alert.sportTitle}</span>
-        </div>
+        <LeagueHeader sport={alert.sport} sportTitle={alert.sportTitle} />
         <AlertBadge level={alert.alertLevel} />
       </div>
       
@@ -201,8 +247,6 @@ function SteamMoveCard({ alert }: { alert: MarketAlert }) {
     minute: '2-digit',
   });
   
-  const sportEmoji = sportEmojis[alert.sport] || '🎯';
-  
   // Calculate previous odds from change percentage
   // If change is -5%, current is 2.0, then prev = 2.0 / (1 - 0.05) = 2.105
   const homePrevOdds = alert.homeChange && Math.abs(alert.homeChange) > 0.1 
@@ -220,10 +264,7 @@ function SteamMoveCard({ alert }: { alert: MarketAlert }) {
     <div className="bg-bg-card border border-amber-500/30 rounded-xl p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{sportEmoji}</span>
-          <span className="text-text-secondary text-sm font-medium">{alert.sportTitle}</span>
-        </div>
+        <LeagueHeader sport={alert.sport} sportTitle={alert.sportTitle} />
         <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
           ⚡ STEAM
         </span>
