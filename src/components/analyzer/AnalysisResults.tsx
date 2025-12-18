@@ -70,8 +70,8 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
     );
   }
 
-  // Check for available data
-  const hasH2HData = result.momentumAndForm.h2hSummary && result.momentumAndForm.h2hSummary.totalMatches > 0;
+  // Check for available data - with null safety for older analyses
+  const hasH2HData = result.momentumAndForm?.h2hSummary && result.momentumAndForm.h2hSummary.totalMatches > 0;
   const hasInjuryData = result.injuryContext && (
     result.injuryContext.homeTeam?.players.length || 
     result.injuryContext.awayTeam?.players.length
@@ -81,6 +81,7 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
     (result.preMatchInsights.streaks?.home?.length || 0) > 0 ||
     (result.preMatchInsights.streaks?.away?.length || 0) > 0
   );
+  const hasMomentumAndForm = !!result.momentumAndForm;
 
   return (
     <div className="max-w-6xl mx-auto">

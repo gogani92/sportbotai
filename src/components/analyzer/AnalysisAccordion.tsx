@@ -173,12 +173,17 @@ export default function AnalysisAccordion({ result }: AnalysisAccordionProps) {
 
   const { valueAnalysis, marketStability, momentumAndForm, tacticalAnalysis, riskAnalysis, matchInfo } = result;
 
+  // Guard against missing data in older analyses
+  const hasMomentumAndForm = !!momentumAndForm;
+  const hasValueAnalysis = !!valueAnalysis;
+  const hasRiskAnalysis = !!riskAnalysis;
+
   // Determine badges for each section
-  const valueBadge = valueAnalysis.bestValueSide !== 'NONE' 
+  const valueBadge = hasValueAnalysis && valueAnalysis.bestValueSide !== 'NONE' 
     ? { text: 'Edge Found', color: 'bg-success/15 text-success' } 
     : undefined;
 
-  const riskBadge = riskAnalysis.overallRiskLevel === 'HIGH'
+  const riskBadge = hasRiskAnalysis && riskAnalysis.overallRiskLevel === 'HIGH'
     ? { text: 'Caution', color: 'bg-danger/15 text-danger' }
     : undefined;
 
@@ -314,26 +319,28 @@ export default function AnalysisAccordion({ result }: AnalysisAccordionProps) {
       </AccordionSection>
 
       {/* Section 3: Form & Momentum - Using full MomentumFormSection component */}
-      <AccordionSection
-        title="Form & Momentum"
-        subtitle="Team performance & trends"
-        icon={<FormIcon />}
-        badge={momentumAndForm.formDataSource === 'API_FOOTBALL' ? { text: 'Real Data', color: 'bg-success/15 text-success' } : undefined}
-        isOpen={openSections.has('form')}
-        onToggle={() => toggleSection('form')}
-      >
-        <div className="pt-4">
-          <MomentumFormSection 
-            momentumAndForm={momentumAndForm}
-            homeTeam={matchInfo.homeTeam}
-            awayTeam={matchInfo.awayTeam}
-            sport={matchInfo.sport}
-          />
-        </div>
-      </AccordionSection>
+      {hasMomentumAndForm && (
+        <AccordionSection
+          title="Form & Momentum"
+          subtitle="Team performance & trends"
+          icon={<FormIcon />}
+          badge={momentumAndForm.formDataSource === 'API_FOOTBALL' ? { text: 'Real Data', color: 'bg-success/15 text-success' } : undefined}
+          isOpen={openSections.has('form')}
+          onToggle={() => toggleSection('form')}
+        >
+          <div className="pt-4">
+            <MomentumFormSection 
+              momentumAndForm={momentumAndForm}
+              homeTeam={matchInfo.homeTeam}
+              awayTeam={matchInfo.awayTeam}
+              sport={matchInfo.sport}
+            />
+          </div>
+        </AccordionSection>
+      )}
 
       {/* Section 3.5: Head-to-Head (only if data available) */}
-      {(momentumAndForm.headToHead && momentumAndForm.headToHead.length > 0) && (
+      {hasMomentumAndForm && (momentumAndForm.headToHead && momentumAndForm.headToHead.length > 0) && (
         <AccordionSection
           title="Head-to-Head"
           subtitle="Historical matchups"
@@ -355,7 +362,7 @@ export default function AnalysisAccordion({ result }: AnalysisAccordionProps) {
       )}
 
       {/* Section 3.6: Team Statistics (only if data available) */}
-      {(momentumAndForm.homeStats || momentumAndForm.awayStats) && (
+      {hasMomentumAndForm && (momentumAndForm.homeStats || momentumAndForm.awayStats) && (
         <AccordionSection
           title="Team Statistics"
           subtitle="Season performance"

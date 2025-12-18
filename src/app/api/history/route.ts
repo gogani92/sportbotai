@@ -81,8 +81,50 @@ export async function GET(request: NextRequest) {
         : Promise.resolve(0),
     ]);
 
+    // Try to fetch prediction outcomes for these analyses to show accuracy
+    const analysesWithOutcomes = await Promise.all(
+      analyses.map(async (analysis) => {
+        // Build matchRef pattern to find matching prediction
+        const matchRef = `${analysis.homeTeam} vs ${analysis.awayTeam}`;
+        const altMatchRef = `${analysis.awayTeam} vs ${analysis.homeTeam}`;
+        
+        try {
+          const prediction = await prisma.predictionOutcome.findFirst({
+            where: {
+              OR: [
+                { matchRef: { contains: analysis.homeTeam } },
+                { matchRef: { contains: analysis.awayTeam } },
+              ],
+              matchDate: analysis.matchDate ? {
+                gte: new Date(new Date(analysis.matchDate).getTime() - 24 * 60 * 60 * 1000),
+                lte: new Date(new Date(analysis.matchDate).getTime() + 24 * 60 * 60 * 1000),
+              } : undefined,
+            },
+            select: {
+              wasAccurate: true,
+              actualResult: true,
+              actualScore: true,
+              predictedScenario: true,
+            },
+          });
+          
+          return {
+            ...analysis,
+            predictionOutcome: prediction ? {
+              wasAccurate: prediction.wasAccurate,
+              actualResult: prediction.actualResult,
+              actualScore: prediction.actualScore,
+              predictedScenario: prediction.predictedScenario,
+            } : null,
+          };
+        } catch {
+          return { ...analysis, predictionOutcome: null };
+        }
+      })
+    );
+
     return NextResponse.json({
-      analyses,
+      analyses: analysesWithOutcomes,
       pagination: {
         total,
         limit,
