@@ -64,8 +64,8 @@ export async function getEnrichedMatchDataV2(
   awayForm: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string; date: string }> | null;
   headToHead: Array<{ homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; date: string }> | null;
   h2hSummary: { totalMatches: number; homeWins: number; awayWins: number; draws: number } | null;
-  homeStats: { goalsScored: number; goalsConceded: number; cleanSheets: number; wins: number; losses: number; draws?: number } | null;
-  awayStats: { goalsScored: number; goalsConceded: number; cleanSheets: number; wins: number; losses: number; draws?: number } | null;
+  homeStats: { goalsScored: number; goalsConceded: number; cleanSheets: number; wins: number; losses: number; draws?: number; played?: number; averageScored?: number; averageConceded?: number } | null;
+  awayStats: { goalsScored: number; goalsConceded: number; cleanSheets: number; wins: number; losses: number; draws?: number; played?: number; averageScored?: number; averageConceded?: number } | null;
   dataSource: 'API_SPORTS' | 'CACHE' | 'UNAVAILABLE';
 }> {
   console.log(`[Bridge] START: ${homeTeam} vs ${awayTeam} (${sport})`);
@@ -187,6 +187,9 @@ export async function getEnrichedMatchDataV2(
         wins: data.homeTeam.stats.record?.wins || 0,
         losses: data.homeTeam.stats.record?.losses || 0,
         draws: data.homeTeam.stats.record?.draws,
+        played: data.homeTeam.stats.record?.gamesPlayed || 0,
+        averageScored: data.homeTeam.stats.scoring?.averageFor || 0,
+        averageConceded: data.homeTeam.stats.scoring?.averageAgainst || 0,
       } : null,
       
       awayStats: data.awayTeam.stats ? {
@@ -196,6 +199,9 @@ export async function getEnrichedMatchDataV2(
         wins: data.awayTeam.stats.record?.wins || 0,
         losses: data.awayTeam.stats.record?.losses || 0,
         draws: data.awayTeam.stats.record?.draws,
+        played: data.awayTeam.stats.record?.gamesPlayed || 0,
+        averageScored: data.awayTeam.stats.scoring?.averageFor || 0,
+        averageConceded: data.awayTeam.stats.scoring?.averageAgainst || 0,
       } : null,
       
       dataSource: 'API_SPORTS' as const,

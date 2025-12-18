@@ -210,23 +210,29 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const homeFormCounts = countForm(homeFormStr);
     const awayFormCounts = countForm(awayFormStr);
 
-    // Calculate stats
+    // Calculate stats - use actual played count from API if available, otherwise form count
     const homeStats = {
       goalsScored: enrichedData.homeStats?.goalsScored || 0,
       goalsConceded: enrichedData.homeStats?.goalsConceded || 0,
-      played: homeFormCounts.played,
-      wins: homeFormCounts.wins,
-      draws: homeFormCounts.draws,
-      losses: homeFormCounts.losses,
+      played: enrichedData.homeStats?.played || homeFormCounts.played,
+      wins: enrichedData.homeStats?.wins || homeFormCounts.wins,
+      draws: enrichedData.homeStats?.draws ?? homeFormCounts.draws,
+      losses: enrichedData.homeStats?.losses || homeFormCounts.losses,
+      // Pre-calculated averages from API (more accurate)
+      averageScored: enrichedData.homeStats?.averageScored,
+      averageConceded: enrichedData.homeStats?.averageConceded,
     };
 
     const awayStats = {
       goalsScored: enrichedData.awayStats?.goalsScored || 0,
       goalsConceded: enrichedData.awayStats?.goalsConceded || 0,
-      played: awayFormCounts.played,
-      wins: awayFormCounts.wins,
-      draws: awayFormCounts.draws,
-      losses: awayFormCounts.losses,
+      played: enrichedData.awayStats?.played || awayFormCounts.played,
+      wins: enrichedData.awayStats?.wins || awayFormCounts.wins,
+      draws: enrichedData.awayStats?.draws ?? awayFormCounts.draws,
+      losses: enrichedData.awayStats?.losses || awayFormCounts.losses,
+      // Pre-calculated averages from API (more accurate)
+      averageScored: enrichedData.awayStats?.averageScored,
+      averageConceded: enrichedData.awayStats?.averageConceded,
     };
 
     // H2H summary
@@ -772,8 +778,8 @@ function buildContextFactors(
 function formatEnrichedContext(data: {
   homeTeam: string;
   awayTeam: string;
-  homeStats?: { goalsScored: number; goalsConceded: number; played: number; wins: number; draws: number; losses: number };
-  awayStats?: { goalsScored: number; goalsConceded: number; played: number; wins: number; draws: number; losses: number };
+  homeStats?: { goalsScored: number; goalsConceded: number; played: number; wins: number; draws: number; losses: number; averageScored?: number; averageConceded?: number };
+  awayStats?: { goalsScored: number; goalsConceded: number; played: number; wins: number; draws: number; losses: number; averageScored?: number; averageConceded?: number };
   homeForm?: string;
   awayForm?: string;
   homeFormDetails?: Array<{ result: 'W' | 'L' | 'D'; opponent: string; score: string }> | null;
@@ -784,19 +790,29 @@ function formatEnrichedContext(data: {
 }): string {
   const lines: string[] = [];
   
-  // SEASON STATS - actual numbers the AI can cite
+  // SEASON STATS - use pre-calculated averages from API if available, otherwise calculate
   if (data.homeStats && data.homeStats.played > 0) {
     const hs = data.homeStats;
-    const ppg = (hs.goalsScored / hs.played).toFixed(1);
-    const cpg = (hs.goalsConceded / hs.played).toFixed(1);
-    lines.push(`${data.homeTeam} season: ${hs.wins}W-${hs.draws}D-${hs.losses}L (${ppg} scored, ${cpg} conceded per game)`);
+    // Use API-provided averages if available (more accurate), otherwise calculate
+    const ppg = hs.averageScored !== undefined && hs.averageScored > 0 
+      ? hs.averageScored.toFixed(1) 
+      : (hs.goalsScored / hs.played).toFixed(1);
+    const cpg = hs.averageConceded !== undefined && hs.averageConceded > 0 
+      ? hs.averageConceded.toFixed(1) 
+      : (hs.goalsConceded / hs.played).toFixed(1);
+    lines.push(`${data.homeTeam} season (${hs.played} games): ${hs.wins}W-${hs.draws}D-${hs.losses}L (${ppg} scored, ${cpg} conceded per game)`);
   }
   
   if (data.awayStats && data.awayStats.played > 0) {
     const as = data.awayStats;
-    const ppg = (as.goalsScored / as.played).toFixed(1);
-    const cpg = (as.goalsConceded / as.played).toFixed(1);
-    lines.push(`${data.awayTeam} season: ${as.wins}W-${as.draws}D-${as.losses}L (${ppg} scored, ${cpg} conceded per game)`);
+    // Use API-provided averages if available (more accurate), otherwise calculate
+    const ppg = as.averageScored !== undefined && as.averageScored > 0 
+      ? as.averageScored.toFixed(1) 
+      : (as.goalsScored / as.played).toFixed(1);
+    const cpg = as.averageConceded !== undefined && as.averageConceded > 0 
+      ? as.averageConceded.toFixed(1) 
+      : (as.goalsConceded / as.played).toFixed(1);
+    lines.push(`${data.awayTeam} season (${as.played} games): ${as.wins}W-${as.draws}D-${as.losses}L (${ppg} scored, ${cpg} conceded per game)`);
   }
   
   // FORM STRING - last 5 results
