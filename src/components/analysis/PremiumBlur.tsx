@@ -2,12 +2,12 @@
  * Premium Blur Component
  * 
  * Layer 2 of the two-layer blur system.
- * Shows a blur overlay for non-Pro users with a CTA to upgrade.
+ * Shows upgrade CTA for non-Pro users matching Market Alerts design.
  * 
  * Design:
- * - Blurred preview of premium content
- * - "Upgrade to Pro" CTA in center
- * - Lock icon and value proposition
+ * - Gradient border card
+ * - Feature checklist
+ * - "Upgrade to Pro" CTA button
  */
 
 'use client';
@@ -28,8 +28,8 @@ interface PremiumBlurProps {
 export function PremiumBlur({
   children,
   isPro,
-  title = 'Pro Analysis',
-  description = 'Upgrade to Pro for detailed match insights, game flow analysis, and AI-powered predictions.',
+  title = 'Pro Match Analysis',
+  description = 'Unlock detailed match insights, game flow predictions, and value detection.',
 }: PremiumBlurProps) {
   // If Pro user, just render children normally
   if (isPro) {
@@ -37,51 +37,50 @@ export function PremiumBlur({
   }
 
   return (
-    <div className="relative mt-4">
-      {/* Compact blurred preview - just a hint, not full content */}
-      <div className="blur-[6px] opacity-20 pointer-events-none select-none max-h-[120px] overflow-hidden">
-        {children}
-      </div>
-      
-      {/* Overlay with CTA - compact for quick upgrade */}
-      <div className="absolute inset-0 flex items-center justify-center bg-[#050506]/80 backdrop-blur-sm rounded-xl">
-        <div className="text-center px-4 py-4 max-w-xs">
-          {/* Lock icon - smaller */}
-          <div className="w-8 h-8 bg-gradient-to-br from-violet-500/20 to-purple-600/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-violet-500/20">
-            <svg 
-              className="w-4 h-4 text-violet-400" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={1.5} 
-                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" 
-              />
-            </svg>
-          </div>
-          
-          {/* Title - compact */}
-          <h3 className="text-sm font-semibold text-white mb-1">
-            {title}
-          </h3>
-          
-          {/* Description - shorter */}
-          <p className="text-xs text-zinc-400 mb-3 leading-relaxed line-clamp-2">
-            {description}
-          </p>
-          
-          {/* CTA Button - compact */}
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-semibold rounded-lg hover:from-violet-400 hover:to-purple-500 transition-all shadow-lg shadow-violet-500/20"
-          >
-            <span>Upgrade to Pro</span>
-            <span className="text-[10px] opacity-75">€9/mo</span>
-          </Link>
+    <div className="mt-4">
+      {/* Premium Gate Card - matching Market Alerts style */}
+      <div className="bg-gradient-to-br from-[#0a0a0b] via-[#0a0a0b] to-violet-500/5 border border-violet-500/30 rounded-2xl p-6 text-center">
+        {/* Lock Icon */}
+        <div className="text-4xl mb-4">🔒</div>
+        
+        {/* Title */}
+        <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+        
+        {/* Description */}
+        <p className="text-zinc-400 text-sm mb-5 max-w-sm mx-auto">
+          {description}
+        </p>
+        
+        {/* Feature List */}
+        <div className="bg-black/30 rounded-xl p-4 mb-5 text-left max-w-xs mx-auto">
+          <h4 className="font-semibold text-white mb-3 text-center text-sm">What you get:</h4>
+          <ul className="space-y-2 text-zinc-300 text-sm">
+            <li className="flex items-center gap-2">
+              <span className="text-violet-400">✓</span>
+              Match snapshot & key insights
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-violet-400">✓</span>
+              Game flow predictions
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-violet-400">✓</span>
+              Value detection & odds analysis
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-violet-400">✓</span>
+              30 analyses per day
+            </li>
+          </ul>
         </div>
+        
+        {/* CTA Button */}
+        <Link
+          href="/pricing"
+          className="inline-block bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors"
+        >
+          Upgrade to Pro – €9/mo
+        </Link>
       </div>
     </div>
   );
