@@ -287,8 +287,8 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
             />
           )}
 
-          {/* Upgrade Card - Matches PremiumGate style */}
-          <div className="mt-8 bg-gradient-to-br from-bg-card via-bg-card to-purple-500/5 border border-purple-500/30 rounded-2xl p-8 text-center">
+          {/* Upgrade Card - Pro uses purple, Premium uses silver */}
+          <div className={`mt-8 bg-gradient-to-br from-bg-card via-bg-card ${usageLimit.plan === 'FREE' ? 'to-purple-500/5 border-purple-500/30' : 'to-zinc-400/5 border-zinc-400/30'} border rounded-2xl p-8 text-center`}>
             <div className="text-6xl mb-6">🔒</div>
             
             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
@@ -332,19 +332,19 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
                 ) : (
                   <>
                     <li className="flex items-center gap-3">
-                      <span className="text-purple-400">✓</span>
+                      <span className="text-zinc-300">✓</span>
                       Unlimited analyses
                     </li>
                     <li className="flex items-center gap-3">
-                      <span className="text-purple-400">✓</span>
+                      <span className="text-zinc-300">✓</span>
                       Priority AI processing
                     </li>
                     <li className="flex items-center gap-3">
-                      <span className="text-purple-400">✓</span>
+                      <span className="text-zinc-300">✓</span>
                       Full analysis history access
                     </li>
                     <li className="flex items-center gap-3">
-                      <span className="text-purple-400">✓</span>
+                      <span className="text-zinc-300">✓</span>
                       Market Alerts & Steam Moves
                     </li>
                   </>
@@ -352,10 +352,13 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
               </ul>
             </div>
 
-            {/* CTA Button */}
+            {/* CTA Button - Pro uses purple, Premium uses silver */}
             <Link 
               href="/pricing" 
-              className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold text-lg px-8 py-3 rounded-lg transition-colors"
+              className={usageLimit.plan === 'FREE' 
+                ? "inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold text-lg px-8 py-3 rounded-lg transition-colors"
+                : "inline-block bg-gradient-to-r from-zinc-300 to-zinc-400 hover:from-zinc-200 hover:to-zinc-300 text-zinc-900 font-semibold text-lg px-8 py-3 rounded-lg transition-colors shadow-lg shadow-zinc-400/20"
+              }
             >
               {usageLimit.plan === 'FREE' ? 'Upgrade to Pro' : 'Upgrade to Premium'}
             </Link>

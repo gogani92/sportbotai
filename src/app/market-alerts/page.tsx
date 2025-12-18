@@ -448,7 +448,7 @@ function PremiumGate() {
   return (
     <div className="min-h-screen bg-bg-primary py-12">
       <div className="container-custom max-w-2xl mx-auto">
-        <div className="bg-gradient-to-br from-bg-card via-bg-card to-purple-500/5 border border-purple-500/30 rounded-2xl p-8 text-center">
+        <div className="bg-gradient-to-br from-bg-card via-bg-card to-zinc-400/5 border border-zinc-400/30 rounded-2xl p-8 text-center">
           <div className="text-6xl mb-6">🔒</div>
           <h1 className="text-3xl font-bold text-text-primary mb-4">Market Alerts</h1>
           <p className="text-text-secondary text-lg mb-6">
@@ -460,29 +460,29 @@ function PremiumGate() {
             <h3 className="font-semibold text-text-primary mb-4 text-center">What you get:</h3>
             <ul className="space-y-3 text-text-secondary max-w-md mx-auto">
               <li className="flex items-center gap-3">
-                <span className="text-purple-400">✓</span>
+                <span className="text-zinc-300">✓</span>
                 Top 5 matches with highest model edge
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-purple-400">✓</span>
+                <span className="text-zinc-300">✓</span>
                 Steam move detection (sharp money alerts)
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-purple-400">✓</span>
+                <span className="text-zinc-300">✓</span>
                 Real-time odds movement tracking
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-purple-400">✓</span>
+                <span className="text-zinc-300">✓</span>
                 Edge strength & confidence indicators
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-purple-400">✓</span>
+                <span className="text-zinc-300">✓</span>
                 Market intelligence summary
               </li>
             </ul>
           </div>
           
-          <Link href="/pricing" className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold text-lg px-8 py-3 rounded-lg transition-colors">
+          <Link href="/pricing" className="inline-block bg-gradient-to-r from-zinc-300 to-zinc-400 hover:from-zinc-200 hover:to-zinc-300 text-zinc-900 font-semibold text-lg px-8 py-3 rounded-lg transition-colors shadow-lg shadow-zinc-400/20">
             Upgrade to Premium
           </Link>
         </div>
@@ -607,7 +607,7 @@ export default function MarketAlertsPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">
               Market Alerts
             </h1>
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-zinc-300/20 to-zinc-400/20 text-zinc-300 border border-zinc-400/30">
               PREMIUM
             </span>
           </div>

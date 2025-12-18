@@ -738,7 +738,7 @@ export default function AIDeskHeroChat() {
             {error.toLowerCase().includes('rate limit') && userPlan === 'PRO' && (
               <Link
                 href="/pricing#premium"
-                className="flex-shrink-0 px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition-all"
+                className="flex-shrink-0 px-4 py-1.5 bg-gradient-to-r from-zinc-300 to-zinc-400 hover:from-zinc-200 hover:to-zinc-300 text-zinc-900 text-xs font-semibold rounded-lg transition-all"
               >
                 Upgrade to Premium
               </Link>
