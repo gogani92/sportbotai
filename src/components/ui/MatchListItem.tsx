@@ -7,6 +7,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import TeamLogo from './TeamLogo';
 import LeagueLogo from './LeagueLogo';
@@ -38,7 +39,7 @@ export default function MatchListItem({
   isHot = false,
   className = '',
 }: MatchListItemProps) {
-  // Generate match preview URL (btoa works in browsers, Buffer is Node.js only)
+  // Generate match preview URL - use consistent server-side encoding
   const matchData = {
     homeTeam,
     awayTeam,
@@ -46,28 +47,34 @@ export default function MatchListItem({
     sport: sportKey,
     kickoff: commenceTime,
   };
-  const encodedMatchId = typeof window !== 'undefined' 
-    ? btoa(unescape(encodeURIComponent(JSON.stringify(matchData))))
-    : Buffer.from(JSON.stringify(matchData)).toString('base64');
+  // Use Buffer on both server and client for consistency (Next.js polyfills it)
+  const encodedMatchId = Buffer.from(JSON.stringify(matchData)).toString('base64');
 
-  // Format time until match
-  const getTimeDisplay = () => {
-    const matchDate = new Date(commenceTime);
-    const now = new Date();
-    const diffMs = matchDate.getTime() - now.getTime();
+  // Format time until match - use state to avoid hydration mismatch
+  const [timeDisplay, setTimeDisplay] = useState({ text: '', isUrgent: false });
+  
+  useEffect(() => {
+    const calculateTime = () => {
+      const matchDate = new Date(commenceTime);
+      const now = new Date();
+      const diffMs = matchDate.getTime() - now.getTime();
+      
+      if (diffMs < 0) return { text: 'LIVE', isUrgent: true };
+      
+      const minutes = Math.floor(diffMs / (1000 * 60));
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      
+      if (minutes < 60) return { text: `${minutes}m`, isUrgent: true };
+      if (hours < 24) return { text: `${hours}h ${minutes % 60}m`, isUrgent: hours < 3 };
+      return { text: `${days}d ${hours % 24}h`, isUrgent: false };
+    };
     
-    if (diffMs < 0) return { text: 'LIVE', isUrgent: true };
-    
-    const minutes = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    
-    if (minutes < 60) return { text: `${minutes}m`, isUrgent: true };
-    if (hours < 24) return { text: `${hours}h ${minutes % 60}m`, isUrgent: hours < 3 };
-    return { text: `${days}d ${hours % 24}h`, isUrgent: false };
-  };
-
-  const timeDisplay = getTimeDisplay();
+    setTimeDisplay(calculateTime());
+    // Update every minute
+    const interval = setInterval(() => setTimeDisplay(calculateTime()), 60000);
+    return () => clearInterval(interval);
+  }, [commenceTime]);
   const hasDraw = drawProb !== undefined && drawProb !== null;
 
   return (

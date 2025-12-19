@@ -87,8 +87,7 @@ export default function MatchCard({
     }
   }, [homeTeam, awayTeam, commenceTime, sportKey]);
 
-  // Generate match preview URL
-  // Encode match info into URL-safe format (btoa works in browsers, Buffer is Node.js only)
+  // Generate match preview URL - use Buffer for consistent encoding
   const matchData = {
     homeTeam,
     awayTeam,
@@ -96,25 +95,29 @@ export default function MatchCard({
     sport: sportKey,
     kickoff: commenceTime,
   };
-  const encodedMatchId = typeof window !== 'undefined' 
-    ? btoa(unescape(encodeURIComponent(JSON.stringify(matchData))))
-    : Buffer.from(JSON.stringify(matchData)).toString('base64');
+  // Use Buffer on both server and client for consistency (Next.js polyfills it)
+  const encodedMatchId = Buffer.from(JSON.stringify(matchData)).toString('base64');
 
-  // Format match date
-  const formatMatchDate = (dateString: string) => {
-    const matchDate = new Date(dateString);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    if (matchDate.toDateString() === today.toDateString()) {
-      return matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    }
-    if (matchDate.toDateString() === tomorrow.toDateString()) {
-      return 'Tomorrow';
-    }
-    return matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  // Format match date - only called within useEffect/event handlers
+  const [formattedDate, setFormattedDate] = useState<string>('');
+  
+  useEffect(() => {
+    const formatMatchDate = (dateString: string) => {
+      const matchDate = new Date(dateString);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      if (matchDate.toDateString() === today.toDateString()) {
+        return matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      }
+      if (matchDate.toDateString() === tomorrow.toDateString()) {
+        return 'Tomorrow';
+      }
+      return matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+    setFormattedDate(formatMatchDate(commenceTime));
+  }, [commenceTime]);
 
   return (
     <Link
@@ -207,7 +210,7 @@ export default function MatchCard({
 
       {/* Match time + Analyze CTA */}
       <div className="mt-3 pt-3 border-t border-divider flex items-center justify-between">
-        <span className="text-xs text-text-muted">{formatMatchDate(commenceTime)}</span>
+        <span className="text-xs text-text-muted" suppressHydrationWarning>{formattedDate}</span>
         {isLive ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-red-500/15 text-red-400 border border-red-500/30 rounded-full group-hover:bg-red-500 group-hover:text-white group-hover:border-red-500 transition-all">
             <span className="relative flex h-1.5 w-1.5">

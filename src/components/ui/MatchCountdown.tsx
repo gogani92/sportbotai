@@ -22,9 +22,20 @@ export default function MatchCountdown({
   showIcon = true,
   className = '',
 }: MatchCountdownProps) {
-  const [timeLeft, setTimeLeft] = useState(getTimeLeft(commenceTime));
+  // Initialize with empty state to avoid hydration mismatch
+  const [timeLeft, setTimeLeft] = useState({
+    display: '',
+    isLive: false,
+    totalMinutes: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+  });
 
   useEffect(() => {
+    // Calculate immediately on mount
+    setTimeLeft(getTimeLeft(commenceTime));
+    
     const timer = setInterval(() => {
       setTimeLeft(getTimeLeft(commenceTime));
     }, 60000); // Update every minute

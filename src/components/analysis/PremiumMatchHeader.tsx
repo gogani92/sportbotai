@@ -47,17 +47,26 @@ export default function PremiumMatchHeader({
 }: PremiumMatchHeaderProps) {
   const [liveScore, setLiveScore] = useState<LiveScoreData | null>(null);
   const [matchStatus, setMatchStatus] = useState<'upcoming' | 'live' | 'finished' | 'not_found'>('upcoming');
+  const [timeLabel, setTimeLabel] = useState<string>('');
+  const [isUpcoming, setIsUpcoming] = useState(true);
+  const [formattedDate, setFormattedDate] = useState<string>('');
+  const [formattedTime, setFormattedTime] = useState<string>('');
 
   const kickoffDate = new Date(kickoff);
-  const formattedDate = kickoffDate.toLocaleDateString('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
-  const formattedTime = kickoffDate.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  
+  // Format date/time in useEffect to avoid hydration mismatch
+  useEffect(() => {
+    const kd = new Date(kickoff);
+    setFormattedDate(kd.toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    }));
+    setFormattedTime(kd.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }));
+  }, [kickoff]);
 
   // Detect sport type for live scores API
   const getSportType = (sportName: string): string => {
@@ -118,30 +127,42 @@ export default function PremiumMatchHeader({
     }
   }, [kickoffDate, fetchLiveScore, matchStatus]);
 
-  // Check if match is live or upcoming
-  const now = new Date();
-  const isUpcoming = kickoffDate > now && matchStatus !== 'live';
+  // Calculate time label in useEffect to avoid hydration mismatch
   const isLive = matchStatus === 'live';
   const isFinished = matchStatus === 'finished';
-  const timeDiff = kickoffDate.getTime() - now.getTime();
-  const hoursUntil = Math.floor(timeDiff / (1000 * 60 * 60));
-  const daysUntil = Math.floor(hoursUntil / 24);
+  
+  useEffect(() => {
+    const calculateTimeLabel = () => {
+      const now = new Date();
+      const upcoming = kickoffDate > now && matchStatus !== 'live';
+      setIsUpcoming(upcoming);
+      
+      const timeDiff = kickoffDate.getTime() - now.getTime();
+      const hoursUntil = Math.floor(timeDiff / (1000 * 60 * 60));
+      const daysUntil = Math.floor(hoursUntil / 24);
 
-  let timeLabel: string;
-  if (isLive && liveScore?.status.elapsed) {
-    timeLabel = `${liveScore.status.elapsed}'`;
-  } else if (isFinished) {
-    timeLabel = 'Full Time';
-  } else if (!isUpcoming) {
-    timeLabel = 'In Progress';
-  } else if (daysUntil > 0) {
-    timeLabel = `${daysUntil}d ${hoursUntil % 24}h`;
-  } else if (hoursUntil > 0) {
-    timeLabel = `${hoursUntil}h`;
-  } else {
-    const minutesUntil = Math.floor(timeDiff / (1000 * 60));
-    timeLabel = minutesUntil > 0 ? `${minutesUntil}m` : 'Starting Soon';
-  }
+      let label: string;
+      if (matchStatus === 'live' && liveScore?.status.elapsed) {
+        label = `${liveScore.status.elapsed}'`;
+      } else if (matchStatus === 'finished') {
+        label = 'Full Time';
+      } else if (!upcoming) {
+        label = 'In Progress';
+      } else if (daysUntil > 0) {
+        label = `${daysUntil}d ${hoursUntil % 24}h`;
+      } else if (hoursUntil > 0) {
+        label = `${hoursUntil}h`;
+      } else {
+        const minutesUntil = Math.floor(timeDiff / (1000 * 60));
+        label = minutesUntil > 0 ? `${minutesUntil}m` : 'Starting Soon';
+      }
+      setTimeLabel(label);
+    };
+    
+    calculateTimeLabel();
+    const interval = setInterval(calculateTimeLabel, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, [kickoffDate, matchStatus, liveScore]);
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-[#0a0a0b] border border-white/[0.06]">

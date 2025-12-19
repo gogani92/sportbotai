@@ -8,8 +8,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { SITE_CONFIG } from '@/lib/seo';
 
+// Hardcoded to avoid hydration mismatch - update yearly
+const CURRENT_YEAR = 2025;
+
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
+  const currentYear = CURRENT_YEAR;
 
   return (
     <footer className="bg-bg text-text-secondary">

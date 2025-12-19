@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { TrendingMatch } from './trending';
 import TeamLogo from '@/components/ui/TeamLogo';
 import LeagueLogo from '@/components/ui/LeagueLogo';
@@ -21,27 +22,33 @@ export function TrendingMatchCard({
   onSelect,
   variant = 'default' 
 }: TrendingMatchCardProps) {
-  const matchDate = new Date(match.commenceTime);
-  const isToday = new Date().toDateString() === matchDate.toDateString();
-  const isTomorrow = new Date(Date.now() + 86400000).toDateString() === matchDate.toDateString();
+  const [dateStr, setDateStr] = useState<string>('');
   
-  const timeStr = matchDate.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  
-  const dateStr = isToday 
-    ? `Today ${timeStr}`
-    : isTomorrow 
-      ? `Tomorrow ${timeStr}`
-      : matchDate.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        });
+  useEffect(() => {
+    const matchDate = new Date(match.commenceTime);
+    const now = new Date();
+    const isToday = now.toDateString() === matchDate.toDateString();
+    const isTomorrow = new Date(Date.now() + 86400000).toDateString() === matchDate.toDateString();
+    
+    const timeStr = matchDate.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    
+    const computed = isToday 
+      ? `Today ${timeStr}`
+      : isTomorrow 
+        ? `Tomorrow ${timeStr}`
+        : matchDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+    setDateStr(computed);
+  }, [match.commenceTime]);
 
   // Get best odds for display
   const odds = match.odds ? { 
