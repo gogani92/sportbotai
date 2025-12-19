@@ -23,8 +23,6 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: session } = useSession();
   const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
-  const userPlan = (session?.user as any)?.plan || 'FREE';
-  const isFreePlan = userPlan === 'FREE';
 
   return (
     <header className="bg-bg/95 backdrop-blur-md border-b border-divider sticky top-0 z-50">
@@ -88,15 +86,6 @@ export default function Header() {
               Blog
             </Link>
             <ShortcutHint />
-            {/* Upgrade to Pro button for free users */}
-            {session && isFreePlan && (
-              <Link
-                href="/pricing#pro"
-                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 hover:scale-105"
-              >
-                Upgrade to Pro
-              </Link>
-            )}
             <UserMenu />
           </div>
 
@@ -152,20 +141,6 @@ export default function Header() {
               {session && (
                 <>
                   <div className="my-2 border-t border-divider" />
-                  
-                  {/* Upgrade to Pro CTA for free users - PROMINENT */}
-                  {isFreePlan && (
-                    <Link
-                      href="/pricing#pro"
-                      className="flex items-center justify-center gap-2 mx-4 mb-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-3 rounded-lg transition-all shadow-lg shadow-purple-500/20"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Upgrade to Pro – 30 analyses/day
-                    </Link>
-                  )}
                   
                   <p className="px-4 py-2 text-xs text-text-muted uppercase tracking-wider">Your Account</p>
                   
