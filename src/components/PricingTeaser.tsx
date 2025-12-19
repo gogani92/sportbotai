@@ -39,11 +39,21 @@ export default function PricingTeaser() {
       highlighted: false,
     },
     {
-      name: 'Yearly',
+      name: 'Pro Yearly',
+      price: '$149',
+      period: '/year',
+      description: 'Save $90/year',
+      features: ['Everything in Pro', 'Billed annually', 'Save 37%'],
+      cta: 'Pro Annual',
+      href: '/pricing',
+      highlighted: false,
+    },
+    {
+      name: 'Premium Yearly',
       price: '$290',
       period: '/year',
       description: 'Best value - Save $310',
-      features: ['Everything in Premium', 'Billed annually', '6+ months free'],
+      features: ['Everything in Premium', 'Billed annually', 'Save 52%'],
       cta: 'Best Deal',
       href: '/pricing',
       highlighted: false,
@@ -62,7 +72,7 @@ export default function PricingTeaser() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-7xl mx-auto">
         {plans.map((plan) => (
           <div 
             key={plan.name}

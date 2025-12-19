@@ -60,6 +60,22 @@ const plans: PricingPlan[] = [
     buttonText: 'Upgrade to Pro',
   },
   {
+    id: 'pro-yearly',
+    name: 'Pro Yearly',
+    price: '$149',
+    priceId: 'pro-yearly', // Will be resolved to actual Price ID server-side
+    description: 'Save $90/year',
+    features: [
+      'Everything in Pro',
+      '10 analyses per day',
+      '50 AI chat messages per day',
+      'All sports',
+      'Analysis history (30 days)',
+      'Billed annually',
+    ],
+    buttonText: 'Pro Annual',
+  },
+  {
     id: 'premium',
     name: 'Premium',
     price: '$49.99',
@@ -155,7 +171,7 @@ export default function PricingCards() {
   return (
     <div className="relative">
       {/* Horizontal scroll container on mobile */}
-      <div className="flex lg:grid lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 max-w-7xl mx-auto overflow-x-auto pb-4 lg:pb-0 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0">
+      <div className="flex xl:grid xl:grid-cols-5 gap-3 sm:gap-4 xl:gap-5 max-w-7xl mx-auto overflow-x-auto pb-4 xl:pb-0 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 xl:mx-0 xl:px-0">
         {plans.map((plan) => (
           <div
             key={plan.id}
@@ -180,7 +196,7 @@ export default function PricingCards() {
                 <span className={`text-3xl sm:text-4xl font-bold ${plan.highlighted ? 'text-primary' : 'text-white'}`}>
                   {plan.price}
                 </span>
-                <span className="text-gray-400 text-sm">{plan.id === 'premium-yearly' ? '/year' : plan.id === 'free' ? '' : '/month'}</span>
+                <span className="text-gray-400 text-sm">{plan.id.includes('yearly') ? '/year' : plan.id === 'free' ? '' : '/month'}</span>
               </div>
               <p className="text-gray-400 text-xs sm:text-sm">{plan.description}</p>
             </div>
