@@ -404,6 +404,39 @@ export async function POST(request: NextRequest) {
     }
 
     // ========================================
+    // CHECK IF MATCH IS TOO FAR AWAY (>48 HOURS)
+    // ========================================
+    if (normalizedRequest.matchData.matchDate) {
+      const matchDate = new Date(normalizedRequest.matchData.matchDate);
+      const now = new Date();
+      const hoursUntilKickoff = (matchDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+      
+      if (hoursUntilKickoff > 48) {
+        const daysUntilKickoff = Math.ceil(hoursUntilKickoff / 24);
+        const availableDate = new Date(matchDate.getTime() - 48 * 60 * 60 * 1000);
+        
+        console.log(`[Analyze] Match too far away: ${hoursUntilKickoff.toFixed(1)}h (${daysUntilKickoff} days)`);
+        
+        return NextResponse.json({
+          success: false,
+          tooFarAway: true,
+          hoursUntilKickoff,
+          daysUntilKickoff,
+          availableDate: availableDate.toISOString(),
+          matchInfo: {
+            homeTeam: normalizedRequest.matchData.homeTeam,
+            awayTeam: normalizedRequest.matchData.awayTeam,
+            league: normalizedRequest.matchData.league,
+            sport: normalizedRequest.matchData.sport,
+            matchDate: normalizedRequest.matchData.matchDate,
+          },
+          message: `Analysis available ${daysUntilKickoff} day${daysUntilKickoff > 1 ? 's' : ''} before kickoff`,
+          reason: 'Our AI analysis becomes available 48 hours before kickoff when we have the most accurate data (injuries, lineups, latest odds).',
+        });
+      }
+    }
+
+    // ========================================
     // USAGE LIMIT CHECK
     // ========================================
     const usageCheck = await canUserAnalyze(userId);

@@ -64,6 +64,11 @@ interface MatchPreviewClientProps {
 }
 
 interface MatchPreviewData {
+  // Too far away response (>48h)
+  tooFarAway?: boolean;
+  daysUntilKickoff?: number;
+  availableDate?: string;
+  reason?: string;
   matchInfo: {
     id: string;
     homeTeam: string;
@@ -204,6 +209,12 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
           return;
         }
         
+        // Handle match too far away (>48h) - API now returns this directly
+        if (result.tooFarAway) {
+          setData(result); // Store for rendering the "coming soon" UI
+          return;
+        }
+        
         if (!response.ok) {
           throw new Error(result.error || 'Failed to load match preview');
         }
@@ -280,7 +291,13 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
   }
 
   // Match is too far in the future - show friendly message
-  if (matchTiming?.isTooFarAway && parsedMatch) {
+  // Check both client-side calculation AND API response
+  const isTooFarAway = matchTiming?.isTooFarAway || data?.tooFarAway;
+  const daysUntil = data?.daysUntilKickoff || matchTiming?.daysUntilKickoff || 0;
+  const availableDateStr = data?.availableDate || (matchTiming?.kickoffDate ? new Date(matchTiming.kickoffDate.getTime() - 48 * 60 * 60 * 1000).toISOString() : null);
+  
+  if (isTooFarAway && (parsedMatch || data?.matchInfo)) {
+    const matchForHeader = data?.matchInfo || parsedMatch;
     return (
       <div className="min-h-screen bg-[#050506]">
         <div className="fixed inset-0 bg-gradient-to-b from-white/[0.01] via-transparent to-transparent pointer-events-none" />
@@ -298,13 +315,15 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
           </Link>
 
           {/* Match header */}
-          <PremiumMatchHeader 
-            homeTeam={parsedMatch.homeTeam}
-            awayTeam={parsedMatch.awayTeam}
-            league={parsedMatch.league}
-            sport={parsedMatch.sport}
-            kickoff={parsedMatch.kickoff}
-          />
+          {matchForHeader && (
+            <PremiumMatchHeader 
+              homeTeam={matchForHeader.homeTeam}
+              awayTeam={matchForHeader.awayTeam}
+              league={matchForHeader.league}
+              sport={matchForHeader.sport}
+              kickoff={matchForHeader.kickoff}
+            />
+          )}
 
           {/* Too far away message - matches app card style */}
           <div className="mt-8 p-5 rounded-xl bg-[#0a0a0b] border border-white/[0.04]">
@@ -317,7 +336,7 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
               <div>
                 <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Coming Soon</span>
                 <h3 className="text-base font-medium text-white">
-                  Analysis Available in {matchTiming.daysUntilKickoff} Days
+                  Analysis Available in {daysUntil} Day{daysUntil !== 1 ? 's' : ''}
                 </h3>
               </div>
             </div>
@@ -327,12 +346,14 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
               we have the most accurate data.
             </p>
             
-            <div className="flex items-center gap-2 text-zinc-500 text-xs">
-              <svg className="w-3.5 h-3.5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span>Available: {new Date(matchTiming.kickoffDate.getTime() - 48 * 60 * 60 * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-            </div>
+            {availableDateStr && (
+              <div className="flex items-center gap-2 text-zinc-500 text-xs">
+                <svg className="w-3.5 h-3.5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Available: {new Date(availableDateStr).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+              </div>
+            )}
           </div>
 
           {/* Why we wait explanation */}

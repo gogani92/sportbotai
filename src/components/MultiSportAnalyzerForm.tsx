@@ -271,6 +271,12 @@ export default function MultiSportAnalyzerForm({
 
       const result = await response.json();
 
+      // Handle match too far away (>48 hours)
+      if (result.tooFarAway) {
+        setError(`Analysis available in ${result.daysUntilKickoff} day${result.daysUntilKickoff > 1 ? 's' : ''} - our AI analysis becomes available 48 hours before kickoff.`);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(result.error || 'Analysis failed');
       }
