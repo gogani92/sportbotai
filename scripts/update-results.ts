@@ -146,9 +146,9 @@ async function updatePredictionResults() {
     
     const searchHome = homeTeam.toLowerCase();
     const searchAway = awayTeam.toLowerCase();
-    const dateStr = prediction.matchDate.toISOString().split('T')[0];
+    const dateStr = prediction.kickoff.toISOString().split('T')[0];
     
-    console.log(`\nChecking: ${prediction.matchRef} (${dateStr})`);
+    console.log(`\nChecking: ${prediction.matchName} (${dateStr})`);
     
     // Detect sport
     const isNBA = ['bulls', 'cavaliers', 'timberwolves', 'grizzlies', 'heat', 'pistons', 'celtics', 'lakers', 'warriors', 'nuggets', 'suns', 'bucks', 'nets', 'knicks'].some(t => searchHome.includes(t) || searchAway.includes(t));
