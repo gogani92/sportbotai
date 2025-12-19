@@ -402,12 +402,13 @@ export default function AIDeskChat() {
       let isFromCache = false;
       
       if (response.ok && isStreamable && response.body) {
-        // Add empty assistant message for streaming
+        // Add assistant message with initial "Thinking..." status
         setMessages(prev => [...prev, {
           id: assistantMessageId,
           role: 'assistant',
           content: '',
           isStreaming: true,
+          statusMessage: 'Thinking...',  // Show immediately
           timestamp: new Date(),
         }]);
         setIsLoading(false); // Show the streaming message
