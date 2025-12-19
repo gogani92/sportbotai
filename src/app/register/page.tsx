@@ -33,8 +33,21 @@ function RegisterForm() {
     const storedParams = localStorage.getItem('utm_params');
     const stored = storedParams ? JSON.parse(storedParams) : {};
     
+    // Use URL params first, then stored params, then referrer, then 'direct'
+    let finalSource = source || stored.source;
+    if (!finalSource && document.referrer) {
+      try {
+        const referrerHost = new URL(document.referrer).hostname;
+        if (referrerHost && referrerHost !== window.location.hostname) {
+          finalSource = referrerHost;
+        }
+      } catch {
+        // Invalid referrer, ignore
+      }
+    }
+    
     setUtmParams({
-      source: source || stored.source || document.referrer ? new URL(document.referrer || 'https://direct').hostname : 'direct',
+      source: finalSource || undefined, // Don't set 'direct' - let null mean direct
       medium: medium || stored.medium,
       campaign: campaign || stored.campaign,
     });
