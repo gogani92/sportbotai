@@ -39,7 +39,6 @@ export default async function AdminPage() {
     recentQueries,
     agentPostsCount,
     // Prediction stats
-    predictionStats,
     aiPredictionStats,
   ] = await Promise.all([
     // Total users
@@ -108,9 +107,6 @@ export default async function AdminPage() {
     // Agent posts count
     getAgentPostsCount(),
     
-    // Prediction accuracy stats (PredictionOutcome model)
-    getPredictionStats(),
-    
     // AI Prediction stats (Prediction model from pre-analyze)
     getAIPredictionStats(),
   ]);
@@ -142,7 +138,6 @@ export default async function AdminPage() {
       recentUsers={recentUsers}
       recentAnalyses={recentAnalyses}
       chatAnalytics={chatAnalytics}
-      predictionStats={predictionStats}
       aiPredictionStats={aiPredictionStats}
     />
   );
@@ -230,212 +225,6 @@ async function getAgentPostsCount() {
     return await prisma.agentPost.count();
   } catch {
     return 0;
-  }
-}
-
-async function getPredictionStats() {
-  try {
-    // Get all predictions with outcomes - using unique matchRef to avoid counting duplicates
-    const [
-      totalPredictions,
-      totalUniqueMatches,
-      evaluatedPredictions,
-      accuratePredictions,
-      recentPredictions,
-      byLeague,
-      byConfidence,
-      last30Days,
-      last7Days,
-    ] = await Promise.all([
-      // Total prediction records (for reference)
-      prisma.prediction.count(),
-      
-      // Total UNIQUE matches (the real count we care about)
-      prisma.prediction.findMany({
-        distinct: ['matchName'],
-        select: { matchName: true },
-      }).then(results => results.length),
-      
-      // Evaluated unique matches (outcome is HIT or MISS) - count unique matchNames
-      prisma.prediction.findMany({
-        where: { outcome: { in: ['HIT', 'MISS'] } },
-        distinct: ['matchName'],
-        select: { matchName: true },
-      }).then(results => results.length),
-      
-      // Accurate predictions - count unique matchNames where outcome is HIT
-      prisma.prediction.findMany({
-        where: { outcome: 'HIT' },
-        distinct: ['matchName'],
-        select: { matchName: true },
-      }).then(results => results.length),
-      
-      // Recent predictions (last 50 unique matches)
-      prisma.prediction.findMany({
-        take: 50,
-        orderBy: { kickoff: 'desc' },
-        distinct: ['matchName'],
-        select: {
-          id: true,
-          matchName: true,
-          league: true,
-          kickoff: true,
-          reasoning: true,
-          prediction: true,
-          conviction: true,
-          actualResult: true,
-          actualScore: true,
-          outcome: true,
-          source: true,
-          createdAt: true,
-        },
-      }),
-      
-      // Accuracy by league
-      prisma.prediction.groupBy({
-        by: ['league'],
-        where: { 
-          outcome: { in: ['HIT', 'MISS'] },
-          league: { not: '' }, // Filter out empty strings, nulls are excluded by groupBy
-        },
-        _count: { id: true },
-      }).then(async (leagues) => {
-        // For each league, get accurate count (filter out null leagues)
-        const validLeagues = leagues.filter(l => l.league !== null);
-        const leagueStats = await Promise.all(
-          validLeagues.map(async (l) => {
-            const accurate = await prisma.prediction.count({
-              where: { league: l.league, outcome: 'HIT' },
-            });
-            return {
-              league: l.league!,
-              total: l._count.id,
-              accurate,
-              accuracy: l._count.id > 0 ? Math.round((accurate / l._count.id) * 100) : 0,
-            };
-          })
-        );
-        return leagueStats.sort((a, b) => b.total - a.total).slice(0, 10);
-      }),
-      
-      // Accuracy by conviction level
-      prisma.prediction.groupBy({
-        by: ['conviction'],
-        where: { 
-          outcome: { in: ['HIT', 'MISS'] },
-          conviction: { gte: 0 },  // Filter non-null by requiring >= 0
-        },
-        _count: { id: true },
-      }).then(async (levels) => {
-        const levelStats = await Promise.all(
-          levels.filter(l => l.conviction !== null).map(async (l) => {
-            const accurate = await prisma.prediction.count({
-              where: { conviction: l.conviction, outcome: 'HIT' },
-            });
-            return {
-              confidence: l.conviction!,
-              total: l._count.id,
-              accurate,
-              accuracy: l._count.id > 0 ? Math.round((accurate / l._count.id) * 100) : 0,
-            };
-          })
-        );
-        return levelStats.sort((a, b) => a.confidence - b.confidence);
-      }),
-      
-      // Last 30 days stats
-      prisma.prediction.findMany({
-        where: {
-          kickoff: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-          outcome: { in: ['HIT', 'MISS'] },
-        },
-        select: { outcome: true, kickoff: true },
-      }),
-      
-      // Last 7 days stats
-      prisma.prediction.findMany({
-        where: {
-          kickoff: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-          outcome: { in: ['HIT', 'MISS'] },
-        },
-        select: { outcome: true },
-      }),
-    ]);
-
-    // Calculate overall accuracy
-    const overallAccuracy = evaluatedPredictions > 0 
-      ? Math.round((accuratePredictions / evaluatedPredictions) * 100) 
-      : 0;
-    
-    // Calculate 30-day accuracy
-    const accurate30d = last30Days.filter(p => p.outcome === 'HIT').length;
-    const accuracy30d = last30Days.length > 0 
-      ? Math.round((accurate30d / last30Days.length) * 100) 
-      : 0;
-    
-    // Calculate 7-day accuracy
-    const accurate7d = last7Days.filter(p => p.outcome === 'HIT').length;
-    const accuracy7d = last7Days.length > 0 
-      ? Math.round((accurate7d / last7Days.length) * 100) 
-      : 0;
-    
-    // Build daily trend for last 30 days
-    const dailyTrend: Array<{ date: string; total: number; accurate: number; accuracy: number }> = [];
-    const dateMap = new Map<string, { total: number; accurate: number }>();
-    
-    for (const pred of last30Days) {
-      const dateKey = pred.kickoff.toISOString().split('T')[0];
-      const existing = dateMap.get(dateKey) || { total: 0, accurate: 0 };
-      existing.total++;
-      if (pred.outcome === 'HIT') existing.accurate++;
-      dateMap.set(dateKey, existing);
-    }
-    
-    // Sort by date
-    const sortedDates = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-    for (const [date, stats] of sortedDates) {
-      dailyTrend.push({
-        date,
-        total: stats.total,
-        accurate: stats.accurate,
-        accuracy: stats.total > 0 ? Math.round((stats.accurate / stats.total) * 100) : 0,
-      });
-    }
-
-    return {
-      totalPredictions: totalUniqueMatches, // Use unique match count as the main number
-      totalRecords: totalPredictions, // Keep raw record count for debugging
-      evaluatedPredictions,
-      accuratePredictions,
-      pendingEvaluation: totalUniqueMatches - evaluatedPredictions,
-      overallAccuracy,
-      accuracy7d,
-      accuracy30d,
-      total7d: last7Days.length,
-      total30d: last30Days.length,
-      recentPredictions,
-      byLeague,
-      byConfidence,
-      dailyTrend,
-    };
-  } catch (error) {
-    console.error('Error fetching prediction stats:', error);
-    return {
-      totalPredictions: 0,
-      totalRecords: 0,
-      evaluatedPredictions: 0,
-      accuratePredictions: 0,
-      pendingEvaluation: 0,
-      overallAccuracy: 0,
-      accuracy7d: 0,
-      accuracy30d: 0,
-      total7d: 0,
-      total30d: 0,
-      recentPredictions: [],
-      byLeague: [],
-      byConfidence: [],
-      dailyTrend: [],
-    };
   }
 }
 
