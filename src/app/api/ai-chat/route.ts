@@ -412,11 +412,11 @@ function detectMatchAnalysisRequest(message: string): {
     const match = message.match(pattern);
     if (match && match[1] && match[2]) {
       // Clean up team names (remove extra words)
-      let homeTeam = match[1].trim()
+      const homeTeam = match[1].trim()
         .replace(/^(the|match|game)\s+/i, '')
         .replace(/\s+(match|game|tonight|today)?$/i, '')
         .trim();
-      let awayTeam = match[2].trim()
+      const awayTeam = match[2].trim()
         .replace(/^(the)\s+/i, '')
         .replace(/\s+(match|game|tonight|today|\?)?$/i, '')
         .trim();
