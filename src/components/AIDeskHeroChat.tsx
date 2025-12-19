@@ -73,25 +73,21 @@ function stripMarkdown(text: string): string {
 }
 
 // ============================================
-// SUGGESTED QUESTIONS - Diverse categories
+// SUGGESTED QUESTIONS - Fallback categories
 // ============================================
 
-const SUGGESTED_QUESTIONS = [
+const FALLBACK_QUESTIONS = [
   { text: "Who is the starting goalkeeper for Real Madrid?", icon: "👥", category: "Rosters" },
   { text: "What's the latest injury news for Arsenal?", icon: "🏥", category: "Injuries" },
   { text: "When do Liverpool play next?", icon: "📅", category: "Fixtures" },
   { text: "What was the score in last night's NBA games?", icon: "📊", category: "Results" },
   { text: "Who's top of the Serie A table?", icon: "🏆", category: "Standings" },
   { text: "How many goals has Haaland scored this season?", icon: "⚽", category: "Stats" },
-  { text: "Any transfer rumors for the January window?", icon: "💰", category: "Transfers" },
-  { text: "What did Guardiola say about the upcoming match?", icon: "🎙️", category: "Press" },
-  { text: "What are the odds for the Lakers game tonight?", icon: "📈", category: "Odds" },
-  { text: "Compare Messi and Ronaldo's stats this season", icon: "⚔️", category: "Compare" },
 ];
 
 function getRandomQuestions(count: number) {
   // Return first N items for SSR stability (shuffled on client)
-  return SUGGESTED_QUESTIONS.slice(0, count);
+  return FALLBACK_QUESTIONS.slice(0, count);
 }
 
 // ============================================
@@ -122,14 +118,37 @@ export default function AIDeskHeroChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Shuffle questions on client mount only (after hydration)
+  // Fetch dynamic prompts on client mount
   useEffect(() => {
-    const shuffled = [...SUGGESTED_QUESTIONS];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    async function fetchDynamicPrompts() {
+      try {
+        const response = await fetch('/api/suggested-prompts');
+        if (!response.ok) throw new Error('Failed to fetch prompts');
+        
+        const data = await response.json();
+        if (data.prompts && Array.isArray(data.prompts) && data.prompts.length > 0) {
+          // Transform prompts to our format with icons
+          const icons = ['⚽', '🏀', '🏈', '⚾', '🎾', '🏒'];
+          const dynamicQuestions = data.prompts.slice(0, 6).map((text: string, i: number) => ({
+            text,
+            icon: icons[i % icons.length],
+            category: 'Match',
+          }));
+          setSuggestedQuestions(dynamicQuestions);
+        }
+      } catch (err) {
+        console.error('[AIDeskHeroChat] Error fetching dynamic prompts:', err);
+        // Fallback: shuffle static questions
+        const shuffled = [...FALLBACK_QUESTIONS];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        setSuggestedQuestions(shuffled.slice(0, 6));
+      }
     }
-    setSuggestedQuestions(shuffled.slice(0, 6));
+    
+    fetchDynamicPrompts();
   }, []);
 
   // Auto-scroll to bottom (block: 'nearest' prevents page scroll)
