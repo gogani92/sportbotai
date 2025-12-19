@@ -335,13 +335,28 @@ export async function GET(request: NextRequest) {
           stats.matchesAnalyzed++;
           stats.analyzedMatches.push(matchRef);
           
-          // Build full response for cache
+          // Build full response for cache - MUST match match-preview API response format!
+          // The client expects data.matchInfo to exist
           const cacheResponse = {
-            homeTeam: event.home_team,
-            awayTeam: event.away_team,
-            sport: sport.key,
-            league: sport.league,
-            kickoff: event.commence_time,
+            // matchInfo wrapper - required by client!
+            matchInfo: {
+              id: generateMatchId(event, sport.key, sport.league),
+              homeTeam: event.home_team,
+              awayTeam: event.away_team,
+              league: sport.league,
+              sport: sport.key,
+              hasDraw: sport.hasDraw,
+              scoringUnit: sport.hasDraw ? 'goals' : 'points',
+              kickoff: event.commence_time,
+              venue: null,
+            },
+            // Data availability
+            dataAvailability: {
+              source: 'API_SPORTS',
+              hasFormData: true,
+              hasH2H: true,
+              hasInjuries: false,
+            },
             story: analysis.story,
             signals: analysis.signals,
             probabilities: analysis.probabilities,

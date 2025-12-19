@@ -157,8 +157,44 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const cachedPreview = await cacheGet<any>(cacheKey);
       if (cachedPreview) {
         console.log(`[Match-Preview] Cache HIT for ${matchInfo.homeTeam} vs ${matchInfo.awayTeam} (${Date.now() - startTime}ms, preAnalyzed: ${cachedPreview.preAnalyzed || false})`);
+        
+        // Backwards compatibility: transform old flat cache format to new format with matchInfo wrapper
+        // Old format: { homeTeam, awayTeam, ... } 
+        // New format: { matchInfo: { homeTeam, awayTeam, ... }, ... }
+        let responseData = cachedPreview;
+        if (!cachedPreview.matchInfo && cachedPreview.homeTeam) {
+          console.log(`[Match-Preview] Transforming old cache format to new format`);
+          const sportConfig = getSportConfig(cachedPreview.sport || matchInfo.sport);
+          responseData = {
+            matchInfo: {
+              id: matchId,
+              homeTeam: cachedPreview.homeTeam || matchInfo.homeTeam,
+              awayTeam: cachedPreview.awayTeam || matchInfo.awayTeam,
+              league: cachedPreview.league || matchInfo.league,
+              sport: cachedPreview.sport || matchInfo.sport,
+              hasDraw: sportConfig.hasDraw,
+              scoringUnit: sportConfig.scoringUnit,
+              kickoff: cachedPreview.kickoff || matchInfo.kickoff,
+              venue: null,
+            },
+            dataAvailability: cachedPreview.dataAvailability || {
+              source: 'API_SPORTS',
+              hasFormData: true,
+              hasH2H: true,
+              hasInjuries: false,
+            },
+            story: cachedPreview.story,
+            signals: cachedPreview.signals,
+            probabilities: cachedPreview.probabilities,
+            marketIntel: cachedPreview.marketIntel,
+            odds: cachedPreview.odds,
+            preAnalyzed: cachedPreview.preAnalyzed,
+            preAnalyzedAt: cachedPreview.preAnalyzedAt,
+          };
+        }
+        
         return NextResponse.json({
-          ...cachedPreview,
+          ...responseData,
           fromCache: true,
         }, {
           headers: {
