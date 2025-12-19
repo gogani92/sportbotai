@@ -49,26 +49,48 @@ export const metadata: Metadata = {
   creator: SITE_CONFIG.name,
   publisher: SITE_CONFIG.name,
   
-  // Favicon & Icons
+  // Favicon & Icons - comprehensive for all platforms
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
-    apple: '/favicon.svg',
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.svg',
   },
   
   // PWA Manifest
   manifest: '/manifest.json',
   
-  // PWA / Mobile App specific
+  // Apple iOS PWA specific - critical for native-like experience
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'SportBot AI',
+    startupImage: [
+      // iPhone 14 Pro Max
+      { url: '/splashscreens/apple-splash-1290-2796.png', media: '(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)' },
+      // iPhone 14 Pro
+      { url: '/splashscreens/apple-splash-1179-2556.png', media: '(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)' },
+      // iPhone 13/14
+      { url: '/splashscreens/apple-splash-1170-2532.png', media: '(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)' },
+      // iPhone 12 Mini
+      { url: '/splashscreens/apple-splash-1080-2340.png', media: '(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3)' },
+      // iPhone SE
+      { url: '/splashscreens/apple-splash-750-1334.png', media: '(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)' },
+    ],
   },
   // Modern mobile-web-app-capable (non-Apple)
   other: {
     'mobile-web-app-capable': 'yes',
+    // Android Chrome - prevent zoom issues
+    'format-detection': 'telephone=no',
+    // Improve PWA add experience
+    'msapplication-TileColor': '#050607',
+    'msapplication-tap-highlight': 'no',
   },
   
   // Canonical & Base

@@ -1205,3 +1205,403 @@ button:focus-visible {
 .blog-content > p:first-of-type {
   @apply text-lg md:text-xl text-gray-200 leading-relaxed;
 }
+
+/* ========================================
+   MOBILE UX OPTIMIZATIONS
+   iOS & Android native-like experience
+   ======================================== */
+
+/* === HAPTIC-LIKE FEEDBACK === */
+@media (hover: none) and (pointer: coarse) {
+  /* Subtle press effect for all interactive elements */
+  button:active,
+  a:active,
+  [role="button"]:active,
+  .interactive:active {
+    transform: scale(0.97);
+    transition: transform 50ms ease-out;
+  }
+  
+  /* Cards get a subtle sink effect */
+  .card:active,
+  [data-pressable]:active {
+    transform: scale(0.985);
+    transition: transform 50ms ease-out;
+  }
+  
+  /* Buttons get more pronounced feedback */
+  .btn-primary:active,
+  .btn-secondary:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
+  }
+}
+
+/* === IOS SAFE AREAS (Notch/Dynamic Island/Home Indicator) === */
+.safe-area-inset {
+  padding-top: env(safe-area-inset-top, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+}
+
+/* Bottom nav needs extra padding for home indicator */
+.bottom-nav-safe {
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+}
+
+/* Header safe area for notch/dynamic island */
+.header-safe {
+  padding-top: max(12px, env(safe-area-inset-top, 12px));
+}
+
+/* === SMOOTH SCROLLING & MOMENTUM === */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent rubber-banding on main content */
+html, body {
+  overscroll-behavior-y: none;
+}
+
+/* Allow rubber-band on scrollable content */
+.scroll-bounce {
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* === NATIVE INPUT STYLING === */
+@media (max-width: 768px) {
+  /* Prevent zoom on input focus (iOS) */
+  input, textarea, select {
+    font-size: 16px !important;
+    border-radius: 12px;
+  }
+  
+  /* Better touch targets */
+  input, textarea, select, button {
+    min-height: 48px;
+  }
+  
+  /* iOS-style input appearance */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  /* Remove iOS input shadows */
+  input {
+    -webkit-appearance: none;
+    box-shadow: none !important;
+  }
+}
+
+/* === TAP HIGHLIGHT COLORS === */
+* {
+  -webkit-tap-highlight-color: rgba(42, 246, 160, 0.15);
+}
+
+/* Remove tap highlight on non-interactive */
+html, body, main, section, article, div {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* === PULL TO REFRESH INTEGRATION === */
+.ptr-container {
+  position: relative;
+  overscroll-behavior-y: contain;
+}
+
+.ptr-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  transition: transform 0.2s ease;
+  padding: 16px;
+  z-index: 100;
+}
+
+.ptr-indicator.active {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* === SWIPE GESTURE HINTS === */
+.swipe-hint {
+  position: relative;
+}
+
+.swipe-hint::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+/* === BOTTOM SHEET STYLING === */
+.bottom-sheet {
+  border-radius: 24px 24px 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+.bottom-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  margin: 8px auto 16px;
+}
+
+/* === FLOATING LABELS (Native-like inputs) === */
+.floating-input {
+  position: relative;
+}
+
+.floating-input input:focus + label,
+.floating-input input:not(:placeholder-shown) + label {
+  transform: translateY(-1.5rem) scale(0.85);
+  color: var(--color-accent);
+}
+
+.floating-input label {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: all 0.2s ease;
+  pointer-events: none;
+  color: var(--color-text-muted);
+}
+
+/* === IOS-STYLE SEGMENTED CONTROL === */
+.segmented-control {
+  display: inline-flex;
+  background: var(--color-bg-card);
+  border-radius: 10px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.segmented-control button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  color: var(--color-text-muted);
+}
+
+.segmented-control button.active {
+  background: var(--color-bg-hover);
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* === CARD SWIPE ACTIONS (like iOS Mail) === */
+.swipe-actions {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-actions-content {
+  position: relative;
+  z-index: 1;
+  background: var(--color-bg-card);
+  transition: transform 0.2s ease;
+}
+
+.swipe-actions-left,
+.swipe-actions-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.swipe-actions-left {
+  left: 0;
+  background: var(--color-danger);
+}
+
+.swipe-actions-right {
+  right: 0;
+  background: var(--color-success);
+}
+
+/* === LOADING STATES === */
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-card) 0%,
+    var(--color-bg-hover) 50%,
+    var(--color-bg-card) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* === MOBILE MODAL/DRAWER === */
+.mobile-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 90vh;
+  border-radius: 24px 24px 0 0;
+  background: var(--color-bg-card);
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 60;
+}
+
+.mobile-drawer.open {
+  transform: translateY(0);
+}
+
+.mobile-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 59;
+  pointer-events: none;
+}
+
+.mobile-drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* === NATIVE-LIKE LIST ITEMS === */
+.list-item-native {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 0.5px solid var(--color-divider);
+  transition: background 0.1s ease;
+}
+
+.list-item-native:active {
+  background: var(--color-bg-hover);
+}
+
+/* === BADGE NOTIFICATIONS === */
+.badge-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-danger);
+  border-radius: 50%;
+  border: 2px solid var(--color-bg);
+}
+
+.badge-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--color-danger);
+  border-radius: 10px;
+  border: 2px solid var(--color-bg);
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+/* === ANDROID-SPECIFIC OVERRIDES === */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific styles */
+  .ios-only {
+    display: block;
+  }
+  .android-only {
+    display: none;
+  }
+}
+
+@supports not (-webkit-touch-callout: none) {
+  /* Android/other specific styles */
+  .ios-only {
+    display: none;
+  }
+  .android-only {
+    display: block;
+  }
+  
+  /* Android ripple effect */
+  @media (hover: none) and (pointer: coarse) {
+    .ripple {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .ripple::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 10%);
+      background-repeat: no-repeat;
+      background-position: center;
+      transform: scale(10);
+      opacity: 0;
+      transition: transform 0.5s, opacity 0.3s;
+    }
+    
+    .ripple:active::after {
+      transform: scale(0);
+      opacity: 1;
+      transition: 0s;
+    }
+  }
+}
+
+/* === KEYBOARD AVOIDANCE === */
+@media (max-width: 768px) {
+  .keyboard-push {
+    transition: padding-bottom 0.2s ease;
+  }
+  
+  /* When virtual keyboard is likely visible */
+  input:focus ~ .keyboard-push,
+  textarea:focus ~ .keyboard-push {
+    padding-bottom: 280px; /* Approximate keyboard height */
+  }
+}
+
+/* === PWA STANDALONE MODE ADJUSTMENTS === */
+@media (display-mode: standalone) {
+  /* Remove browser UI compensation */
+  .header-safe {
+    padding-top: max(44px, env(safe-area-inset-top, 44px));
+  }
+  
+  /* Ensure bottom nav accounts for home indicator */
+  .bottom-nav-safe {
+    padding-bottom: max(34px, env(safe-area-inset-bottom, 34px));
+  }
+}

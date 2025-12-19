@@ -68,8 +68,13 @@ export default function MobileBottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-bg-card/95 backdrop-blur-lg border-t border-divider safe-area-bottom">
-      <div className="flex items-center justify-around h-16">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-bg-card/95 backdrop-blur-xl border-t border-divider/50"
+      style={{ 
+        paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))',
+      }}
+    >
+      <div className="flex items-center justify-around h-14">
         {navItems.map((item) => {
           const isActive = pathname === item.href || 
             (item.href !== '/' && pathname.startsWith(item.href));
@@ -79,18 +84,16 @@ export default function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={`
-                flex flex-col items-center justify-center gap-1 flex-1 h-full 
-                transition-all duration-200 touch-manipulation active:scale-95
-                ${item.highlight 
-                  ? 'relative' 
-                  : ''
-                }
+                flex flex-col items-center justify-center gap-0.5 flex-1 h-full 
+                transition-all duration-150 touch-manipulation
+                active:scale-90 active:opacity-80
+                ${item.highlight ? 'relative' : ''}
               `}
             >
               {/* Highlight bubble for main action */}
               {item.highlight && (
-                <div className="absolute -top-3 w-14 h-14 bg-accent rounded-full flex items-center justify-center shadow-lg shadow-accent/30">
-                  <div className={`${isActive ? 'text-bg' : 'text-bg'}`}>
+                <div className="absolute -top-4 w-12 h-12 bg-accent rounded-full flex items-center justify-center shadow-lg shadow-accent/40 active:scale-95 transition-transform">
+                  <div className="text-bg">
                     {item.icon}
                   </div>
                 </div>
@@ -99,13 +102,13 @@ export default function MobileBottomNav() {
               {!item.highlight && (
                 <>
                   <div className={`
-                    transition-colors duration-200
-                    ${isActive ? 'text-accent' : 'text-text-muted'}
+                    transition-all duration-150
+                    ${isActive ? 'text-accent scale-110' : 'text-text-muted'}
                   `}>
                     {item.icon}
                   </div>
                   <span className={`
-                    text-[10px] font-medium transition-colors duration-200
+                    text-[10px] font-medium transition-colors duration-150
                     ${isActive ? 'text-accent' : 'text-text-muted'}
                   `}>
                     {item.label}
@@ -115,7 +118,7 @@ export default function MobileBottomNav() {
               
               {item.highlight && (
                 <span className={`
-                  text-[10px] font-semibold mt-8 transition-colors duration-200
+                  text-[10px] font-semibold mt-7 transition-colors duration-150
                   ${isActive ? 'text-accent' : 'text-text-muted'}
                 `}>
                   {item.label}
