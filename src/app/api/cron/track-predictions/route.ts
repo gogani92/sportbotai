@@ -198,6 +198,33 @@ async function getMatchResult(homeTeam: string, awayTeam: string, matchDate: Dat
 }
 
 /**
+ * Calculate the correct season string based on date
+ * NBA/NHL seasons run October to June, so:
+ * - Oct 2024 - Jun 2025 = "2024-2025"
+ * - Oct 2025 - Jun 2026 = "2025-2026"
+ */
+function getSeasonForDate(dateStr: string, isNFL: boolean = false): string {
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1; // 1-12
+  
+  if (isNFL) {
+    // NFL season is just the year (e.g., "2025" for 2025-2026 season)
+    // Season starts in September
+    return month >= 9 ? String(year) : String(year);
+  }
+  
+  // NBA/NHL: Season spans two years
+  // October-December = first year of season
+  // January-June = second year of season
+  if (month >= 10) {
+    return `${year}-${year + 1}`;
+  } else {
+    return `${year - 1}-${year}`;
+  }
+}
+
+/**
  * Fetch result from API-Sports for a specific sport
  */
 async function fetchSportResult(
@@ -213,8 +240,11 @@ async function fetchSportResult(
       ? 'https://v1.basketball.api-sports.io' 
       : 'https://v1.hockey.api-sports.io';
     
+    const season = getSeasonForDate(dateStr);
+    console.log(`[Track-Predictions] Fetching ${sport} games for ${dateStr}, season ${season}`);
+    
     const response = await fetch(
-      `${baseUrl}/games?date=${dateStr}&league=${leagueId}&season=2024-2025`,
+      `${baseUrl}/games?date=${dateStr}&league=${leagueId}&season=${season}`,
       {
         headers: {
           'x-rapidapi-key': apiKey,
@@ -267,8 +297,11 @@ async function fetchNFLResult(
   apiKey: string
 ): Promise<MatchResult | null> {
   try {
+    const season = getSeasonForDate(dateStr, true);
+    console.log(`[Track-Predictions] Fetching NFL games for ${dateStr}, season ${season}`);
+    
     const response = await fetch(
-      `https://v1.american-football.api-sports.io/games?date=${dateStr}&league=1&season=2024`,
+      `https://v1.american-football.api-sports.io/games?date=${dateStr}&league=1&season=${season}`,
       {
         headers: {
           'x-rapidapi-key': apiKey,
