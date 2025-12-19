@@ -59,11 +59,11 @@ function stripMarkdown(text: string): string {
 }
 
 // ============================================
-// SUGGESTED QUESTIONS - Showcasing different categories
+// SUGGESTED QUESTIONS - Dynamic from API, fallback to static
 // ============================================
 
-const SUGGESTED_QUESTIONS = [
-  // Match Analysis (NEW - triggers full /api/analyze)
+const FALLBACK_QUESTIONS = [
+  // Match Analysis (triggers full /api/analyze)
   "Analyze Real Madrid vs Barcelona",
   // Rosters & Squads
   "Who is the starting goalkeeper for Real Madrid?",
@@ -87,10 +87,9 @@ const SUGGESTED_QUESTIONS = [
   "Compare Messi and Ronaldo's stats this season",
 ];
 
-// Get random questions - only shuffle on client side
-function getRandomQuestions(count: number): string[] {
-  // Return first N items for SSR stability
-  return SUGGESTED_QUESTIONS.slice(0, count);
+// Get initial questions for SSR
+function getInitialQuestions(count: number): string[] {
+  return FALLBACK_QUESTIONS.slice(0, count);
 }
 
 // ============================================
@@ -107,8 +106,8 @@ export default function AIDeskChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Start with stable questions, shuffle on client mount
-  const [suggestedQuestions, setSuggestedQuestions] = useState(() => getRandomQuestions(4));
+  // Start with stable questions, fetch dynamic ones on mount
+  const [suggestedQuestions, setSuggestedQuestions] = useState(() => getInitialQuestions(4));
   
   // Audio state for TTS
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -123,14 +122,31 @@ export default function AIDeskChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Shuffle questions on client mount only (after hydration)
+  // Fetch dynamic prompts on client mount
   useEffect(() => {
-    const shuffled = [...SUGGESTED_QUESTIONS];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    async function fetchDynamicPrompts() {
+      try {
+        const response = await fetch('/api/suggested-prompts');
+        if (!response.ok) throw new Error('Failed to fetch prompts');
+        
+        const data = await response.json();
+        if (data.prompts && Array.isArray(data.prompts) && data.prompts.length > 0) {
+          // Take first 4 prompts (first one should be today's match)
+          setSuggestedQuestions(data.prompts.slice(0, 4));
+        }
+      } catch (err) {
+        console.error('[AIDeskChat] Error fetching dynamic prompts:', err);
+        // Fallback: shuffle static questions
+        const shuffled = [...FALLBACK_QUESTIONS];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        setSuggestedQuestions(shuffled.slice(0, 4));
+      }
     }
-    setSuggestedQuestions(shuffled.slice(0, 4));
+    
+    fetchDynamicPrompts();
   }, []);
 
   // Auto-scroll to bottom (block: 'nearest' prevents page scroll)
