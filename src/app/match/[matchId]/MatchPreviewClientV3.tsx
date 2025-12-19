@@ -186,6 +186,7 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
         if (response.status === 429 && result.usageLimitReached) {
           setUsageLimit(result as UsageLimitData);
           // Dispatch usage update event so header refreshes
+          console.log('[MatchPreview] Dispatching USAGE_UPDATED_EVENT (429)');
           window.dispatchEvent(new Event(USAGE_UPDATED_EVENT));
           return;
         }
@@ -195,6 +196,7 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
         }
         
         // Successful analysis - dispatch usage update event
+        console.log('[MatchPreview] Dispatching USAGE_UPDATED_EVENT (success)');
         window.dispatchEvent(new Event(USAGE_UPDATED_EVENT));
         
         setData(result);

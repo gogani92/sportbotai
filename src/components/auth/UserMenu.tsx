@@ -30,9 +30,11 @@ export function UserMenu() {
   // Helper to fetch fresh usage data
   const fetchUsageData = useCallback(() => {
     if (session) {
-      fetch('/api/usage', { cache: 'no-store' })
+      console.log('[UserMenu] Fetching fresh usage data...');
+      fetch('/api/usage', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
         .then(res => res.json())
         .then(data => {
+          console.log('[UserMenu] Got usage data:', data);
           if (data.remaining !== undefined) {
             setUsageData({
               remaining: data.remaining,
@@ -41,7 +43,7 @@ export function UserMenu() {
             });
           }
         })
-        .catch(() => {});
+        .catch(err => console.error('[UserMenu] Fetch error:', err));
     }
   }, [session]);
 
@@ -52,8 +54,12 @@ export function UserMenu() {
 
   // Listen for usage update events (dispatched after analysis)
   useEffect(() => {
-    window.addEventListener(USAGE_UPDATED_EVENT, fetchUsageData);
-    return () => window.removeEventListener(USAGE_UPDATED_EVENT, fetchUsageData);
+    const handler = () => {
+      console.log('[UserMenu] USAGE_UPDATED_EVENT received!');
+      fetchUsageData();
+    };
+    window.addEventListener(USAGE_UPDATED_EVENT, handler);
+    return () => window.removeEventListener(USAGE_UPDATED_EVENT, handler);
   }, [fetchUsageData]);
 
   // Also refetch when window gains focus (user switches tabs back)
