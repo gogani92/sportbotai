@@ -27,18 +27,8 @@ interface UserData {
   };
 }
 
-interface Analysis {
-  id: string;
-  sport: string;
-  league: string | null;
-  homeTeam: string;
-  awayTeam: string;
-  createdAt: Date;
-}
-
 interface Props {
   user: UserData;
-  recentAnalyses: Analysis[];
 }
 
 const PLAN_LIMITS: Record<string, number> = {
@@ -53,7 +43,7 @@ const PLAN_COLORS: Record<string, { bg: string; text: string; border: string }> 
   PREMIUM: { bg: 'bg-accent/20', text: 'text-accent', border: 'border-accent/30' },
 };
 
-export default function AccountDashboard({ user, recentAnalyses }: Props) {
+export default function AccountDashboard({ user }: Props) {
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [usageData, setUsageData] = useState<{ used: number; limit: number; remaining: number } | null>(null);
 
@@ -258,72 +248,27 @@ export default function AccountDashboard({ user, recentAnalyses }: Props) {
           </div>
         </div>
 
-        {/* Recent Analyses */}
+        {/* Quick Links */}
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-white mb-4">Recent Analyses</h2>
-          
-          {recentAnalyses.length === 0 ? (
-            <div className="bg-bg-card rounded-xl border border-divider p-8 text-center">
-              <svg className="w-12 h-12 text-text-muted mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <p className="text-text-secondary mb-4">No analyses yet</p>
-              <Link href="/matches" className="btn-primary inline-block">
-                Browse Matches
-              </Link>
-            </div>
-          ) : (
-            <div className="bg-bg-card rounded-xl border border-divider overflow-hidden">
-              <div className="divide-y divide-divider">
-                {recentAnalyses.map((analysis) => (
-                  <Link
-                    key={analysis.id}
-                    href={`/history/${analysis.id}`}
-                    className="flex items-center justify-between p-4 hover:bg-bg-hover transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-bg flex items-center justify-center text-lg">
-                        {analysis.sport === 'soccer' ? '⚽' : 
-                         analysis.sport === 'basketball' ? '🏀' :
-                         analysis.sport === 'tennis' ? '🎾' :
-                         analysis.sport === 'hockey' ? '🏒' :
-                         analysis.sport === 'american_football' ? '🏈' :
-                         analysis.sport === 'mma' ? '🥊' : '🏆'}
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">
-                          {analysis.homeTeam} vs {analysis.awayTeam}
-                        </p>
-                        <p className="text-text-muted text-sm">
-                          {analysis.league || analysis.sport}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-text-muted text-sm">
-                        {new Date(analysis.createdAt).toLocaleDateString()}
-                      </p>
-                      <svg className="w-5 h-5 text-text-muted ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </Link>
-                ))}
+          <Link 
+            href="/history"
+            className="flex items-center justify-between p-4 bg-bg-card rounded-xl border border-divider hover:border-primary/30 transition-colors group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              
-              <div className="p-4 border-t border-divider bg-bg/50">
-                <Link 
-                  href="/history" 
-                  className="text-primary hover:text-primary/80 text-sm font-medium flex items-center justify-center gap-1"
-                >
-                  View All History
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Link>
+              <div>
+                <p className="text-white font-medium">Analysis History</p>
+                <p className="text-text-muted text-sm">View all your past analyses</p>
               </div>
             </div>
-          )}
+            <svg className="w-5 h-5 text-text-muted group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
 
         {/* Account Settings */}

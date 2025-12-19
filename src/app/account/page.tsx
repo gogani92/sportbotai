@@ -41,24 +41,6 @@ async function getUserData(userId: string) {
   return user;
 }
 
-async function getRecentAnalyses(userId: string) {
-  const analyses = await prisma.analysis.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-    select: {
-      id: true,
-      sport: true,
-      league: true,
-      homeTeam: true,
-      awayTeam: true,
-      createdAt: true,
-    },
-  });
-
-  return analyses;
-}
-
 export default async function AccountPage() {
   const session = await getServerSession(authOptions);
 
@@ -66,19 +48,13 @@ export default async function AccountPage() {
     redirect('/login?callbackUrl=/account');
   }
 
-  const [userData, recentAnalyses] = await Promise.all([
-    getUserData(session.user.id),
-    getRecentAnalyses(session.user.id),
-  ]);
+  const userData = await getUserData(session.user.id);
 
   if (!userData) {
     redirect('/login');
   }
 
   return (
-    <AccountDashboard 
-      user={userData} 
-      recentAnalyses={recentAnalyses}
-    />
+    <AccountDashboard user={userData} />
   );
 }
