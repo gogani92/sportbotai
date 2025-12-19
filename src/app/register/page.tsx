@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -108,16 +108,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-lg font-bold text-bg-primary">B</span>
-            </div>
-            <span className="text-xl font-bold text-text-primary">SportBot AI</span>
-          </Link>
+    <div className="w-full max-w-md">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <Link href="/" className="inline-flex items-center gap-2 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <span className="text-lg font-bold text-bg-primary">B</span>
+          </div>
+          <span className="text-xl font-bold text-text-primary">SportBot AI</span>
+        </Link>
           <h1 className="text-2xl font-bold text-text-primary">Create your account</h1>
           <p className="text-text-secondary mt-2">Start analyzing matches with AI</p>
         </div>
@@ -282,6 +281,27 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
+      <Suspense fallback={
+        <div className="w-full max-w-md animate-pulse">
+          <div className="h-10 bg-bg-tertiary rounded-xl mb-8 w-32 mx-auto"></div>
+          <div className="h-8 bg-bg-tertiary rounded-xl mb-2 w-48 mx-auto"></div>
+          <div className="h-4 bg-bg-tertiary rounded mb-6 w-40 mx-auto"></div>
+          <div className="space-y-3">
+            <div className="h-12 bg-bg-tertiary rounded-xl"></div>
+            <div className="h-12 bg-bg-tertiary rounded-xl"></div>
+            <div className="h-12 bg-bg-tertiary rounded-xl"></div>
+            <div className="h-12 bg-bg-tertiary rounded-xl"></div>
+          </div>
+        </div>
+      }>
+        <RegisterForm />
+      </Suspense>
     </div>
   );
 }
