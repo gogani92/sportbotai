@@ -296,7 +296,7 @@ async function getPredictionStats() {
         by: ['league'],
         where: { 
           outcome: { in: ['HIT', 'MISS'] },
-          league: { not: null },
+          NOT: { league: null },
         },
         _count: { id: true },
       }).then(async (leagues) => {
