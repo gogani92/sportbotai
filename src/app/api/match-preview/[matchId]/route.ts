@@ -43,6 +43,7 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const startTime = Date.now();
+  console.log(`[Match-Preview] === REQUEST RECEIVED at ${new Date().toISOString()} ===`);
   
   try {
     // ==========================================
