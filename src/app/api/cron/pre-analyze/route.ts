@@ -315,7 +315,7 @@ export async function GET(request: NextRequest) {
             matchDate
           );
           
-          console.log(`[Pre-Analyze] Analyzing: ${matchRef}...`);
+          console.log(`[Pre-Analyze] Analyzing: ${matchRef} | Cache key: ${cacheKey}`);
           
           // Run AI analysis
           const analysis = await runQuickAnalysis(
@@ -357,9 +357,9 @@ export async function GET(request: NextRequest) {
             preAnalyzedAt: new Date().toISOString(),
           };
           
-          // Cache the response
+          // Cache the response with longer TTL for pre-analyzed content
           try {
-            await cacheSet(cacheKey, cacheResponse, CACHE_TTL.MATCH_PREVIEW);
+            await cacheSet(cacheKey, cacheResponse, CACHE_TTL.PRE_ANALYZED);
             stats.cacheWrites++;
             console.log(`[Pre-Analyze] Cached: ${matchRef}`);
           } catch (cacheError) {

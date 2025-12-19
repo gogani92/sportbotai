@@ -146,6 +146,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const matchDate = matchInfo.kickoff ? new Date(matchInfo.kickoff).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
     const cacheKey = CACHE_KEYS.matchPreview(matchInfo.homeTeam, matchInfo.awayTeam, matchInfo.sport, matchDate);
     
+    console.log(`[Match-Preview] Cache key: ${cacheKey}`);
+    console.log(`[Match-Preview] Match info: home=${matchInfo.homeTeam}, away=${matchInfo.awayTeam}, sport=${matchInfo.sport}, date=${matchDate}`);
+    
     const kickoffTime = matchInfo.kickoff ? new Date(matchInfo.kickoff).getTime() : 0;
     const minutesUntilKickoff = kickoffTime ? (kickoffTime - Date.now()) / 60000 : Infinity;
     const shouldSkipCache = minutesUntilKickoff < 30; // Skip cache if match starts within 30 min
@@ -153,7 +156,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (!shouldSkipCache) {
       const cachedPreview = await cacheGet<any>(cacheKey);
       if (cachedPreview) {
-        console.log(`[Match-Preview] Cache HIT for ${matchInfo.homeTeam} vs ${matchInfo.awayTeam} (${Date.now() - startTime}ms)`);
+        console.log(`[Match-Preview] Cache HIT for ${matchInfo.homeTeam} vs ${matchInfo.awayTeam} (${Date.now() - startTime}ms, preAnalyzed: ${cachedPreview.preAnalyzed || false})`);
         return NextResponse.json({
           ...cachedPreview,
           fromCache: true,
@@ -163,7 +166,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           }
         });
       }
-      console.log(`[Match-Preview] Cache MISS - generating fresh analysis`);
+      console.log(`[Match-Preview] Cache MISS for key: ${cacheKey}`);
     } else {
       console.log(`[Match-Preview] Skipping cache - match starts in ${Math.round(minutesUntilKickoff)} min`);
     }
