@@ -399,10 +399,8 @@ export async function GET(request: NextRequest) {
     const allAlerts: MarketAlert[] = [];
     let totalMatches = 0;
     
-    // Fetch odds for each sport (limit to 3 sports per request to save quota)
-    const sportsToFetch = ALERT_SPORTS.slice(0, 5);
-    
-    for (const sport of sportsToFetch) {
+    // Fetch odds for ALL supported sports
+    for (const sport of ALERT_SPORTS) {
       try {
         const oddsResponse = await theOddsClient.getOddsForSport(sport.key, {
           regions: ['eu', 'us'],
