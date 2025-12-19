@@ -15,7 +15,7 @@ import { prisma } from './prisma';
 
 // Plan limits
 export const PLAN_LIMITS = {
-  FREE: 1,      // 1 analysis per day
+  FREE: 1,      // 1 analysis TOTAL (lifetime trial)
   PRO: 30,      // 30 analyses per day
   PREMIUM: -1,  // Unlimited (-1 = no limit)
 } as const;
@@ -208,12 +208,23 @@ export async function canUserAnalyze(userId: string): Promise<{
 
   const limit = PLAN_LIMITS[user.plan as keyof typeof PLAN_LIMITS];
   
-  // Unlimited plan
+  // Unlimited plan (PREMIUM)
   if (limit === -1) {
     return { allowed: true, remaining: -1, limit: -1, plan: user.plan };
   }
 
-  // Check if we need to reset daily count
+  // FREE plan: lifetime limit (never resets)
+  if (user.plan === 'FREE') {
+    const remaining = Math.max(0, limit - user.analysisCount);
+    return {
+      allowed: remaining > 0,
+      remaining,
+      limit,
+      plan: user.plan,
+    };
+  }
+
+  // PRO plan: daily limit (resets each day)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -240,17 +251,34 @@ export async function canUserAnalyze(userId: string): Promise<{
 
 /**
  * Increment user's analysis count
+ * - FREE users: lifetime count (never resets)
+ * - PRO users: daily count (resets each day)
  */
 export async function incrementAnalysisCount(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { plan: true, lastAnalysisDate: true, analysisCount: true },
+  });
+
+  if (!user) return;
+
+  // FREE users: just increment (lifetime total)
+  if (user.plan === 'FREE') {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        analysisCount: { increment: 1 },
+        lastAnalysisDate: new Date(),
+      },
+    });
+    return;
+  }
+
+  // PRO users: reset count on new day
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { lastAnalysisDate: true, analysisCount: true },
-  });
-
-  const lastAnalysis = user?.lastAnalysisDate;
+  const lastAnalysis = user.lastAnalysisDate;
   const lastAnalysisDay = lastAnalysis ? new Date(lastAnalysis) : null;
   if (lastAnalysisDay) {
     lastAnalysisDay.setHours(0, 0, 0, 0);
