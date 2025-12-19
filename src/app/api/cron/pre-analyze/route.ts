@@ -108,7 +108,7 @@ function generateMatchId(event: OddsApiEvent, sportKey: string, league: string):
 
 /**
  * Quick AI analysis for pre-caching
- * Simplified version focused on getting probabilities and story
+ * Now matches the full API format for consistency
  */
 async function runQuickAnalysis(
   homeTeam: string,
@@ -118,9 +118,17 @@ async function runQuickAnalysis(
   odds: { home: number; away: number; draw?: number },
   kickoff: string
 ): Promise<{
-  story: { verdict: string; narrative: string; confidence: number };
+  story: { 
+    favored: 'home' | 'away' | 'draw';
+    confidence: 'strong' | 'moderate' | 'slight';
+    narrative: string;
+    snapshot: string[];
+    riskFactors: string[];
+  };
   probabilities: { home: number; away: number; draw?: number };
   signals: any;
+  universalSignals: any;
+  headlines: Array<{ icon: string; text: string; favors: string; viral: boolean }>;
   marketIntel: MarketIntel | null;
 } | null> {
   try {
@@ -178,24 +186,39 @@ async function runQuickAnalysis(
     const signals = normalizeToUniversalSignals(rawInput);
     const signalsSummary = getSignalSummary(signals);
     
-    // Build AI prompt (simplified)
+    // Determine if this sport has draws
+    const hasDraw = !!odds.draw;
+    const favoredOptions = hasDraw ? '"home" | "away" | "draw"' : '"home" | "away"';
+    
+    // Build AI prompt - match full API format for consistency
     const prompt = `Analyze this ${league} match: ${homeTeam} vs ${awayTeam}
 
 ODDS: Home ${odds.home} | Away ${odds.away}${odds.draw ? ` | Draw ${odds.draw}` : ''}
 
 FORM: ${homeTeam}: ${homeFormStr} | ${awayTeam}: ${awayFormStr}
 
-SIGNALS SUMMARY: ${signalsSummary}
+SIGNALS: ${signalsSummary}
 
-Provide analysis as JSON:
+Generate JSON matching this exact structure:
 {
-  "probabilities": { "home": 0.XX, "away": 0.XX${odds.draw ? ', "draw": 0.XX' : ''} },
-  "verdict": "Who wins and why (1 sentence)",
-  "narrative": "Key insight (2-3 sentences)",
-  "confidence": 1-10
+  "probabilities": { "home": 0.XX, "away": 0.XX${hasDraw ? ', "draw": 0.XX' : ''} },
+  "favored": ${favoredOptions},
+  "confidence": "high" | "medium" | "low",
+  "snapshot": [
+    "First insight with a specific stat (e.g., '4W-1L form')",
+    "Second insight about the matchup",
+    "Third insight about H2H or trends",
+    "Fourth insight about risk or uncertainty"
+  ],
+  "gameFlow": "2-3 sentences about expected game dynamics",
+  "riskFactors": ["Primary risk", "Secondary risk (optional)"]
 }
 
-Base probabilities on form, signals, and market odds. Be analytical, not promotional.`;
+RULES:
+- snapshot must have 3-4 bullet points with real stats
+- gameFlow is the narrative about how the match will unfold
+- Be analytical, cite numbers from form and context
+${!hasDraw ? '- This sport has NO DRAWS - pick home or away.' : ''}`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -204,7 +227,7 @@ Base probabilities on form, signals, and market odds. Be analytical, not promoti
         { role: 'user', content: prompt },
       ],
       temperature: 0.3,
-      max_tokens: 500,
+      max_tokens: 700,
       response_format: { type: 'json_object' },
     });
     
@@ -217,18 +240,37 @@ Base probabilities on form, signals, and market odds. Be analytical, not promoti
       drawOdds: odds.draw,
     };
     
-    const hasDraw = !!odds.draw;
     const marketIntel = analyzeMarket(signals, oddsData, hasDraw);
     
+    // Map confidence to API format
+    const mapConfidence = (conf: string | number): 'strong' | 'moderate' | 'slight' => {
+      if (conf === 'high' || (typeof conf === 'number' && conf >= 7)) return 'strong';
+      if (conf === 'low' || (typeof conf === 'number' && conf <= 4)) return 'slight';
+      return 'moderate';
+    };
+    
+    // Return story in SAME format as generateAIAnalysis
     return {
       story: {
-        verdict: aiResponse.verdict || `${homeTeam} vs ${awayTeam} preview`,
-        narrative: aiResponse.narrative || 'Analysis not available.',
-        confidence: aiResponse.confidence || 5,
+        favored: aiResponse.favored || (hasDraw ? 'draw' : 'home'),
+        confidence: mapConfidence(aiResponse.confidence),
+        narrative: aiResponse.gameFlow || aiResponse.narrative || 'Analysis not available.',
+        snapshot: aiResponse.snapshot || [
+          `${homeTeam} form: ${homeFormStr}`,
+          `${awayTeam} form: ${awayFormStr}`,
+          `Pre-match analysis`,
+        ],
+        riskFactors: aiResponse.riskFactors || ['Limited historical data'],
       },
       probabilities: aiResponse.probabilities || { home: 0.33, away: 0.33, draw: 0.34 },
       signals,
       marketIntel,
+      // Include universalSignals for UI
+      universalSignals: signals,
+      // Include headlines
+      headlines: [
+        { icon: '📊', text: `${homeTeam} vs ${awayTeam}: Pre-analyzed`, favors: aiResponse.favored || 'neutral', viral: false }
+      ],
     };
   } catch (error) {
     console.error(`[Pre-Analyze] AI analysis failed for ${homeTeam} vs ${awayTeam}:`, error);
@@ -359,6 +401,10 @@ export async function GET(request: NextRequest) {
             },
             story: analysis.story,
             signals: analysis.signals,
+            // Universal signals for UI display
+            universalSignals: analysis.universalSignals,
+            // Headlines for viral display
+            headlines: analysis.headlines,
             probabilities: analysis.probabilities,
             marketIntel: analysis.marketIntel,
             odds: {
@@ -368,6 +414,13 @@ export async function GET(request: NextRequest) {
               homeTeam: event.home_team,
               awayTeam: event.away_team,
             },
+            // Empty fields that full API populates but we don't have
+            viralStats: null,
+            homeAwaySplits: null,
+            goalsTiming: null,
+            contextFactors: null,
+            keyPlayerBattle: null,
+            referee: null,
             preAnalyzed: true,
             preAnalyzedAt: new Date().toISOString(),
           };

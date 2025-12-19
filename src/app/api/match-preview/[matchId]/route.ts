@@ -158,13 +158,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       if (cachedPreview) {
         console.log(`[Match-Preview] Cache HIT for ${matchInfo.homeTeam} vs ${matchInfo.awayTeam} (${Date.now() - startTime}ms, preAnalyzed: ${cachedPreview.preAnalyzed || false})`);
         
-        // Backwards compatibility: transform old flat cache format to new format with matchInfo wrapper
-        // Old format: { homeTeam, awayTeam, ... } 
-        // New format: { matchInfo: { homeTeam, awayTeam, ... }, ... }
+        // Backwards compatibility: transform old cache formats
         let responseData = cachedPreview;
+        const sportConfig = getSportConfig(cachedPreview.sport || cachedPreview.matchInfo?.sport || matchInfo.sport);
+        
+        // Transform old flat format (no matchInfo wrapper)
         if (!cachedPreview.matchInfo && cachedPreview.homeTeam) {
-          console.log(`[Match-Preview] Transforming old cache format to new format`);
-          const sportConfig = getSportConfig(cachedPreview.sport || matchInfo.sport);
+          console.log(`[Match-Preview] Transforming old flat cache format`);
           responseData = {
             matchInfo: {
               id: matchId,
@@ -185,11 +185,46 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             },
             story: cachedPreview.story,
             signals: cachedPreview.signals,
+            universalSignals: cachedPreview.universalSignals || cachedPreview.signals,
+            headlines: cachedPreview.headlines,
             probabilities: cachedPreview.probabilities,
             marketIntel: cachedPreview.marketIntel,
             odds: cachedPreview.odds,
+            viralStats: cachedPreview.viralStats || null,
             preAnalyzed: cachedPreview.preAnalyzed,
             preAnalyzedAt: cachedPreview.preAnalyzedAt,
+          };
+        }
+        
+        // Transform old story format (verdict/narrative/confidence number → favored/narrative/snapshot/riskFactors)
+        if (responseData.story && !responseData.story.favored && (responseData.story.verdict || typeof responseData.story.confidence === 'number')) {
+          console.log(`[Match-Preview] Transforming old story format to new format`);
+          const oldStory = responseData.story;
+          const homeTeam = responseData.matchInfo?.homeTeam || matchInfo.homeTeam;
+          const awayTeam = responseData.matchInfo?.awayTeam || matchInfo.awayTeam;
+          
+          // Infer favored from verdict text
+          const verdictLower = (oldStory.verdict || '').toLowerCase();
+          let favored: 'home' | 'away' | 'draw' = sportConfig.hasDraw ? 'draw' : 'home';
+          if (verdictLower.includes(homeTeam.toLowerCase()) || verdictLower.includes('home')) {
+            favored = 'home';
+          } else if (verdictLower.includes(awayTeam.toLowerCase()) || verdictLower.includes('away')) {
+            favored = 'away';
+          }
+          
+          // Map numeric confidence to string
+          const numConf = typeof oldStory.confidence === 'number' ? oldStory.confidence : 5;
+          const confidence: 'strong' | 'moderate' | 'slight' = numConf >= 7 ? 'strong' : numConf <= 4 ? 'slight' : 'moderate';
+          
+          responseData.story = {
+            favored,
+            confidence,
+            narrative: oldStory.narrative || oldStory.verdict || '',
+            snapshot: oldStory.snapshot || [
+              oldStory.verdict || `${homeTeam} vs ${awayTeam}`,
+              oldStory.narrative || 'Pre-analyzed match',
+            ],
+            riskFactors: oldStory.riskFactors || ['Pre-analyzed - limited context'],
           };
         }
         
