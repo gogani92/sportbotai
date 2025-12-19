@@ -115,22 +115,24 @@ function marketEdgeToPrediction(
 /**
  * Get match result from multiple sports APIs
  */
-async function getMatchResult(homeTeam: string, awayTeam: string, matchDate: Date, league?: string | null): Promise<MatchResult | null> {
+async function getMatchResult(homeTeam: string, awayTeam: string, matchDate: Date, league?: string | null, sport?: string | null): Promise<MatchResult | null> {
   const apiKey = process.env.API_FOOTBALL_KEY;
   if (!apiKey) return null;
   
   const dateStr = matchDate.toISOString().split('T')[0];
   const searchHome = homeTeam.toLowerCase();
   const searchAway = awayTeam.toLowerCase();
+  const sportLower = sport?.toLowerCase() || '';
+  const leagueLower = league?.toLowerCase() || '';
   
-  // Detect sport from league or team names
-  const isNBA = league?.toLowerCase().includes('nba') || 
+  // Detect sport from sport field, league, or team names
+  const isNBA = sportLower.includes('basketball') || leagueLower.includes('nba') || 
     ['lakers', 'celtics', 'bulls', 'heat', 'warriors', 'nuggets', 'suns', 'bucks', 'nets', 'knicks', 'clippers', 'mavs', 'mavericks', 'rockets', 'spurs', 'jazz', 'thunder', 'grizzlies', 'pelicans', 'timberwolves', 'blazers', 'kings', 'magic', 'hawks', 'hornets', 'pistons', 'pacers', 'cavaliers', '76ers', 'raptors', 'wizards'].some(t => searchHome.includes(t) || searchAway.includes(t));
   
-  const isNHL = league?.toLowerCase().includes('nhl') || 
+  const isNHL = sportLower.includes('hockey') || sportLower.includes('icehockey') || leagueLower.includes('nhl') || 
     ['bruins', 'rangers', 'penguins', 'capitals', 'flyers', 'devils', 'islanders', 'canadiens', 'senators', 'maple leafs', 'lightning', 'panthers', 'hurricanes', 'predators', 'blue jackets', 'red wings', 'blackhawks', 'wild', 'blues', 'jets', 'avalanche', 'stars', 'coyotes', 'ducks', 'kings', 'sharks', 'kraken', 'golden knights', 'flames', 'oilers', 'canucks'].some(t => searchHome.includes(t) || searchAway.includes(t));
 
-  const isNFL = league?.toLowerCase().includes('nfl') || 
+  const isNFL = sportLower.includes('americanfootball') || sportLower.includes('nfl') || leagueLower.includes('nfl') || 
     ['chiefs', 'bills', 'ravens', 'bengals', 'dolphins', 'patriots', 'jets', 'steelers', 'browns', 'titans', 'colts', 'jaguars', 'texans', 'broncos', 'raiders', 'chargers', 'eagles', 'cowboys', 'giants', 'commanders', 'lions', 'packers', 'vikings', 'bears', 'buccaneers', 'saints', 'falcons', 'panthers', 'seahawks', '49ers', 'cardinals', 'rams'].some(t => searchHome.includes(t) || searchAway.includes(t));
 
   try {
@@ -554,8 +556,12 @@ export async function GET(request: NextRequest) {
       
       if (!homeTeam || !awayTeam) continue;
 
-      // Get match result (pass league for sport detection)
-      const result = await getMatchResult(homeTeam, awayTeam, pred.kickoff, pred.league);
+      console.log(`[Track-Predictions] Checking: ${pred.matchName} (${pred.sport})`);
+      
+      // Get match result (pass sport and league for sport detection)
+      const result = await getMatchResult(homeTeam, awayTeam, pred.kickoff, pred.league, pred.sport);
+      
+      console.log(`[Track-Predictions] Result for ${pred.matchName}: ${result ? `${result.homeScore}-${result.awayScore}` : 'NOT FOUND'}`);
 
       if (result && result.completed && pred.prediction) {
         const evaluation = evaluatePrediction(
