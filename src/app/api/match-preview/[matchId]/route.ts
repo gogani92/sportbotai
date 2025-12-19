@@ -619,31 +619,38 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         });
         console.log(`[Match-Preview] Analysis saved for user ${userId}`);
         
-        // Also create PredictionOutcome for tracking accuracy
+        // Also create Prediction for tracking accuracy
         // Check if prediction already exists for this match
-        const existingPrediction = await prisma.predictionOutcome.findFirst({
+        const existingPrediction = await prisma.prediction.findFirst({
           where: {
-            matchRef,
+            matchName: matchRef,
+            source: 'MATCH_ANALYSIS',
             createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
           },
         });
         
         if (!existingPrediction) {
           const predictedScenario = favored === 'home' 
-            ? `${matchInfo.homeTeam} win` 
+            ? `Home Win - ${matchInfo.homeTeam}` 
             : favored === 'away' 
-              ? `${matchInfo.awayTeam} win` 
+              ? `Away Win - ${matchInfo.awayTeam}` 
               : 'Draw';
           
-          await prisma.predictionOutcome.create({
+          await prisma.prediction.create({
             data: {
-              matchRef,
+              matchId: matchRef.replace(/\s+/g, '_').toLowerCase(),
+              matchName: matchRef,
+              sport: matchInfo.sport || 'unknown',
               league: matchInfo.league || 'Unknown',
-              matchDate,
-              narrativeAngle: aiAnalysis?.story?.narrative?.substring(0, 500) || `Analysis: ${matchRef}`,
-              predictedScenario,
-              confidenceLevel: confidence === 'strong' ? 85 : confidence === 'moderate' ? 65 : 45,
+              kickoff: matchDate,
+              type: 'MATCH_RESULT',
+              prediction: predictedScenario,
+              reasoning: aiAnalysis?.story?.narrative?.substring(0, 500) || `Analysis: ${matchRef}`,
+              conviction: confidence === 'strong' ? 8 : confidence === 'moderate' ? 6 : 4,
+              odds: marketIntel?.marketOdds?.home || null,
+              impliedProb: marketIntel?.impliedProbability?.home || null,
               source: 'MATCH_ANALYSIS',
+              outcome: 'PENDING',
             },
           });
           console.log(`[Match-Preview] Prediction saved: ${matchRef} -> ${predictedScenario}`);

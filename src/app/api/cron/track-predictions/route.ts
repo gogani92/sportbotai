@@ -333,9 +333,10 @@ export async function GET(request: NextRequest) {
 
     for (const post of recentPosts) {
       // Check if prediction already exists for this match
-      const existingPrediction = await prisma.predictionOutcome.findFirst({
+      const existingPrediction = await prisma.prediction.findFirst({
         where: {
-          matchRef: post.matchRef || '',
+          matchName: post.matchRef || '',
+          source: 'AGENT_POST',
           createdAt: {
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Within last week
           },
@@ -359,15 +360,20 @@ export async function GET(request: NextRequest) {
 
       if (prediction) {
         try {
-          const newPrediction = await prisma.predictionOutcome.create({
+          const matchName = post.matchRef || `${post.homeTeam} vs ${post.awayTeam}`;
+          const newPrediction = await prisma.prediction.create({
             data: {
-              matchRef: post.matchRef || `${post.homeTeam} vs ${post.awayTeam}`,
-              league: post.league,
-              matchDate: new Date(), // Will be updated when we get actual match time
-              narrativeAngle: prediction.narrativeAngle,
-              predictedScenario: prediction.predictedScenario,
-              confidenceLevel: prediction.confidenceLevel,
+              matchId: matchName.replace(/\s+/g, '_').toLowerCase(),
+              matchName,
+              sport: 'soccer', // Default, can be improved
+              league: post.league || 'Unknown',
+              kickoff: new Date(), // Will be updated when we get actual match time
+              type: 'MATCH_RESULT',
+              prediction: prediction.predictedScenario,
+              reasoning: prediction.narrativeAngle,
+              conviction: Math.round(prediction.confidenceLevel / 10), // Convert 0-100 to 1-10
               source: 'AGENT_POST',
+              outcome: 'PENDING',
             },
           });
           
@@ -414,10 +420,11 @@ export async function GET(request: NextRequest) {
     for (const analysis of recentAnalyses) {
       const matchRef = `${analysis.homeTeam} vs ${analysis.awayTeam}`;
       
-      // Check if prediction already exists
-      const existingPrediction = await prisma.predictionOutcome.findFirst({
+      // Check if prediction already exists (skip - match-preview already creates it)
+      const existingPrediction = await prisma.prediction.findFirst({
         where: {
-          matchRef,
+          matchName: matchRef,
+          source: 'MATCH_ANALYSIS',
           createdAt: {
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
           },
@@ -436,15 +443,19 @@ export async function GET(request: NextRequest) {
 
       if (prediction) {
         try {
-          await prisma.predictionOutcome.create({
+          await prisma.prediction.create({
             data: {
-              matchRef,
-              league: analysis.league,
-              matchDate: analysis.matchDate || new Date(),
-              narrativeAngle: `Market Edge Analysis: ${analysis.bestValueSide} identified as best value`,
-              predictedScenario: prediction.predictedScenario,
-              confidenceLevel: prediction.confidenceLevel,
+              matchId: matchRef.replace(/\s+/g, '_').toLowerCase(),
+              matchName: matchRef,
+              sport: analysis.sport || 'soccer',
+              league: analysis.league || 'Unknown',
+              kickoff: analysis.matchDate || new Date(),
+              type: 'MATCH_RESULT',
+              prediction: prediction.predictedScenario,
+              reasoning: `Market Edge Analysis: ${analysis.bestValueSide} identified as best value`,
+              conviction: Math.round(prediction.confidenceLevel / 10),
               source: 'MATCH_ANALYSIS',
+              outcome: 'PENDING',
             },
           });
           results.newAnalysisPredictions++;
@@ -461,52 +472,50 @@ export async function GET(request: NextRequest) {
     console.log('[Track-Predictions] Step 3: Checking outcomes for pending predictions...');
 
     // Get predictions without outcomes from past matches
-    const pendingPredictions = await prisma.predictionOutcome.findMany({
+    const pendingPredictions = await prisma.prediction.findMany({
       where: {
-        wasAccurate: null,
-        matchDate: {
+        outcome: 'PENDING',
+        kickoff: {
           lte: new Date(), // Match should have started
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Within last week
         },
       },
       take: 20,
-      orderBy: { matchDate: 'asc' },
+      orderBy: { kickoff: 'asc' },
     });
 
     console.log(`[Track-Predictions] Found ${pendingPredictions.length} pending predictions`);
 
-    for (const prediction of pendingPredictions) {
-      // Parse teams from matchRef
-      const [homeTeam, awayTeam] = prediction.matchRef.split(' vs ').map(t => t.trim());
+    for (const pred of pendingPredictions) {
+      // Parse teams from matchName
+      const [homeTeam, awayTeam] = pred.matchName.split(' vs ').map(t => t.trim());
       
       if (!homeTeam || !awayTeam) continue;
 
       // Get match result (pass league for sport detection)
-      const result = await getMatchResult(homeTeam, awayTeam, prediction.matchDate, prediction.league);
+      const result = await getMatchResult(homeTeam, awayTeam, pred.kickoff, pred.league);
 
-      if (result && result.completed && prediction.predictedScenario) {
+      if (result && result.completed && pred.prediction) {
         const evaluation = evaluatePrediction(
-          prediction.predictedScenario,
+          pred.prediction,
           result.homeScore,
           result.awayScore
         );
 
         try {
-          await prisma.predictionOutcome.update({
-            where: { id: prediction.id },
+          await prisma.prediction.update({
+            where: { id: pred.id },
             data: {
               actualResult: evaluation.actualResult,
               actualScore: `${result.homeScore}-${result.awayScore}`,
-              wasAccurate: evaluation.wasAccurate,
-              learningNote: evaluation.wasAccurate
-                ? 'Prediction validated successfully'
-                : `Prediction incorrect. Predicted: ${prediction.predictedScenario}, Actual: ${evaluation.actualResult}`,
+              outcome: evaluation.wasAccurate ? 'HIT' : 'MISS',
+              validatedAt: new Date(),
             },
           });
           results.updatedOutcomes++;
-          console.log(`[Track-Predictions] Updated outcome for ${prediction.matchRef}: ${evaluation.wasAccurate ? 'CORRECT' : 'WRONG'}`);
+          console.log(`[Track-Predictions] Updated outcome for ${pred.matchName}: ${evaluation.wasAccurate ? 'HIT' : 'MISS'}`);
         } catch (error) {
-          results.errors.push(`Failed to update outcome for ${prediction.matchRef}`);
+          results.errors.push(`Failed to update outcome for ${pred.matchName}`);
         }
       }
     }

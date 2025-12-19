@@ -55,16 +55,16 @@ interface ChatAnalytics {
 
 interface PredictionRecord {
   id: string;
-  matchRef: string;
+  matchName: string;
   league: string | null;
-  matchDate: Date;
-  narrativeAngle: string | null;
-  predictedScenario: string | null;
-  confidenceLevel: number | null;
+  kickoff: Date;
+  reasoning: string | null;
+  prediction: string | null;
+  conviction: number | null;
   actualResult: string | null;
   actualScore: string | null;
-  wasAccurate: boolean | null;
-  learningNote: string | null;
+  outcome: string;
+  source: string;
   createdAt: Date;
 }
 
@@ -741,12 +741,12 @@ export default function AdminDashboard({
                   <div key={pred.id} className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-text-primary truncate">{pred.matchRef}</div>
-                        <div className="text-xs text-text-muted">{pred.league || 'Unknown'} • {formatDate(new Date(pred.matchDate))}</div>
+                        <div className="font-medium text-text-primary truncate">{pred.matchName}</div>
+                        <div className="text-xs text-text-muted">{pred.league || 'Unknown'} • {formatDate(new Date(pred.kickoff))}</div>
                       </div>
-                      {pred.wasAccurate === null ? (
+                      {pred.outcome === 'PENDING' ? (
                         <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-400 whitespace-nowrap">⏳ Pending</span>
-                      ) : pred.wasAccurate ? (
+                      ) : pred.outcome === 'HIT' ? (
                         <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400 whitespace-nowrap">✓ Correct</span>
                       ) : (
                         <span className="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400 whitespace-nowrap">✗ Wrong</span>
@@ -755,7 +755,7 @@ export default function AdminDashboard({
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <div className="text-xs text-text-muted">Predicted</div>
-                        <div className="text-text-primary">{pred.predictedScenario || '-'}</div>
+                        <div className="text-text-primary">{pred.prediction || '-'}</div>
                       </div>
                       <div>
                         <div className="text-xs text-text-muted">Actual</div>
@@ -765,15 +765,15 @@ export default function AdminDashboard({
                         </div>
                       </div>
                     </div>
-                    {pred.confidenceLevel && (
+                    {pred.conviction && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-text-muted">Confidence:</span>
+                        <span className="text-xs text-text-muted">Conviction:</span>
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          pred.confidenceLevel >= 7 ? 'bg-green-500/20 text-green-400' :
-                          pred.confidenceLevel >= 4 ? 'bg-yellow-500/20 text-yellow-400' :
+                          pred.conviction >= 7 ? 'bg-green-500/20 text-green-400' :
+                          pred.conviction >= 4 ? 'bg-yellow-500/20 text-yellow-400' :
                           'bg-gray-500/20 text-gray-400'
                         }`}>
-                          {pred.confidenceLevel}/10
+                          {pred.conviction}/10
                         </span>
                       </div>
                     )}
@@ -799,41 +799,41 @@ export default function AdminDashboard({
                     {predictionStats.recentPredictions.map((pred) => (
                       <tr key={pred.id} className="hover:bg-bg-tertiary/50">
                         <td className="px-4 py-3">
-                          <div className="text-sm font-medium text-text-primary">{pred.matchRef}</div>
-                          {pred.narrativeAngle && (
-                            <div className="text-xs text-text-muted truncate max-w-[200px]">{pred.narrativeAngle}</div>
+                          <div className="text-sm font-medium text-text-primary">{pred.matchName}</div>
+                          {pred.reasoning && (
+                            <div className="text-xs text-text-muted truncate max-w-[200px]">{pred.reasoning}</div>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-text-secondary">{pred.league || '-'}</td>
                         <td className="px-4 py-3">
-                          <div className="text-sm text-text-primary">{pred.predictedScenario || '-'}</div>
+                          <div className="text-sm text-text-primary">{pred.prediction || '-'}</div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm text-text-primary">{pred.actualResult || '-'}</div>
                           {pred.actualScore && <div className="text-xs text-text-muted">{pred.actualScore}</div>}
                         </td>
                         <td className="px-4 py-3">
-                          {pred.confidenceLevel && (
+                          {pred.conviction && (
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              pred.confidenceLevel >= 7 ? 'bg-green-500/20 text-green-400' :
-                              pred.confidenceLevel >= 4 ? 'bg-yellow-500/20 text-yellow-400' :
+                              pred.conviction >= 7 ? 'bg-green-500/20 text-green-400' :
+                              pred.conviction >= 4 ? 'bg-yellow-500/20 text-yellow-400' :
                               'bg-gray-500/20 text-gray-400'
                             }`}>
-                              {pred.confidenceLevel}/10
+                              {pred.conviction}/10
                             </span>
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          {pred.wasAccurate === null ? (
+                          {pred.outcome === 'PENDING' ? (
                             <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-400">Pending</span>
-                          ) : pred.wasAccurate ? (
+                          ) : pred.outcome === 'HIT' ? (
                             <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400">✓ Correct</span>
                           ) : (
                             <span className="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400">✗ Wrong</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-text-secondary">
-                          {formatDate(new Date(pred.matchDate))}
+                          {formatDate(new Date(pred.kickoff))}
                         </td>
                       </tr>
                     ))}

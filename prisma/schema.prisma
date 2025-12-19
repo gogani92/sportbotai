@@ -320,7 +320,7 @@ model SportExpertise {
 }
 
 model Prediction {
-  id                String      @id @default(cuid())
+  id                String           @id @default(cuid())
   matchId           String
   matchName         String
   sport             String
@@ -332,17 +332,20 @@ model Prediction {
   conviction        Int
   odds              Float?
   impliedProb       Float?
+  source            PredictionSource @default(PRE_ANALYZE)
   tweetId           String?
   validationTweetId String?
-  outcome           CallOutcome @default(PENDING)
+  outcome           CallOutcome      @default(PENDING)
   actualResult      String?
+  actualScore       String?
   validatedAt       DateTime?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([matchId])
   @@index([outcome])
   @@index([sport])
+  @@index([source])
   @@index([createdAt])
   @@index([conviction])
 }
@@ -454,6 +457,12 @@ enum CallOutcome {
   MISS
   PUSH
   VOID
+}
+
+enum PredictionSource {
+  PRE_ANALYZE
+  MATCH_ANALYSIS
+  AGENT_POST
 }
 
 enum PostCategory {

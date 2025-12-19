@@ -84,37 +84,36 @@ export async function GET(request: NextRequest) {
     // Try to fetch prediction outcomes for these analyses to show accuracy
     const analysesWithOutcomes = await Promise.all(
       analyses.map(async (analysis) => {
-        // Build matchRef pattern to find matching prediction
+        // Build matchName pattern to find matching prediction
         const matchRef = `${analysis.homeTeam} vs ${analysis.awayTeam}`;
-        const altMatchRef = `${analysis.awayTeam} vs ${analysis.homeTeam}`;
         
         try {
-          const prediction = await prisma.predictionOutcome.findFirst({
+          const prediction = await prisma.prediction.findFirst({
             where: {
               OR: [
-                { matchRef: { contains: analysis.homeTeam } },
-                { matchRef: { contains: analysis.awayTeam } },
+                { matchName: { contains: analysis.homeTeam } },
+                { matchName: { contains: analysis.awayTeam } },
               ],
-              matchDate: analysis.matchDate ? {
+              kickoff: analysis.matchDate ? {
                 gte: new Date(new Date(analysis.matchDate).getTime() - 24 * 60 * 60 * 1000),
                 lte: new Date(new Date(analysis.matchDate).getTime() + 24 * 60 * 60 * 1000),
               } : undefined,
             },
             select: {
-              wasAccurate: true,
+              outcome: true,
               actualResult: true,
               actualScore: true,
-              predictedScenario: true,
+              prediction: true,
             },
           });
           
           return {
             ...analysis,
             predictionOutcome: prediction ? {
-              wasAccurate: prediction.wasAccurate,
+              wasAccurate: prediction.outcome === 'HIT',
               actualResult: prediction.actualResult,
               actualScore: prediction.actualScore,
-              predictedScenario: prediction.predictedScenario,
+              predictedScenario: prediction.prediction,
             } : null,
           };
         } catch {

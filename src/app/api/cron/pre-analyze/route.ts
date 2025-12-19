@@ -484,6 +484,7 @@ export async function GET(request: NextRequest) {
                   conviction,
                   odds: predictedOdds,
                   impliedProb: impliedProb * 100,
+                  source: 'PRE_ANALYZE',
                   outcome: 'PENDING',
                 },
                 update: {
