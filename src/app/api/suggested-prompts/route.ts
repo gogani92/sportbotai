@@ -22,7 +22,7 @@ interface CachedPrompts {
 }
 
 let promptsCache: CachedPrompts | null = null;
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes (refresh more often for dynamic content)
 
 // ============================================
 // STATIC FALLBACK PROMPTS (rotating pool)
@@ -63,16 +63,16 @@ const STATIC_PROMPTS = {
 // ============================================
 
 /**
- * Get a random match from today's fixtures
+ * Get upcoming matches (next 24 hours)
  */
-async function getTodaysMatchPrompt(): Promise<string | null> {
+async function getUpcomingMatchPrompts(): Promise<string[]> {
   try {
     if (!theOddsClient.isConfigured()) {
       console.log('[Suggested Prompts] Odds API not configured');
-      return null;
+      return [];
     }
 
-    // Priority sports to check for today's matches
+    // Priority sports to check
     const prioritySports = [
       'soccer_epl',
       'soccer_spain_la_liga', 
@@ -84,27 +84,34 @@ async function getTodaysMatchPrompt(): Promise<string | null> {
       'soccer_uefa_champs_league',
     ];
 
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const now = new Date();
+    const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const prompts: string[] = [];
 
-    // Check each sport for today's events
+    // Check each sport for upcoming events
     for (const sportKey of prioritySports) {
+      if (prompts.length >= 3) break; // Get up to 3 match prompts
+      
       try {
         const { data: events } = await theOddsClient.getEvents(sportKey);
         
-        // Filter to today's matches only
-        const todaysMatches = events.filter(event => {
+        // Filter to upcoming matches (next 24 hours, not started yet)
+        const upcomingMatches = events.filter(event => {
           const matchDate = new Date(event.commence_time);
-          return matchDate >= today && matchDate < tomorrow;
+          return matchDate > now && matchDate < next24Hours;
         });
 
-        if (todaysMatches.length > 0) {
-          // Pick a random match from today
-          const randomMatch = todaysMatches[Math.floor(Math.random() * todaysMatches.length)];
-          const prompt = `Analyze ${randomMatch.home_team} vs ${randomMatch.away_team}`;
-          console.log(`[Suggested Prompts] Today's match: ${prompt}`);
-          return prompt;
+        if (upcomingMatches.length > 0) {
+          // Sort by kickoff time (soonest first)
+          upcomingMatches.sort((a, b) => 
+            new Date(a.commence_time).getTime() - new Date(b.commence_time).getTime()
+          );
+          
+          // Take the first upcoming match from this sport
+          const match = upcomingMatches[0];
+          const prompt = `Analyze ${match.home_team} vs ${match.away_team}`;
+          prompts.push(prompt);
+          console.log(`[Suggested Prompts] Upcoming match: ${prompt}`);
         }
       } catch (err) {
         console.error(`[Suggested Prompts] Error fetching ${sportKey}:`, err);
@@ -112,11 +119,14 @@ async function getTodaysMatchPrompt(): Promise<string | null> {
       }
     }
 
-    console.log('[Suggested Prompts] No matches found for today');
-    return null;
+    if (prompts.length === 0) {
+      console.log('[Suggested Prompts] No upcoming matches found');
+    }
+    
+    return prompts;
   } catch (error) {
-    console.error('[Suggested Prompts] Error getting today\'s match:', error);
-    return null;
+    console.error('[Suggested Prompts] Error getting upcoming matches:', error);
+    return [];
   }
 }
 
@@ -204,22 +214,20 @@ function shuffleArray<T>(array: T[]): T[] {
 async function buildPrompts(): Promise<string[]> {
   const prompts: string[] = [];
 
-  // 1. Get today's match (will be first prompt)
-  const todaysMatch = await getTodaysMatchPrompt();
-  if (todaysMatch) {
-    prompts.push(todaysMatch);
-  }
+  // 1. Get upcoming match prompts (top priority - real matches happening soon)
+  const upcomingMatches = await getUpcomingMatchPrompts();
+  prompts.push(...upcomingMatches);
+  console.log(`[Suggested Prompts] Got ${upcomingMatches.length} upcoming match prompts`);
 
-  // 2. Try to get trending topics
+  // 2. Try to get trending topics from Perplexity
   const trending = await getTrendingTopics();
+  console.log(`[Suggested Prompts] Got ${trending.length} trending topics`);
   
-  // 3. Add trending topics (up to 3)
-  const usableTrending = trending.slice(0, 3);
+  // 3. Add trending topics (up to 2, to leave room for variety)
+  const usableTrending = trending.slice(0, 2);
   prompts.push(...usableTrending);
 
   // 4. Fill remaining with rotating static prompts
-  const neededCount = 10 - prompts.length;
-  
   // Mix from different categories
   const allStatic = [
     ...shuffleArray(STATIC_PROMPTS.general).slice(0, 3),
@@ -247,6 +255,7 @@ async function buildPrompts(): Promise<string[]> {
     }
   }
 
+  console.log(`[Suggested Prompts] Final prompts (${prompts.length}):`, prompts.slice(0, 4));
   return prompts.slice(0, 10);
 }
 
