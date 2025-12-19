@@ -277,8 +277,9 @@ async function runQuickAnalysis(
 MARKET: ${odds.home} / ${odds.away}${odds.draw ? ` / ${odds.draw}` : ''}
 FORM: ${homeTeam} ${homeFormStr} | ${awayTeam} ${awayFormStr}
 SIGNALS: ${signalsSummary}
+INJURIES: No injury data available - assume full squads
 
-Be AIXBT. Sharp takes. Back them with numbers.
+Be AIXBT. Sharp takes. Back them with numbers FROM THE DATA ABOVE ONLY.
 
 JSON output:
 {
@@ -289,17 +290,22 @@ JSON output:
     "THE EDGE: [team] because [stat]. Not close.",
     "MARKET MISS: [what odds undervalue]. The data screams [X].",
     "THE PATTERN: [H2H/streak with numbers]. This isn't random.",
-    "THE RISK: [caveat]. Don't ignore this."
+    "THE RISK: [caveat based on form/market data]. Don't ignore this."
   ],
   "gameFlow": "Sharp take on how this plays out. Cite the numbers.",
-  "riskFactors": ["Primary risk", "Secondary if relevant"]
+  "riskFactors": ["Risk based on form/market/H2H data only", "Secondary if relevant"]
 }
+
+CRITICAL RULES:
+- ONLY use data provided above. Do NOT invent injuries, suspensions, or lineup info.
+- riskFactors must be based on form patterns, market odds, or H2H - NOT made-up injuries.
+- If you don't have injury data, don't mention injuries.
 
 SNAPSHOT VIBE:
 - First bullet: State your pick. Be confident. Give the stat.
 - Second bullet: What's the market sleeping on? Find the gap.
 - Third bullet: Pattern recognition. H2H, streaks, momentum.
-- Fourth bullet: What could wreck this thesis? Be honest.
+- Fourth bullet: What could wreck this thesis? Use form/momentum risks, not imagined injuries.
 
 NO GENERIC TAKES. If you can't find an edge, say so.
 ${!hasDraw ? 'NO DRAWS in this sport. Pick a winner.' : ''}`;

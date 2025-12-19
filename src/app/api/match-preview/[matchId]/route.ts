@@ -1272,11 +1272,15 @@ function formatEnrichedContext(data: {
   if (homeAbsences.length > 0) {
     const names = homeAbsences.map(i => i.player).join(', ');
     lines.push(`${data.homeTeam} missing: ${names}`);
+  } else {
+    lines.push(`${data.homeTeam} injuries: None reported`);
   }
   
   if (awayAbsences.length > 0) {
     const names = awayAbsences.map(i => i.player).join(', ');
     lines.push(`${data.awayTeam} missing: ${names}`);
+  } else {
+    lines.push(`${data.awayTeam} injuries: None reported`);
   }
   
   return lines.length > 0 ? lines.join('\n') : 'No detailed match data available.';
@@ -1380,11 +1384,18 @@ DATA CITATION RULES:
 - Include H2H records when available (e.g., "5-2 in last 7 meetings")
 - If data is limited, say so directly: "Limited data available"
 
+CRITICAL - INJURIES RULE:
+- ONLY mention injuries/absences that are explicitly listed in the MATCH CONTEXT above
+- If context says "injuries: None reported" → do NOT mention injuries in riskFactors or snapshot
+- Do NOT invent injury information based on your general knowledge
+- riskFactors should focus on form trends, market odds, H2H patterns - NOT imagined absences
+
 NEVER:
 - Give betting advice or tips
 - Make generic claims without data backing
 - Use hollow phrases: "capitalize on weaknesses", "clinical finishing", "likely to dominate"
 - Say "expected to be fast-paced" without citing scoring rates
+- Mention injuries that aren't in the provided data
 
 ALWAYS:
 - Lead with the strongest statistical edge
