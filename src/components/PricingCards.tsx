@@ -1,8 +1,8 @@
 /**
  * Pricing Cards component
  * 
- * Displays three pricing plans: FREE, PRO, PREMIUM
- * With Stripe checkout integration (skeleton).
+ * Displays three pricing plans: FREE, PRO (with toggle), PREMIUM (with toggle)
+ * With Stripe checkout integration.
  */
 
 'use client';
@@ -15,37 +15,28 @@ import { useRouter } from 'next/navigation';
 interface PricingPlan {
   id: string;
   name: string;
-  price: string;
-  priceId: string; // Stripe Price ID - CHANGE THIS after creating products in Stripe
+  monthlyPrice: string;
+  yearlyPrice: string;
+  monthlyPriceId: string;
+  yearlyPriceId: string;
   description: string;
+  yearlyDescription: string;
   features: string[];
   highlighted?: boolean;
   buttonText: string;
 }
 
-// Plans definition - priceId will be resolved server-side
+// Plans definition
 const plans: PricingPlan[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: '$0',
-    priceId: '', // Free plan has no Stripe checkout
-    description: 'Try it once for free',
-    features: [
-      '1 match analysis',
-      '1 AI chat message',
-      'Basic sports (soccer)',
-      'Standard AI analysis',
-      'Email support',
-    ],
-    buttonText: 'Start Free',
-  },
   {
     id: 'pro',
     name: 'Pro',
-    price: '$19.99',
-    priceId: 'pro', // Will be resolved to actual Price ID server-side
+    monthlyPrice: '$19.99',
+    yearlyPrice: '$149',
+    monthlyPriceId: 'pro',
+    yearlyPriceId: 'pro-yearly',
     description: 'For serious analysts',
+    yearlyDescription: 'Save $90/year',
     features: [
       '10 analyses per day',
       '50 AI chat messages per day',
@@ -60,27 +51,14 @@ const plans: PricingPlan[] = [
     buttonText: 'Upgrade to Pro',
   },
   {
-    id: 'pro-yearly',
-    name: 'Pro Yearly',
-    price: '$149',
-    priceId: 'pro-yearly', // Will be resolved to actual Price ID server-side
-    description: 'Save $90/year',
-    features: [
-      'Everything in Pro',
-      '10 analyses per day',
-      '50 AI chat messages per day',
-      'All sports',
-      'Analysis history (30 days)',
-      'Billed annually',
-    ],
-    buttonText: 'Pro Annual',
-  },
-  {
     id: 'premium',
     name: 'Premium',
-    price: '$49.99',
-    priceId: 'premium', // Will be resolved to actual Price ID server-side
+    monthlyPrice: '$49.99',
+    yearlyPrice: '$290',
+    monthlyPriceId: 'premium',
+    yearlyPriceId: 'premium-yearly',
     description: 'Unlimited everything + Alerts',
+    yearlyDescription: 'Save $310/year (52% off)',
     features: [
       'Unlimited analyses',
       'Unlimited AI chat messages',
@@ -93,49 +71,43 @@ const plans: PricingPlan[] = [
     ],
     buttonText: 'Go Premium',
   },
-  {
-    id: 'premium-yearly',
-    name: 'Premium Yearly',
-    price: '$290',
-    priceId: 'premium-yearly', // Will be resolved to actual Price ID server-side
-    description: 'Best value - Save $310/year',
-    features: [
-      'Everything in Premium',
-      'Unlimited analyses',
-      'Unlimited AI chat messages',
-      'Market Alerts (value edges)',
-      'Advanced stats & trends',
-      'Save 52% vs monthly',
-    ],
-    buttonText: 'Get Annual Plan',
-  },
 ];
 
 export default function PricingCards() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Billing period toggles - yearly is default (true = yearly)
+  const [proYearly, setProYearly] = useState(true);
+  const [premiumYearly, setPremiumYearly] = useState(true);
   const { data: session } = useSession();
   const router = useRouter();
 
+  // Get the toggle state for a plan
+  const isYearly = (planId: string) => {
+    if (planId === 'pro') return proYearly;
+    if (planId === 'premium') return premiumYearly;
+    return true;
+  };
+
+  // Toggle handler
+  const toggleBilling = (planId: string) => {
+    if (planId === 'pro') setProYearly(!proYearly);
+    if (planId === 'premium') setPremiumYearly(!premiumYearly);
+  };
+
   // Function for Stripe checkout
   const handleCheckout = async (plan: PricingPlan) => {
-    // Free plan - go to register or analyzer
-    if (plan.id === 'free') {
-      if (session) {
-        router.push('/analyzer');
-      } else {
-        router.push('/register');
-      }
-      return;
-    }
-
     // Must be logged in for paid plans
     if (!session) {
       router.push('/login?callbackUrl=/pricing');
       return;
     }
 
-    setLoading(plan.id);
+    const yearly = isYearly(plan.id);
+    const priceId = yearly ? plan.yearlyPriceId : plan.monthlyPriceId;
+    const checkoutId = `${plan.id}-${yearly ? 'yearly' : 'monthly'}`;
+
+    setLoading(checkoutId);
     setError(null);
 
     try {
@@ -145,8 +117,8 @@ export default function PricingCards() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: plan.priceId,
-          planName: plan.name,
+          priceId: priceId,
+          planName: `${plan.name} ${yearly ? 'Yearly' : 'Monthly'}`,
         }),
       });
 
@@ -167,118 +139,172 @@ export default function PricingCards() {
     }
   };
 
+  // Handle free plan
+  const handleFreePlan = () => {
+    if (session) {
+      router.push('/analyzer');
+    } else {
+      router.push('/register');
+    }
+  };
+
   return (
     <div className="relative">
-      {/* Horizontal scroll container on mobile */}
-      <div className="flex xl:grid xl:grid-cols-5 gap-3 sm:gap-4 xl:gap-5 max-w-7xl mx-auto overflow-x-auto pb-4 xl:pb-0 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 xl:mx-0 xl:px-0">
-        {plans.map((plan) => {
-          const isPremium = plan.id.includes('premium');
-          
-          return (
-          <div
-            key={plan.id}
-            id={plan.id}
-            className={`flex-shrink-0 w-[80vw] xs:w-[70vw] sm:w-[280px] lg:w-auto snap-center rounded-card p-4 sm:p-5 relative ${
-              plan.highlighted
-                ? 'bg-bg-card border-2 border-primary shadow-glow-primary lg:scale-105'
-                : isPremium
-                ? 'bg-gradient-to-b from-slate-800/50 to-slate-900/50 border-2 border-slate-400/30 shadow-[0_0_20px_rgba(148,163,184,0.15)]'
-                : 'bg-bg-card border border-divider'
-            }`}
-          >
-            {/* Popular badge */}
-            {plan.highlighted && (
-              <div className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2 bg-primary text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-1 rounded-full whitespace-nowrap">
-                MOST POPULAR
-              </div>
-            )}
-            
-            {/* Premium badge */}
-            {isPremium && !plan.highlighted && (
-              <div className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900 text-xs sm:text-sm font-bold px-3 sm:px-4 py-1 rounded-full whitespace-nowrap">
-                {plan.id === 'premium-yearly' ? 'BEST VALUE' : 'PREMIUM'}
-              </div>
-            )}
-
-            {/* Plan header */}
-            <div className="text-center mb-5 sm:mb-6 pt-2 sm:pt-0">
-              <h3 className={`text-lg sm:text-xl font-bold mb-2 ${isPremium ? 'text-slate-200' : 'text-white'}`}>{plan.name}</h3>
-              <div className="mb-2">
-                <span className={`text-3xl sm:text-4xl font-bold ${
-                  plan.highlighted ? 'text-primary' : isPremium ? 'text-slate-200' : 'text-white'
-                }`}>
-                  {plan.price}
-                </span>
-                <span className={`text-sm ${isPremium ? 'text-slate-400' : 'text-gray-400'}`}>{plan.id.includes('yearly') ? '/year' : plan.id === 'free' ? '' : '/month'}</span>
-              </div>
-              <p className={`text-xs sm:text-sm ${isPremium ? 'text-slate-400' : 'text-gray-400'}`}>{plan.description}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+        {/* Free Plan Card */}
+        <div className="rounded-card p-5 sm:p-6 bg-bg-card border border-divider">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold mb-2 text-white">Free</h3>
+            <div className="mb-2">
+              <span className="text-4xl font-bold text-white">$0</span>
             </div>
+            <p className="text-sm text-gray-400">Try it once for free</p>
+          </div>
 
-            {/* Features list */}
-            <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-              {plan.features.map((feature, index) => (
-                <li key={index} className="flex items-start gap-2.5 sm:gap-3">
-                  <svg
-                    className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 ${
-                      plan.highlighted ? 'text-primary' : isPremium ? 'text-slate-300' : 'text-accent'
-                    }`}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className={`text-xs sm:text-sm ${isPremium ? 'text-slate-300' : 'text-gray-300'}`}>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* CTA Button - Larger touch target */}
-            <button
-              onClick={() => handleCheckout(plan)}
-              disabled={loading === plan.id}
-              className={`w-full py-3.5 sm:py-3 px-6 rounded-btn font-semibold transition-all duration-200 touch-manipulation active:scale-[0.98] min-h-[48px] ${
-                plan.highlighted
-                  ? 'bg-primary text-white hover:bg-primary/80'
-                  : isPremium
-                  ? 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900 hover:from-slate-200 hover:to-slate-300'
-                  : 'bg-bg-elevated text-white hover:bg-bg-elevated/80 border border-divider'
-              } ${loading === plan.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-            {loading === plan.id ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
+          <ul className="space-y-3 mb-8">
+            {['1 match analysis', '1 AI chat message', 'Basic sports (soccer)', 'Standard AI analysis', 'Email support'].map((feature, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                Loading...
-              </span>
-            ) : (
-              plan.buttonText
-            )}
+                <span className="text-sm text-gray-300">{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <button
+            onClick={handleFreePlan}
+            className="w-full py-3 px-6 rounded-btn font-semibold transition-all duration-200 bg-bg-elevated text-white hover:bg-bg-elevated/80 border border-divider min-h-[48px]"
+          >
+            Start Free
           </button>
         </div>
-      )})}
+
+        {/* Pro and Premium Cards with toggles */}
+        {plans.map((plan) => {
+          const isPremium = plan.id === 'premium';
+          const yearly = isYearly(plan.id);
+          const checkoutId = `${plan.id}-${yearly ? 'yearly' : 'monthly'}`;
+          
+          return (
+            <div
+              key={plan.id}
+              className={`rounded-card p-5 sm:p-6 relative ${
+                plan.highlighted
+                  ? 'bg-bg-card border-2 border-primary shadow-glow-primary md:scale-105'
+                  : isPremium
+                  ? 'bg-gradient-to-b from-slate-800/50 to-slate-900/50 border-2 border-slate-400/30 shadow-[0_0_20px_rgba(148,163,184,0.15)]'
+                  : 'bg-bg-card border border-divider'
+              }`}
+            >
+              {/* Badge */}
+              {plan.highlighted && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+                  MOST POPULAR
+                </div>
+              )}
+              {isPremium && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900 text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+                  BEST VALUE
+                </div>
+              )}
+
+              {/* Plan header */}
+              <div className="text-center mb-4 pt-2">
+                <h3 className={`text-xl font-bold mb-3 ${isPremium ? 'text-slate-200' : 'text-white'}`}>
+                  {plan.name}
+                </h3>
+
+                {/* Billing Toggle */}
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <span className={`text-sm ${yearly ? 'text-gray-500' : 'text-white font-medium'}`}>Monthly</span>
+                  <button
+                    onClick={() => toggleBilling(plan.id)}
+                    className={`relative w-14 h-7 rounded-full transition-colors duration-200 ${
+                      yearly 
+                        ? plan.highlighted ? 'bg-primary' : isPremium ? 'bg-slate-400' : 'bg-accent'
+                        : 'bg-gray-600'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                        yearly ? 'translate-x-8' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm ${yearly ? 'text-white font-medium' : 'text-gray-500'}`}>Yearly</span>
+                </div>
+
+                {/* Price */}
+                <div className="mb-2">
+                  <span className={`text-4xl font-bold ${
+                    plan.highlighted ? 'text-primary' : isPremium ? 'text-slate-200' : 'text-white'
+                  }`}>
+                    {yearly ? plan.yearlyPrice : plan.monthlyPrice}
+                  </span>
+                  <span className={`text-sm ${isPremium ? 'text-slate-400' : 'text-gray-400'}`}>
+                    {yearly ? '/year' : '/month'}
+                  </span>
+                </div>
+                <p className={`text-sm ${isPremium ? 'text-slate-400' : 'text-gray-400'}`}>
+                  {yearly ? plan.yearlyDescription : plan.description}
+                </p>
+              </div>
+
+              {/* Features list */}
+              <ul className="space-y-3 mb-8">
+                {plan.features.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <svg
+                      className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                        plan.highlighted ? 'text-primary' : isPremium ? 'text-slate-300' : 'text-accent'
+                      }`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span className={`text-sm ${isPremium ? 'text-slate-300' : 'text-gray-300'}`}>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA Button */}
+              <button
+                onClick={() => handleCheckout(plan)}
+                disabled={loading === checkoutId}
+                className={`w-full py-3 px-6 rounded-btn font-semibold transition-all duration-200 min-h-[48px] ${
+                  plan.highlighted
+                    ? 'bg-primary text-white hover:bg-primary/80'
+                    : isPremium
+                    ? 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900 hover:from-slate-200 hover:to-slate-300'
+                    : 'bg-bg-elevated text-white hover:bg-bg-elevated/80 border border-divider'
+                } ${loading === checkoutId ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {loading === checkoutId ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Loading...
+                  </span>
+                ) : (
+                  plan.buttonText
+                )}
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {/* Error message */}
       {error && (
-        <div className="col-span-full bg-danger/10 border border-danger/30 text-danger px-4 py-3 rounded-lg text-center mt-4">
+        <div className="bg-danger/10 border border-danger/30 text-danger px-4 py-3 rounded-lg text-center mt-4 max-w-5xl mx-auto">
           {error}
         </div>
       )}
