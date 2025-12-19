@@ -73,12 +73,17 @@ export default function PricingTeaser() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-7xl mx-auto">
-        {plans.map((plan) => (
+        {plans.map((plan) => {
+          const isPremium = plan.name.includes('Premium');
+          
+          return (
           <div 
             key={plan.name}
             className={`rounded-card p-6 transition-all duration-300 ${
               plan.highlighted 
                 ? 'bg-bg-elevated text-white ring-2 ring-accent shadow-glow-accent scale-105' 
+                : isPremium
+                ? 'bg-gradient-to-b from-slate-800/50 to-slate-900/50 border-2 border-slate-400/30 shadow-[0_0_20px_rgba(148,163,184,0.15)]'
                 : 'bg-bg-card border border-divider hover:border-primary/30'
             }`}
           >
@@ -88,21 +93,28 @@ export default function PricingTeaser() {
                 MOST POPULAR
               </span>
             )}
+            
+            {/* Premium Badge */}
+            {isPremium && !plan.highlighted && (
+              <span className="inline-block bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900 text-xs font-bold px-3 py-1 rounded-full mb-4">
+                {plan.name === 'Premium Yearly' ? 'BEST VALUE' : 'PREMIUM'}
+              </span>
+            )}
 
             {/* Plan Name */}
-            <h3 className={`text-xl font-bold mb-1 ${plan.highlighted ? 'text-white' : 'text-white'}`}>
+            <h3 className={`text-xl font-bold mb-1 ${isPremium ? 'text-slate-200' : 'text-white'}`}>
               {plan.name}
             </h3>
-            <p className={`text-sm mb-4 ${plan.highlighted ? 'text-gray-300' : 'text-gray-400'}`}>
+            <p className={`text-sm mb-4 ${plan.highlighted ? 'text-gray-300' : isPremium ? 'text-slate-400' : 'text-gray-400'}`}>
               {plan.description}
             </p>
 
             {/* Price */}
             <div className="mb-6">
-              <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-white'}`}>
+              <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : isPremium ? 'text-slate-200' : 'text-white'}`}>
                 {plan.price}
               </span>
-              <span className={`text-sm ${plan.highlighted ? 'text-gray-300' : 'text-gray-400'}`}>
+              <span className={`text-sm ${plan.highlighted ? 'text-gray-300' : isPremium ? 'text-slate-400' : 'text-gray-400'}`}>
                 {plan.period}
               </span>
             </div>
@@ -110,8 +122,12 @@ export default function PricingTeaser() {
             {/* Features */}
             <ul className="space-y-2 mb-6">
               {plan.features.map((feature, idx) => (
-                <li key={idx} className={`flex items-center gap-2 text-sm ${plan.highlighted ? 'text-gray-200' : 'text-gray-400'}`}>
-                  <svg className={`w-4 h-4 ${plan.highlighted ? 'text-accent' : 'text-success'}`} fill="currentColor" viewBox="0 0 20 20">
+                <li key={idx} className={`flex items-center gap-2 text-sm ${
+                  plan.highlighted ? 'text-gray-200' : isPremium ? 'text-slate-300' : 'text-gray-400'
+                }`}>
+                  <svg className={`w-4 h-4 ${
+                    plan.highlighted ? 'text-accent' : isPremium ? 'text-slate-300' : 'text-success'
+                  }`} fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   {feature}
@@ -125,13 +141,15 @@ export default function PricingTeaser() {
               className={`block text-center py-3 px-4 rounded-lg font-semibold transition-all ${
                 plan.highlighted 
                   ? 'bg-accent text-bg-primary hover:bg-success' 
+                  : isPremium
+                  ? 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900 hover:from-slate-200 hover:to-slate-300'
                   : 'bg-primary text-white hover:bg-primary/80'
               }`}
             >
               {plan.cta}
             </Link>
           </div>
-        ))}
+        )})}
       </div>
 
       <div className="text-center mt-10">
