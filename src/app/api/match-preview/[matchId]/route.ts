@@ -315,56 +315,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       draws: enrichedData.h2hSummary?.draws || 0,
     };
 
-    console.log(`[Match-Preview] Stats prepared, calling AI analysis...`);
-    console.log(`[Match-Preview] homeStats:`, JSON.stringify(homeStats));
-    console.log(`[Match-Preview] awayStats:`, JSON.stringify(awayStats));
-    console.log(`[Match-Preview] h2h:`, JSON.stringify(h2h));
-
-    // Generate AI analysis with new comprehensive prompt
-    const aiAnalysis = await generateAIAnalysis({
-      homeTeam: matchInfo.homeTeam,
-      awayTeam: matchInfo.awayTeam,
-      league: matchInfo.league,
-      sport: matchInfo.sport,
-      kickoff: matchInfo.kickoff,
-      homeForm: homeFormStr,
-      awayForm: awayFormStr,
-      homeStats,
-      awayStats,
-      h2h,
-      // NEW: Pass enriched context for richer AI content
-      enrichedContext: {
-        homeFormDetails: enrichedData.homeForm?.map(m => ({
-          result: m.result,
-          opponent: m.opponent || 'Unknown',
-          score: m.score || '0-0',
-        })),
-        awayFormDetails: enrichedData.awayForm?.map(m => ({
-          result: m.result,
-          opponent: m.opponent || 'Unknown',
-          score: m.score || '0-0',
-        })),
-        h2hMatches: enrichedData.headToHead?.map(m => ({
-          homeTeam: m.homeTeam || matchInfo.homeTeam,
-          awayTeam: m.awayTeam || matchInfo.awayTeam,
-          homeScore: m.homeScore ?? 0,
-          awayScore: m.awayScore ?? 0,
-          date: m.date || new Date().toISOString(),
-        })),
-        injuryDetails: {
-          home: injuries.home.map(i => ({
-            player: i.player || 'Unknown player',
-            reason: i.reason,
-          })),
-          away: injuries.away.map(i => ({
-            player: i.player || 'Unknown player',
-            reason: i.reason,
-          })),
-        },
-      },
-    });
-
-    console.log(`[Match-Preview] AI analysis complete:`, aiAnalysis?.story?.favored || 'no favored');
+    console.log(`[Match-Preview] Stats prepared in ${Date.now() - startTime}ms`);
 
     // Build key absence from injuries data
     const findKeyAbsence = () => {
@@ -456,78 +407,117 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Build context factors
     const contextFactors = buildContextFactors(matchInfo, homeStats, awayStats, h2h);
 
-    // Fetch odds and calculate market intel (don't block on failure)
-    let marketIntel: MarketIntel | null = null;
-    let odds: OddsData | null = null;
+    // ========================================
+    // PARALLEL EXECUTION: AI + Odds + TTS
+    // Run AI analysis and odds fetching in parallel to save ~2 seconds
+    // ========================================
     
-    try {
-      // Use data layer to fetch odds
-      const dataLayer = getDataLayer();
-      console.log(`[Match-Preview] Fetching odds for ${matchInfo.homeTeam} vs ${matchInfo.awayTeam}, sport: ${matchInfo.sport}, normalized: ${normalizeSport(matchInfo.sport)}`);
-      
-      const oddsResult = await dataLayer.getOdds(
-        normalizeSport(matchInfo.sport) as 'soccer' | 'basketball' | 'hockey' | 'american_football' | 'baseball' | 'mma' | 'tennis',
-        matchInfo.homeTeam,
-        matchInfo.awayTeam,
-        { 
-          markets: ['h2h'],
-          sportKey: matchInfo.sport, // Pass original sport key for correct league
-        }
-      );
-      
-      console.log(`[Match-Preview] Odds result: success=${oddsResult.success}, dataLength=${oddsResult.data?.length || 0}, error=${oddsResult.error?.message || 'none'}`);
-      
-      if (oddsResult.success && oddsResult.data && oddsResult.data.length > 0) {
-        // Get the first bookmaker's odds
-        const firstBookmaker = oddsResult.data[0];
-        console.log(`[Match-Preview] First bookmaker: ${firstBookmaker.bookmaker}, hasMoneyline: ${!!firstBookmaker.moneyline}`);
-        
-        if (firstBookmaker.moneyline) {
-          odds = {
-            homeOdds: firstBookmaker.moneyline.home,
-            awayOdds: firstBookmaker.moneyline.away,
-            drawOdds: firstBookmaker.moneyline.draw,
-            bookmaker: firstBookmaker.bookmaker,
-            lastUpdate: firstBookmaker.lastUpdate?.toISOString(),
-          };
-          
-          // Calculate market intel using universal signals
-          const sportConfig = getSportConfig(matchInfo.sport);
-          marketIntel = analyzeMarket(
-            aiAnalysis.universalSignals,
-            odds,
-            sportConfig.hasDraw
-          );
-          
-          console.log(`[Match-Preview] Market intel calculated: ${marketIntel.recommendation}`);
-          console.log(`[Match-Preview] Odds quota: ${oddsResult.metadata.quotaUsed} used, ${oddsResult.metadata.quotaRemaining} remaining`);
-        }
-      } else if (!oddsResult.success) {
-        console.log(`[Match-Preview] Could not get odds: ${oddsResult.error?.message}`);
-      }
-    } catch (oddsError) {
-      console.error('[Match-Preview] Failed to fetch odds:', oddsError);
-      // Continue without odds - not critical
-    }
-
-    // Generate TTS audio for the narrative (async, don't block)
-    let audioUrl: string | undefined;
-    const narrativeText = aiAnalysis.story?.narrative || (aiAnalysis.story as { gameFlow?: string })?.gameFlow;
-    if (process.env.ELEVENLABS_API_KEY && narrativeText) {
+    // Prepare odds fetch function
+    const fetchOddsAsync = async () => {
       try {
-        const ttsText = buildTTSScript(
+        const dataLayer = getDataLayer();
+        console.log(`[Match-Preview] Fetching odds for ${matchInfo.homeTeam} vs ${matchInfo.awayTeam}, sport: ${matchInfo.sport}`);
+        
+        const oddsResult = await dataLayer.getOdds(
+          normalizeSport(matchInfo.sport) as 'soccer' | 'basketball' | 'hockey' | 'american_football' | 'baseball' | 'mma' | 'tennis',
           matchInfo.homeTeam,
           matchInfo.awayTeam,
-          aiAnalysis.story.favored as 'home' | 'away' | 'draw',
-          aiAnalysis.story.confidence as 'strong' | 'moderate' | 'slight',
-          narrativeText
+          { 
+            markets: ['h2h'],
+            sportKey: matchInfo.sport,
+          }
         );
-        audioUrl = await generateTTSAudio(ttsText, matchId);
+        
+        if (oddsResult.success && oddsResult.data && oddsResult.data.length > 0) {
+          const firstBookmaker = oddsResult.data[0];
+          if (firstBookmaker.moneyline) {
+            console.log(`[Match-Preview] Odds fetched: home=${firstBookmaker.moneyline.home}, away=${firstBookmaker.moneyline.away}`);
+            return {
+              homeOdds: firstBookmaker.moneyline.home,
+              awayOdds: firstBookmaker.moneyline.away,
+              drawOdds: firstBookmaker.moneyline.draw,
+              bookmaker: firstBookmaker.bookmaker,
+              lastUpdate: firstBookmaker.lastUpdate?.toISOString(),
+            } as OddsData;
+          }
+        }
+        console.log(`[Match-Preview] No odds available: ${oddsResult.error?.message || 'no data'}`);
+        return null;
       } catch (error) {
-        console.error('TTS generation failed:', error);
-        // Continue without audio
+        console.error('[Match-Preview] Odds fetch failed:', error);
+        return null;
+      }
+    };
+
+    // Prepare AI analysis function (already has all data)
+    const aiAnalysisPromise = generateAIAnalysis({
+      homeTeam: matchInfo.homeTeam,
+      awayTeam: matchInfo.awayTeam,
+      league: matchInfo.league,
+      sport: matchInfo.sport,
+      kickoff: matchInfo.kickoff,
+      homeForm: homeFormStr,
+      awayForm: awayFormStr,
+      homeStats,
+      awayStats,
+      h2h,
+      enrichedContext: {
+        homeFormDetails: enrichedData.homeForm?.map(m => ({
+          result: m.result,
+          opponent: m.opponent || 'Unknown',
+          score: m.score || '0-0',
+        })),
+        awayFormDetails: enrichedData.awayForm?.map(m => ({
+          result: m.result,
+          opponent: m.opponent || 'Unknown',
+          score: m.score || '0-0',
+        })),
+        h2hMatches: enrichedData.headToHead?.map(m => ({
+          homeTeam: m.homeTeam || matchInfo.homeTeam,
+          awayTeam: m.awayTeam || matchInfo.awayTeam,
+          homeScore: m.homeScore ?? 0,
+          awayScore: m.awayScore ?? 0,
+          date: m.date || new Date().toISOString(),
+        })),
+        injuryDetails: {
+          home: injuries.home.map(i => ({
+            player: i.player || 'Unknown player',
+            reason: i.reason,
+          })),
+          away: injuries.away.map(i => ({
+            player: i.player || 'Unknown player',
+            reason: i.reason,
+          })),
+        },
+      },
+    });
+
+    // Run AI and Odds in PARALLEL - saves ~1-2 seconds
+    const [aiAnalysis, odds] = await Promise.all([
+      aiAnalysisPromise,
+      fetchOddsAsync(),
+    ]);
+
+    console.log(`[Match-Preview] Parallel fetch complete in ${Date.now() - startTime}ms - AI: ${aiAnalysis?.story?.favored || 'unknown'}, Odds: ${odds ? 'yes' : 'no'}`);
+
+    // Calculate market intel using AI signals + odds (only if we have both)
+    let marketIntel: MarketIntel | null = null;
+    if (odds && aiAnalysis?.universalSignals) {
+      try {
+        const sportConfig = getSportConfig(matchInfo.sport);
+        marketIntel = analyzeMarket(
+          aiAnalysis.universalSignals,
+          odds,
+          sportConfig.hasDraw
+        );
+        console.log(`[Match-Preview] Market intel: ${marketIntel.recommendation}, edge: ${marketIntel.valueEdge?.edgePercent || 0}%`);
+      } catch (miError) {
+        console.error('[Match-Preview] Market intel calculation failed:', miError);
       }
     }
+
+    // TTS: Skip to speed up response - audio can be generated on-demand later
+    const audioUrl: string | undefined = undefined;
 
     // Get sport config for terminology
     const sportConfig = getSportConfig(matchInfo.sport);
