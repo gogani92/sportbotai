@@ -146,6 +146,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // ==========================================
+    // FREE USERS: Decrement credit immediately (before cache check)
+    // PRO/PREMIUM: Credits only used for NEW (non-cached) analyses
+    // ==========================================
+    const isFreePlan = usageCheck.plan === 'FREE';
+    let creditUsedEarly = false;
+    
+    if (isFreePlan) {
+      // FREE users always use their credit (1 analysis = 1 credit, cached or not)
+      await incrementAnalysisCount(userId);
+      creditUsedEarly = true;
+      console.log(`[Match-Preview] FREE user ${userId} credit used immediately (remaining: 0)`);
+    }
+
+    // ==========================================
     // CHECK CACHE FIRST (shared across all users)
     // Skip cache if match starts within 30 minutes (need fresh data)
     // ==========================================
@@ -832,12 +846,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // ==========================================
     // INCREMENT USER'S ANALYSIS COUNT (only for fresh analyses, not cached)
+    // Skip if FREE user (they already had credit used earlier)
     // ==========================================
-    try {
-      await incrementAnalysisCount(userId);
-      console.log(`[Match-Preview] Incremented analysis count for user ${session.user.email}`);
-    } catch (incrementError) {
-      console.error('[Match-Preview] Failed to increment analysis count:', incrementError);
+    if (!creditUsedEarly) {
+      try {
+        await incrementAnalysisCount(userId);
+        console.log(`[Match-Preview] Incremented analysis count for user ${session.user.email}`);
+      } catch (incrementError) {
+        console.error('[Match-Preview] Failed to increment analysis count:', incrementError);
+      }
     }
 
     console.log(`[Match-Preview] Completed in ${Date.now() - startTime}ms`);
