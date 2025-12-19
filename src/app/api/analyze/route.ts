@@ -439,18 +439,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(limitedResponse, { status: 200 });
     }
 
+    // ========================================
+    // FREE USERS: Decrement credit immediately
+    // PRO/PREMIUM: Credits only used for NEW (non-cached) analyses
+    // ========================================
+    const isFreePlan = usageCheck.plan === 'FREE';
+    let creditUsedEarly = false;
+    
+    if (isFreePlan) {
+      // FREE users always use their credit (1 analysis = 1 credit, cached or not)
+      await incrementAnalysisCount(userId);
+      creditUsedEarly = true;
+      console.log(`[Usage] FREE user ${userId} credit used immediately (remaining: 0)`);
+    }
+
     // Check for OpenAI API key
     const openai = getOpenAIClient();
     if (!openai) {
       console.warn('OPENAI_API_KEY not configured, using fallback analysis');
-      // Still count this as an analysis
-      await incrementAnalysisCount(userId);
+      // Still count this as an analysis (if not already counted for FREE users)
+      if (!creditUsedEarly) {
+        await incrementAnalysisCount(userId);
+      }
       const response = generateFallbackAnalysis(normalizedRequest);
       return NextResponse.json({
         ...response,
         usageInfo: {
           plan: usageCheck.plan,
-          remaining: usageCheck.remaining - 1,
+          remaining: creditUsedEarly ? 0 : usageCheck.remaining - 1,
           limit: usageCheck.limit,
         }
       });
@@ -651,9 +667,12 @@ export async function POST(request: NextRequest) {
       
       // ========================================
       // INCREMENT USAGE COUNT (only for NEW analyses, not cached)
+      // Skip if FREE user (they already had credit used earlier)
       // ========================================
-      await incrementAnalysisCount(userId);
-      console.log('[Usage] Incremented analysis count for new analysis');
+      if (!creditUsedEarly) {
+        await incrementAnalysisCount(userId);
+        console.log('[Usage] Incremented analysis count for new analysis');
+      }
     }
 
     // ========================================
@@ -796,13 +815,19 @@ export async function POST(request: NextRequest) {
     });
 
     // Add usage info, injury context, and pre-match insights to response
+    // For FREE users, credit was already used at the start (remaining = 0)
+    // For PRO/PREMIUM, decrement from remaining if this was a new analysis
+    const finalRemaining = creditUsedEarly 
+      ? 0  // FREE user already used their credit
+      : usageCheck.remaining - 1;  // PRO/PREMIUM - deduct 1 for new analysis
+    
     return NextResponse.json({
       ...analysis,
       injuryContext: injuryContext || undefined,
       preMatchInsights,
       usageInfo: {
         plan: usageCheck.plan,
-        remaining: usageCheck.remaining - 1,
+        remaining: Math.max(0, finalRemaining),
         limit: usageCheck.limit,
       }
     });
