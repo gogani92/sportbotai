@@ -140,7 +140,7 @@ async function runQuickAnalysis(
     const homeFormStr = enrichedData.homeForm?.map((m: any) => m.result).join('') || '-----';
     const awayFormStr = enrichedData.awayForm?.map((m: any) => m.result).join('') || '-----';
     
-    // Create raw match input for signals
+    // Create raw match input for signals (matching RawMatchInput interface)
     const rawInput: RawMatchInput = {
       sport: sport.includes('soccer') ? 'soccer' : 
              sport.includes('basketball') ? 'basketball' :
@@ -150,13 +150,28 @@ async function runQuickAnalysis(
       awayTeam,
       homeForm: homeFormStr,
       awayForm: awayFormStr,
-      homeGoalsScored: enrichedData.homeStats?.goalsScored || enrichedData.homeStats?.pointsScored || 0,
-      homeGoalsConceded: enrichedData.homeStats?.goalsConceded || enrichedData.homeStats?.pointsConceded || 0,
-      awayGoalsScored: enrichedData.awayStats?.goalsScored || enrichedData.awayStats?.pointsScored || 0,
-      awayGoalsConceded: enrichedData.awayStats?.goalsConceded || enrichedData.awayStats?.pointsConceded || 0,
-      homeOdds: odds.home,
-      awayOdds: odds.away,
-      drawOdds: odds.draw,
+      homeStats: {
+        played: enrichedData.homeStats?.played || 0,
+        wins: enrichedData.homeStats?.wins || 0,
+        draws: enrichedData.homeStats?.draws || 0,
+        losses: enrichedData.homeStats?.losses || 0,
+        scored: enrichedData.homeStats?.goalsScored || enrichedData.homeStats?.pointsScored || 0,
+        conceded: enrichedData.homeStats?.goalsConceded || enrichedData.homeStats?.pointsConceded || 0,
+      },
+      awayStats: {
+        played: enrichedData.awayStats?.played || 0,
+        wins: enrichedData.awayStats?.wins || 0,
+        draws: enrichedData.awayStats?.draws || 0,
+        losses: enrichedData.awayStats?.losses || 0,
+        scored: enrichedData.awayStats?.goalsScored || enrichedData.awayStats?.pointsScored || 0,
+        conceded: enrichedData.awayStats?.goalsConceded || enrichedData.awayStats?.pointsConceded || 0,
+      },
+      h2h: {
+        total: enrichedData.h2h?.total || 0,
+        homeWins: enrichedData.h2h?.homeWins || 0,
+        awayWins: enrichedData.h2h?.awayWins || 0,
+        draws: enrichedData.h2h?.draws || 0,
+      },
     };
     
     // Normalize to universal signals
