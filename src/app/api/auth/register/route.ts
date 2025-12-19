@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const { name, email, password, referralSource, referralMedium, referralCampaign } = body;
 
     // Validation
     if (!email || !password) {
@@ -45,6 +45,9 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         plan: 'FREE',
         analysisCount: 0,
+        referralSource: referralSource || null,
+        referralMedium: referralMedium || null,
+        referralCampaign: referralCampaign || null,
       },
       select: {
         id: true,

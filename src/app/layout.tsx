@@ -15,6 +15,7 @@ import { FavoritesProvider } from '@/lib/FavoritesContext';
 import { ToastProvider } from '@/components/ui';
 import { KeyboardShortcutsProvider } from '@/components/CommandPalette';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import UTMTracker from '@/components/UTMTracker';
 import { SITE_CONFIG, META, OG_DEFAULTS, getOrganizationSchema, getWebsiteSchema } from '@/lib/seo';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import CookieConsent from '@/components/CookieConsent';
@@ -169,6 +170,9 @@ export default function RootLayout({
                 
                 {/* Cookie Consent Banner */}
                 <CookieConsent />
+                
+                {/* UTM Attribution Tracker */}
+                <UTMTracker />
                 
                 {/* PWA Install Prompt */}
                 <PWAInstallPrompt />

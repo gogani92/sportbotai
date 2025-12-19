@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -14,6 +15,30 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Capture UTM params for attribution
+  const [utmParams, setUtmParams] = useState<{
+    source?: string;
+    medium?: string;
+    campaign?: string;
+  }>({});
+
+  useEffect(() => {
+    // Check URL params first
+    const source = searchParams.get('utm_source') || searchParams.get('ref');
+    const medium = searchParams.get('utm_medium');
+    const campaign = searchParams.get('utm_campaign');
+    
+    // Also check localStorage for previously stored params (from landing page)
+    const storedParams = localStorage.getItem('utm_params');
+    const stored = storedParams ? JSON.parse(storedParams) : {};
+    
+    setUtmParams({
+      source: source || stored.source || document.referrer ? new URL(document.referrer || 'https://direct').hostname : 'direct',
+      medium: medium || stored.medium,
+      campaign: campaign || stored.campaign,
+    });
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +62,14 @@ export default function RegisterPage() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          password,
+          referralSource: utmParams.source,
+          referralMedium: utmParams.medium,
+          referralCampaign: utmParams.campaign,
+        }),
       });
 
       const data = await response.json();
