@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { AuthProvider } from '@/components/auth';
 import { FavoritesProvider } from '@/lib/FavoritesContext';
+import { UsageProvider } from '@/lib/UsageContext';
 import { ToastProvider } from '@/components/ui';
 import { KeyboardShortcutsProvider } from '@/components/CommandPalette';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
@@ -144,8 +145,9 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <FavoritesProvider>
-            <ToastProvider>
+          <UsageProvider>
+            <FavoritesProvider>
+              <ToastProvider>
               <KeyboardShortcutsProvider>
                 {/* Skip to content link for accessibility */}
                 <a href="#main-content" className="skip-link">
@@ -173,8 +175,9 @@ export default function RootLayout({
                 {/* PWA Install Prompt */}
                 <PWAInstallPrompt />
               </KeyboardShortcutsProvider>
-            </ToastProvider>
-          </FavoritesProvider>
+              </ToastProvider>
+            </FavoritesProvider>
+          </UsageProvider>
         </AuthProvider>
       </body>
     </html>

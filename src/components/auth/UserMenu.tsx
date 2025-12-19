@@ -4,6 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import ProBadge from '@/components/ProBadge';
+import { useUsage } from '@/lib/UsageContext';
 
 // Admin emails - only these users see admin link
 const ADMIN_EMAILS = [
@@ -17,57 +18,32 @@ const PLAN_LIMITS: Record<string, number> = {
   PREMIUM: -1, // Unlimited
 };
 
-// Custom event for usage updates
+// Custom event for usage updates - kept for backward compatibility
 export const USAGE_UPDATED_EVENT = 'sportbot:usage-updated';
 
 export function UserMenu() {
   const { data: session, status, update } = useSession();
+  const { usageData, refreshUsage } = useUsage();
   const [isOpen, setIsOpen] = useState(false);
-  const [usageData, setUsageData] = useState<{ remaining: number; limit: number; plan: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  // Helper to fetch fresh usage data
-  const fetchUsageData = useCallback(() => {
-    if (session) {
-      console.log('[UserMenu] Fetching fresh usage data...');
-      fetch('/api/usage', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
-        .then(res => res.json())
-        .then(data => {
-          console.log('[UserMenu] Got usage data:', data);
-          if (data.remaining !== undefined) {
-            setUsageData({
-              remaining: data.remaining,
-              limit: data.limit,
-              plan: data.plan || session.user?.plan || 'FREE',
-            });
-          }
-        })
-        .catch(err => console.error('[UserMenu] Fetch error:', err));
-    }
-  }, [session]);
-
-  // Fetch fresh usage data on mount and when session changes
-  useEffect(() => {
-    fetchUsageData();
-  }, [fetchUsageData]);
 
   // Listen for usage update events (dispatched after analysis)
   useEffect(() => {
     const handler = () => {
-      console.log('[UserMenu] USAGE_UPDATED_EVENT received!');
-      fetchUsageData();
+      console.log('[UserMenu] USAGE_UPDATED_EVENT received, refreshing via context...');
+      refreshUsage();
     };
     window.addEventListener(USAGE_UPDATED_EVENT, handler);
     return () => window.removeEventListener(USAGE_UPDATED_EVENT, handler);
-  }, [fetchUsageData]);
+  }, [refreshUsage]);
 
   // Also refetch when window gains focus (user switches tabs back)
   useEffect(() => {
-    const handleFocus = () => fetchUsageData();
+    const handleFocus = () => refreshUsage();
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        fetchUsageData();
+        refreshUsage();
       }
     };
 
@@ -78,14 +54,14 @@ export function UserMenu() {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [fetchUsageData]);
+  }, [refreshUsage]);
   
   // Refetch when menu opens to get latest data
   useEffect(() => {
     if (isOpen) {
-      fetchUsageData();
+      refreshUsage();
     }
-  }, [isOpen, fetchUsageData]);
+  }, [isOpen, refreshUsage]);
 
   // Toggle menu - simple and direct
   const toggleMenu = useCallback(() => {
