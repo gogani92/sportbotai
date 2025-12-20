@@ -67,9 +67,12 @@ const openai = new OpenAI({
 });
 
 export async function GET(request: NextRequest) {
-  // Verify authorization
+  // Verify authorization - allow Vercel cron OR manual Bearer token
   const authHeader = request.headers.get('authorization');
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+  const isAuthorized = authHeader === `Bearer ${CRON_SECRET}`;
+  
+  if (CRON_SECRET && !isVercelCron && !isAuthorized) {
     console.log('[Cron] Unauthorized pre-warm attempt');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

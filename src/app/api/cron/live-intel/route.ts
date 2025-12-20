@@ -235,8 +235,13 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const authHeader = request.headers.get('authorization');
   
-  // Verify cron secret in production
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  // Vercel crons are authenticated automatically - they only run from Vercel's infrastructure
+  // Check for either: Bearer token (manual/internal calls) OR Vercel cron header (automatic cron)
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+  const isAuthorized = authHeader === `Bearer ${CRON_SECRET}`;
+  
+  // In production, require either Vercel cron header or valid auth token
+  if (CRON_SECRET && !isVercelCron && !isAuthorized) {
     console.log('[Live-Intel-Cron] Unauthorized attempt');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
