@@ -10,6 +10,7 @@ import OpenAI from 'openai';
 import { prisma } from '@/lib/prisma';
 import { POST_CATEGORIES, buildAgentPostPrompt, sanitizeAgentPost, type PostCategory } from '@/lib/config/sportBotAgent';
 import { quickMatchResearch } from '@/lib/perplexity';
+import { getTwitterClient, formatForTwitter } from '@/lib/twitter-client';
 
 export const maxDuration = 60;
 
@@ -298,34 +299,36 @@ export async function GET(request: NextRequest) {
     
     console.log(`[Live-Intel-Cron] Created post ${post.id} in ${Date.now() - startTime}ms`);
     
-    // Optionally post to Twitter
-    if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET) {
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    // Post to Twitter directly (not via internal HTTP call which can fail on Vercel)
+    let twitterResult = null;
+    try {
+      const twitter = getTwitterClient();
+      if (twitter.isConfigured()) {
+        const hashtags = getSmartHashtags(randomMatch.sport, randomMatch.homeTeam);
+        const formattedContent = formatForTwitter(postResult.content, { hashtags });
         
-        const headers: Record<string, string> = { 
-          'Content-Type': 'application/json',
-        };
+        console.log('[Live-Intel-Cron] Posting to Twitter...');
+        twitterResult = await twitter.postTweet(formattedContent);
         
-        // Add cron auth header for internal call
-        if (CRON_SECRET) {
-          headers['Authorization'] = `Bearer ${CRON_SECRET}`;
+        if (twitterResult.success) {
+          console.log(`[Live-Intel-Cron] ✅ Posted to Twitter: ${twitterResult.tweet?.id}`);
+          
+          // Save to database
+          await prisma.twitterPost.create({
+            data: {
+              tweetId: twitterResult.tweet?.id || '',
+              content: formattedContent,
+              category: 'LIVE_INTEL',
+            },
+          });
+        } else {
+          console.error('[Live-Intel-Cron] ❌ Twitter post failed:', twitterResult.error);
         }
-        
-        await fetch(`${baseUrl}/api/twitter`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            action: 'tweet',
-            content: postResult.content,
-            hashtags: getSmartHashtags(randomMatch.sport, randomMatch.homeTeam),
-          }),
-        });
-        console.log('[Live-Intel-Cron] Posted to Twitter');
-      } catch (twitterError) {
-        console.error('[Live-Intel-Cron] Twitter post failed:', twitterError);
+      } else {
+        console.log('[Live-Intel-Cron] Twitter not configured, skipping');
       }
+    } catch (twitterError) {
+      console.error('[Live-Intel-Cron] Twitter error:', twitterError);
     }
     
     return NextResponse.json({
