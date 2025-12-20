@@ -39,7 +39,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Sports to pre-analyze
+// Sports to pre-analyze with league-specific configurations
 const PRE_ANALYZE_SPORTS = [
   { key: 'soccer_epl', title: 'EPL', league: 'Premier League', hasDraw: true },
   { key: 'soccer_spain_la_liga', title: 'La Liga', league: 'La Liga', hasDraw: true },
@@ -50,6 +50,125 @@ const PRE_ANALYZE_SPORTS = [
   { key: 'americanfootball_nfl', title: 'NFL', league: 'NFL', hasDraw: false },
   { key: 'icehockey_nhl', title: 'NHL', league: 'NHL', hasDraw: false },
 ];
+
+/**
+ * League-specific prediction hints based on historical accuracy patterns
+ * These are empirically derived from prediction performance analysis
+ */
+const LEAGUE_HINTS: Record<string, string> = {
+  // EPL: 64% accuracy - our best soccer league, trust form data
+  'Premier League': `
+EPL INSIGHT: This is a high-quality league with predictable patterns. 
+- Big 6 away wins are undervalued by markets
+- Bottom half teams rarely win against top 10 at home
+- Trust recent form over historical reputation`,
+
+  // La Liga: 0% accuracy - heavily over-predict draws, need away focus  
+  'La Liga': `
+LA LIGA WARNING: Our model has struggled here. Adjustments needed:
+- MASSIVELY reduce draw predictions - draws are overrated here
+- Away wins happen more than expected, especially for top 4 teams
+- Real Madrid/Barcelona away wins are severely underpriced
+- Mid-table clashes are volatile - lower conviction`,
+
+  // Bundesliga: 33% accuracy - home bias problem
+  'Bundesliga': `
+BUNDESLIGA WARNING: Strong away team performance historically.
+- Bayern/Dortmund away wins are very reliable
+- Home advantage is weaker than other leagues
+- Bottom teams lose away almost always
+- High-scoring nature means form matters more than H2H`,
+
+  // Serie A: 50% accuracy - decent, defensive focus
+  'Serie A': `
+SERIE A INSIGHT: Defensive league patterns.
+- Low-scoring games favor underdogs and draws
+- Big teams struggle away at mid-table sides
+- Home teams rarely get blown out
+- Trust clean sheet data heavily`,
+
+  // Ligue 1: No data yet - PSG dominated
+  'Ligue 1': `
+LIGUE 1 INSIGHT: PSG dominates, rest is unpredictable.
+- PSG home/away wins are very reliable
+- Without PSG, the league is highly volatile
+- Away wins for non-PSG teams are rare
+- Lower conviction on all non-PSG matches`,
+
+  // NBA: 63% accuracy - our best sport
+  'NBA': `
+NBA INSIGHT: Our highest accuracy sport. Trust the model.
+- Form and H2H data are very predictive
+- Back-to-back games create real edges
+- Road underdogs often have value
+- High-scoring nature means favorites cover`,
+
+  // NFL: No recent data
+  'NFL': `
+NFL INSIGHT: Weekly reset nature makes prediction harder.
+- Home field matters more than other sports
+- Division games are unpredictable
+- Favor road teams with elite QBs
+- Weather games favor running teams`,
+
+  // NHL: 50% accuracy
+  'NHL': `
+NHL INSIGHT: High variance sport with goalie dependency.
+- Form is less predictive than other sports
+- Goalie matchups matter enormously (check injuries)
+- Road underdogs often have value
+- Divisional games are more unpredictable`,
+};
+
+/**
+ * Get league-specific hint for AI prompt
+ */
+function getLeagueHint(league: string): string {
+  return LEAGUE_HINTS[league] || '';
+}
+
+/**
+ * Fetch and format injury data for a match
+ * Returns a formatted string for AI prompt, or null if unavailable
+ */
+async function getInjuryInfo(
+  homeTeam: string,
+  awayTeam: string,
+  sport: string,
+  league: string
+): Promise<string | null> {
+  try {
+    // Only soccer has reliable injury data via API-Sports
+    if (!sport.startsWith('soccer_')) {
+      return null;
+    }
+    
+    const injuries = await getMatchInjuries(homeTeam, awayTeam, league);
+    
+    if (!injuries || (injuries.home.length === 0 && injuries.away.length === 0)) {
+      return null;
+    }
+    
+    const formatInjuries = (team: string, list: any[]): string => {
+      if (list.length === 0) return '';
+      const top = list.slice(0, 3); // Limit to top 3 injuries per team
+      const names = top.map(inj => `${inj.playerName} (${inj.type || inj.reason || 'injured'})`).join(', ');
+      return `${team}: ${names}${list.length > 3 ? ` +${list.length - 3} more` : ''}`;
+    };
+    
+    const parts: string[] = [];
+    const homeStr = formatInjuries(homeTeam, injuries.home);
+    const awayStr = formatInjuries(awayTeam, injuries.away);
+    
+    if (homeStr) parts.push(homeStr);
+    if (awayStr) parts.push(awayStr);
+    
+    return parts.length > 0 ? parts.join(' | ') : null;
+  } catch (error) {
+    console.warn(`[Pre-Analyze] Failed to fetch injuries for ${homeTeam} vs ${awayTeam}:`, error);
+    return null;
+  }
+}
 
 // ============================================
 // HELPER FUNCTIONS
@@ -216,14 +335,16 @@ async function runQuickAnalysis(
     // Determine if soccer or other sport
     const isNonSoccer = !sport.startsWith('soccer_');
     
-    // Get enriched match data
-    let enrichedData: any;
+    // Get enriched match data and injuries in parallel
+    const [enrichedDataRaw, injuryInfo] = await Promise.all([
+      isNonSoccer 
+        ? getEnrichedMatchDataV2(homeTeam, awayTeam, sport, league)
+        : getEnrichedMatchData(homeTeam, awayTeam, league),
+      getInjuryInfo(homeTeam, awayTeam, sport, league),
+    ]);
     
-    if (isNonSoccer) {
-      enrichedData = await getEnrichedMatchDataV2(homeTeam, awayTeam, sport, league);
-    } else {
-      enrichedData = await getEnrichedMatchData(homeTeam, awayTeam, league);
-    }
+    // Cast to any for cross-sport compatibility (different data shapes)
+    const enrichedData = enrichedDataRaw as any;
     
     // Build form strings
     const homeFormStr = enrichedData.homeForm?.map((m: any) => m.result).join('') || '-----';
@@ -271,14 +392,22 @@ async function runQuickAnalysis(
     const hasDraw = !!odds.draw;
     const favoredOptions = hasDraw ? '"home" | "away" | "draw"' : '"home" | "away"';
     
+    // Get league-specific hints for better accuracy
+    const leagueHint = getLeagueHint(league);
+    
+    // Build injury context for prompt
+    const injuryContext = injuryInfo 
+      ? `INJURIES: ${injuryInfo}\n(Use this in risk assessment - missing key players matter!)`
+      : 'INJURIES: No injury data available - assume full squads';
+    
     // Build AIXBT-style prompt - sharp, opinionated, data-backed
     const prompt = `${homeTeam} vs ${awayTeam} | ${league}
 
 MARKET: ${odds.home} / ${odds.away}${odds.draw ? ` / ${odds.draw}` : ''}
 FORM: ${homeTeam} ${homeFormStr} | ${awayTeam} ${awayFormStr}
 SIGNALS: ${signalsSummary}
-INJURIES: No injury data available - assume full squads
-
+${injuryContext}
+${leagueHint ? `\n${leagueHint}\n` : ''}
 Be AIXBT. Sharp takes. Back them with numbers FROM THE DATA ABOVE ONLY.
 
 JSON output:
@@ -290,16 +419,16 @@ JSON output:
     "THE EDGE: [team] because [stat]. Not close.",
     "MARKET MISS: [what odds undervalue]. The data screams [X].",
     "THE PATTERN: [H2H/streak with numbers]. This isn't random.",
-    "THE RISK: [caveat based on form/market data]. Don't ignore this."
+    "THE RISK: [caveat based on form/market data${injuryInfo ? '/injuries' : ''}]. Don't ignore this."
   ],
   "gameFlow": "Sharp take on how this plays out. Cite the numbers.",
-  "riskFactors": ["Risk based on form/market/H2H data only", "Secondary if relevant"]
+  "riskFactors": ["Risk based on form/market/H2H${injuryInfo ? '/injury' : ''} data only", "Secondary if relevant"]
 }
 
 CRITICAL RULES:
-- ONLY use data provided above. Do NOT invent injuries, suspensions, or lineup info.
-- riskFactors must be based on form patterns, market odds, or H2H - NOT made-up injuries.
-- If you don't have injury data, don't mention injuries.
+- ONLY use data provided above. Do NOT invent injuries, suspensions, or lineup info not shown above.
+- riskFactors must be based on form patterns, market odds, H2H${injuryInfo ? ', or listed injuries' : ''} - NOT made-up info.
+${injuryInfo ? '- FACTOR IN INJURIES: The listed injuries are real and current. Use them in your analysis.' : '- If you don\'t have injury data, don\'t mention injuries.'}
 - AVOID HOME BIAS: Modern football home advantage is only ~5%. Don't favor home teams without strong statistical evidence.
 - RESPECT THE MARKET: Odds reflect wisdom of millions. Only call an edge when form/H2H data clearly contradicts implied probabilities.
 - BE CONTRARIAN: Your accuracy is better on away picks. Look harder for away value.

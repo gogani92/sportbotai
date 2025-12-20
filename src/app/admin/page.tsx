@@ -241,6 +241,8 @@ async function getAIPredictionStats() {
       recentPredictions,
       byLeague,
       bySport,
+      byConviction,
+      byType,
     ] = await Promise.all([
       // Total predictions
       prisma.prediction.count(),
@@ -314,6 +316,12 @@ async function getAIPredictionStats() {
           })
         );
       }),
+      
+      // By conviction level (grouped into Low: 1-3, Medium: 4-6, High: 7-10)
+      getConvictionStats(),
+      
+      // By prediction type (HOME, AWAY, DRAW)
+      getTypeStats(),
     ]);
     
     const evaluatedCount = hitPredictions + missPredictions;
@@ -331,6 +339,8 @@ async function getAIPredictionStats() {
       recentPredictions,
       byLeague: byLeague.sort((a, b) => b.total - a.total).slice(0, 10),
       bySport: bySport.sort((a, b) => b.total - a.total),
+      byConviction,
+      byType,
     };
   } catch (error) {
     console.error('Error fetching AI prediction stats:', error);
@@ -344,6 +354,96 @@ async function getAIPredictionStats() {
       recentPredictions: [],
       byLeague: [],
       bySport: [],
+      byConviction: [],
+      byType: [],
     };
+  }
+}
+
+/**
+ * Get accuracy stats grouped by conviction level
+ */
+async function getConvictionStats() {
+  try {
+    // Get all evaluated predictions with conviction
+    const predictions = await prisma.prediction.findMany({
+      where: { outcome: { not: 'PENDING' } },
+      select: { conviction: true, outcome: true },
+    });
+    
+    // Group by conviction ranges: Low (1-3), Medium (4-6), High (7-10)
+    const groups = {
+      low: { label: 'Low (1-3)', total: 0, hits: 0 },
+      medium: { label: 'Medium (4-6)', total: 0, hits: 0 },
+      high: { label: 'High (7-10)', total: 0, hits: 0 },
+    };
+    
+    for (const p of predictions) {
+      const conv = p.conviction;
+      const isHit = p.outcome === 'HIT';
+      
+      if (conv <= 3) {
+        groups.low.total++;
+        if (isHit) groups.low.hits++;
+      } else if (conv <= 6) {
+        groups.medium.total++;
+        if (isHit) groups.medium.hits++;
+      } else {
+        groups.high.total++;
+        if (isHit) groups.high.hits++;
+      }
+    }
+    
+    return Object.values(groups).map(g => ({
+      level: g.label,
+      total: g.total,
+      hits: g.hits,
+      accuracy: g.total > 0 ? Math.round((g.hits / g.total) * 100) : 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get accuracy stats grouped by prediction type (HOME, AWAY, DRAW)
+ */
+async function getTypeStats() {
+  try {
+    const predictions = await prisma.prediction.findMany({
+      where: { outcome: { not: 'PENDING' } },
+      select: { prediction: true, outcome: true },
+    });
+    
+    const groups = {
+      home: { label: 'Home Win', total: 0, hits: 0 },
+      away: { label: 'Away Win', total: 0, hits: 0 },
+      draw: { label: 'Draw', total: 0, hits: 0 },
+    };
+    
+    for (const p of predictions) {
+      const pred = p.prediction.toLowerCase();
+      const isHit = p.outcome === 'HIT';
+      
+      if (pred.includes('home')) {
+        groups.home.total++;
+        if (isHit) groups.home.hits++;
+      } else if (pred.includes('away')) {
+        groups.away.total++;
+        if (isHit) groups.away.hits++;
+      } else if (pred.includes('draw')) {
+        groups.draw.total++;
+        if (isHit) groups.draw.hits++;
+      }
+    }
+    
+    return Object.values(groups).map(g => ({
+      type: g.label,
+      total: g.total,
+      hits: g.hits,
+      accuracy: g.total > 0 ? Math.round((g.hits / g.total) * 100) : 0,
+    }));
+  } catch {
+    return [];
   }
 }

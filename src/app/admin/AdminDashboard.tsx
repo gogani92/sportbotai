@@ -76,6 +76,8 @@ interface AIPredictionStats {
   }>;
   byLeague: Array<{ league: string; total: number; hits: number; accuracy: number }>;
   bySport: Array<{ sport: string; total: number; hits: number; accuracy: number }>;
+  byConviction?: Array<{ level: string; total: number; hits: number; accuracy: number }>;
+  byType?: Array<{ type: string; total: number; hits: number; accuracy: number }>;
 }
 
 interface AdminDashboardProps {
@@ -592,6 +594,78 @@ export default function AdminDashboard({
               <div className="card p-4">
                 <div className="text-3xl font-bold text-text-primary">{aiPredictionStats.totalPredictions}</div>
                 <div className="text-sm text-text-secondary">Total Predictions</div>
+              </div>
+            </div>
+
+            {/* Accuracy by Conviction & Type */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* By Conviction Level */}
+              <div className="card p-6">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">📊 Accuracy by Conviction</h3>
+                <p className="text-xs text-text-muted mb-4">Higher conviction should = higher accuracy</p>
+                {aiPredictionStats.byConviction && aiPredictionStats.byConviction.length > 0 ? (
+                  <div className="space-y-3">
+                    {aiPredictionStats.byConviction.map((conv, idx) => {
+                      const barColor = idx === 2 ? 'bg-green-500' : idx === 1 ? 'bg-yellow-500' : 'bg-red-500';
+                      return (
+                        <div key={conv.level} className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm text-text-primary">{conv.level}</span>
+                              <span className={`text-sm font-semibold ${conv.accuracy >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                                {conv.accuracy}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-bg-tertiary rounded-full h-2">
+                              <div 
+                                className={`${barColor} h-2 rounded-full transition-all`}
+                                style={{ width: `${conv.accuracy}%` }}
+                              />
+                            </div>
+                          </div>
+                          <span className="text-xs text-text-muted w-12 text-right">{conv.hits}/{conv.total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-text-muted text-center py-4">No data yet</div>
+                )}
+              </div>
+
+              {/* By Prediction Type */}
+              <div className="card p-6">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">🎯 Accuracy by Pick Type</h3>
+                <p className="text-xs text-text-muted mb-4">Home bias detection</p>
+                {aiPredictionStats.byType && aiPredictionStats.byType.length > 0 ? (
+                  <div className="space-y-3">
+                    {aiPredictionStats.byType.map((type) => {
+                      const barColor = type.type === 'Home Win' ? 'bg-blue-500' : 
+                                       type.type === 'Away Win' ? 'bg-purple-500' : 'bg-yellow-500';
+                      return (
+                        <div key={type.type} className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm text-text-primary">{type.type}</span>
+                              <span className={`text-sm font-semibold ${type.accuracy >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                                {type.accuracy}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-bg-tertiary rounded-full h-2">
+                              <div 
+                                className={`${barColor} h-2 rounded-full transition-all`}
+                                style={{ width: `${type.accuracy}%` }}
+                              />
+                            </div>
+                          </div>
+                          <span className="text-xs text-text-muted w-12 text-right">{type.hits}/{type.total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-text-muted text-center py-4">No data yet</div>
+                )}
               </div>
             </div>
 
