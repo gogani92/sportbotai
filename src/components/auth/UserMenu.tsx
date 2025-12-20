@@ -134,7 +134,7 @@ export function UserMenu() {
       {isOpen && (
         <div 
           ref={menuRef}
-          className="absolute right-0 mt-2 w-64 rounded-xl border border-border-primary bg-bg-secondary shadow-xl overflow-hidden z-[100]"
+          className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 bg-[#0a0a0b] backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden z-[100]"
           role="menu"
           aria-orientation="vertical"
         >
