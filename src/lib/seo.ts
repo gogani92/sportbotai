@@ -429,6 +429,67 @@ export function getPricingSchema() {
 }
 
 // ==============================================
+// FAQ SCHEMA (Optimized for AI Search / ChatGPT)
+// ==============================================
+
+export function getFAQSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'What is SportBot AI?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'SportBot AI is a free AI-powered sports analysis platform that helps you understand any match in 60 seconds. It provides probability estimates, value detection, and risk assessment for Soccer, NBA, NFL, Tennis, UFC and more.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Is SportBot AI free to use?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes! SportBot AI offers a free tier with 1 match analysis per day. Pro and Premium plans are available for users who need more analyses and advanced features.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How does AI sports analysis work?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'SportBot AI uses machine learning models trained on historical match data, team form, injuries, head-to-head records, and real-time odds from 40+ bookmakers to generate probability estimates and identify value opportunities.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'What sports does SportBot AI cover?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'SportBot AI covers 7+ major sports including Soccer (Premier League, La Liga, Champions League, etc.), NBA, NFL, NHL, Tennis, UFC/MMA, and more. We analyze matches from leagues worldwide.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Is SportBot AI a tipster service?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'No. SportBot AI is an educational analytics tool, not a tipster service. We provide data-driven insights and probability models to help you understand matches better - we don\'t guarantee outcomes or tell you what to bet.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How accurate is SportBot AI?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'SportBot AI provides probability estimates based on statistical models and real-time data. Like any analytical tool, accuracy varies. We focus on helping you understand the factors that influence match outcomes rather than guaranteeing predictions.',
+        },
+      },
+    ],
+  };
+}
+
+// ==============================================
 // SAFE KEYWORDS (Stripe/AdSense compliant)
 // ==============================================
 
