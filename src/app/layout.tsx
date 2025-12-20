@@ -18,6 +18,7 @@ import { KeyboardShortcutsProvider } from '@/components/CommandPalette';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import UTMTracker from '@/components/UTMTracker';
 import ReferralSync from '@/components/ReferralSync';
+import ActivityTracker from '@/components/ActivityTracker';
 import { SITE_CONFIG, META, OG_DEFAULTS, getOrganizationSchema, getWebsiteSchema } from '@/lib/seo';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import CookieConsent from '@/components/CookieConsent';
@@ -202,6 +203,9 @@ export default function RootLayout({
                 
                 {/* Sync referral source for OAuth users */}
                 <ReferralSync />
+                
+                {/* Activity tracking for last active */}
+                <ActivityTracker />
                 
                 {/* PWA Install Prompt */}
                 <PWAInstallPrompt />

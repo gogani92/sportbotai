@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import UserManagement from './UserManagement';
 
 interface Stats {
   totalUsers: number;
@@ -88,7 +89,7 @@ interface AdminDashboardProps {
   aiPredictionStats?: AIPredictionStats;
 }
 
-type TabType = 'overview' | 'users' | 'analyses' | 'chat' | 'agent' | 'ai-predictions';
+type TabType = 'overview' | 'users' | 'user-management' | 'analyses' | 'chat' | 'agent' | 'ai-predictions';
 
 export default function AdminDashboard({ 
   stats, 
@@ -227,6 +228,9 @@ export default function AdminDashboard({
             </TabButton>
             <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')}>
               👥 Users
+            </TabButton>
+            <TabButton active={activeTab === 'user-management'} onClick={() => setActiveTab('user-management')}>
+              ⚙️ Manage Users
             </TabButton>
             <TabButton active={activeTab === 'analyses'} onClick={() => setActiveTab('analyses')}>
               📈 Analyses
@@ -507,6 +511,13 @@ export default function AdminDashboard({
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'user-management' && (
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">User Management</h3>
+            <UserManagement />
           </div>
         )}
 

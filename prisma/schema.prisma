@@ -51,6 +51,10 @@ model User {
   stripeCurrentPeriodEnd DateTime?
   analysisCount          Int            @default(0)
   lastAnalysisDate       DateTime?
+  lastActiveAt           DateTime?      // Last time user was active
+  bonusCredits           Int            @default(0) // Extra analyses given by admin
+  isBanned               Boolean        @default(false) // Account suspended
+  bannedReason           String?        // Why account was banned
   referralSource         String?        // UTM source, e.g. "google", "twitter", "reddit"
   referralMedium         String?        // UTM medium, e.g. "cpc", "organic", "social"
   referralCampaign       String?        // UTM campaign name
