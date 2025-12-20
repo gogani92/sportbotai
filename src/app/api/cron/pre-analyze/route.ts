@@ -300,6 +300,9 @@ CRITICAL RULES:
 - ONLY use data provided above. Do NOT invent injuries, suspensions, or lineup info.
 - riskFactors must be based on form patterns, market odds, or H2H - NOT made-up injuries.
 - If you don't have injury data, don't mention injuries.
+- AVOID HOME BIAS: Modern football home advantage is only ~5%. Don't favor home teams without strong statistical evidence.
+- RESPECT THE MARKET: Odds reflect wisdom of millions. Only call an edge when form/H2H data clearly contradicts implied probabilities.
+- BE CONTRARIAN: Your accuracy is better on away picks. Look harder for away value.
 
 SNAPSHOT VIBE:
 - First bullet: State your pick. Be confident. Give the stat.
@@ -316,7 +319,7 @@ ${!hasDraw ? 'NO DRAWS in this sport. Pick a winner.' : ''}`;
         { role: 'system', content: ANALYSIS_PERSONALITY },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.3,
+      temperature: 0.2, // Lower temperature for more consistent predictions
       max_tokens: 700,
       response_format: { type: 'json_object' },
     });
@@ -692,37 +695,73 @@ export async function GET(request: NextRequest) {
             const probs = analysis.probabilities;
             const matchDate = new Date(event.commence_time);
             
-            // Determine the predicted outcome based on highest probability
+            // Normalize probabilities (AI may return decimals or percentages)
+            const normProbs = {
+              home: probs.home < 1 ? probs.home : probs.home / 100,
+              away: probs.away < 1 ? probs.away : probs.away / 100,
+              draw: probs.draw ? (probs.draw < 1 ? probs.draw : probs.draw / 100) : null,
+            };
+            
+            // Calculate implied probabilities from odds
+            const impliedProbs = {
+              home: 1 / consensus.home,
+              away: 1 / consensus.away,
+              draw: consensus.draw ? 1 / consensus.draw : null,
+            };
+            
+            // Calculate edges for each outcome
+            const edges = {
+              home: (normProbs.home - impliedProbs.home) * 100,
+              away: (normProbs.away - impliedProbs.away) * 100,
+              draw: normProbs.draw && impliedProbs.draw ? (normProbs.draw - impliedProbs.draw) * 100 : -999,
+            };
+            
+            // Find the outcome with the highest edge (not just highest probability)
             let predictedOutcome: 'home' | 'away' | 'draw';
             let predictedProb: number;
             let predictedOdds: number;
+            let edge: number;
             
-            if (probs.draw && probs.draw > probs.home && probs.draw > probs.away) {
+            const maxEdge = Math.max(edges.home, edges.away, edges.draw);
+            
+            if (edges.draw === maxEdge && normProbs.draw) {
               predictedOutcome = 'draw';
-              predictedProb = probs.draw;
+              predictedProb = normProbs.draw;
               predictedOdds = consensus.draw || 0;
-            } else if (probs.home > probs.away) {
-              predictedOutcome = 'home';
-              predictedProb = probs.home;
-              predictedOdds = consensus.home;
-            } else {
+              edge = edges.draw;
+            } else if (edges.away >= edges.home) {
               predictedOutcome = 'away';
-              predictedProb = probs.away;
+              predictedProb = normProbs.away;
               predictedOdds = consensus.away;
+              edge = edges.away;
+            } else {
+              predictedOutcome = 'home';
+              predictedProb = normProbs.home;
+              predictedOdds = consensus.home;
+              edge = edges.home;
             }
             
-            // Calculate conviction (1-10 scale based on probability edge)
-            const impliedProb = 1 / predictedOdds;
-            const edge = (predictedProb - impliedProb) * 100;
-            const conviction = Math.min(10, Math.max(1, Math.round(3 + edge))); // 3 baseline + edge
+            // Conviction: 1-10 scale based on edge magnitude
+            // 1-3: Slight edge (0-3% edge)
+            // 4-6: Moderate edge (3-7% edge)
+            // 7-10: Strong edge (7%+ edge)
+            const conviction = Math.min(10, Math.max(1, Math.round(2 + edge * 1.2)));
             
-            // Only create predictions for matches with positive edge
-            if (edge > 0) {
+            // Minimum edge threshold: only predict when edge > 3%
+            const MIN_EDGE_THRESHOLD = 3;
+            
+            // Only create predictions for matches with meaningful positive edge
+            if (edge > MIN_EDGE_THRESHOLD) {
               const predictionId = `pre_${sport.key}_${event.id}_${Date.now()}`;
               
               // Store prediction as "Home Win", "Away Win", or "Draw" for validation compatibility
               const predictionText = predictedOutcome === 'home' ? `Home Win - ${event.home_team}` :
                                      predictedOutcome === 'away' ? `Away Win - ${event.away_team}` : 'Draw';
+              
+              // Get the implied prob for the predicted outcome
+              const storedImpliedProb = predictedOutcome === 'home' ? impliedProbs.home :
+                                        predictedOutcome === 'away' ? impliedProbs.away :
+                                        impliedProbs.draw || 0;
               
               await prisma.prediction.upsert({
                 where: { id: predictionId },
@@ -738,7 +777,7 @@ export async function GET(request: NextRequest) {
                   reasoning: analysis.story?.narrative || 'AI model analysis',
                   conviction,
                   odds: predictedOdds,
-                  impliedProb: impliedProb * 100,
+                  impliedProb: storedImpliedProb * 100,
                   source: 'PRE_ANALYZE',
                   outcome: 'PENDING',
                 },
@@ -750,7 +789,9 @@ export async function GET(request: NextRequest) {
               });
               
               stats.predictionsCreated++;
-              console.log(`[Pre-Analyze] Prediction created: ${matchRef} → ${predictedOutcome} (${(predictedProb * 100).toFixed(1)}%)`);
+              console.log(`[Pre-Analyze] Prediction: ${matchRef} → ${predictionText} (edge: ${edge.toFixed(1)}%, conv: ${conviction})`);
+            } else {
+              console.log(`[Pre-Analyze] Skipped: ${matchRef} (edge: ${edge.toFixed(1)}% < ${MIN_EDGE_THRESHOLD}%)`);
             }
           } catch (predError) {
             console.error(`[Pre-Analyze] Prediction creation failed:`, predError);
