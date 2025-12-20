@@ -128,6 +128,69 @@ function getLeagueHint(league: string): string {
 }
 
 /**
+ * Detect back-to-back games for NBA/NHL
+ * Returns rest context for AI prompt
+ */
+function getRestDaysContext(
+  sport: string,
+  homeFormData: Array<{ date: string }> | null,
+  awayFormData: Array<{ date: string }> | null,
+  matchDate: string,
+  homeTeam: string,
+  awayTeam: string
+): string | null {
+  // Only relevant for NBA and NHL
+  if (!sport.includes('basketball') && !sport.includes('hockey')) {
+    return null;
+  }
+  
+  const matchTime = new Date(matchDate).getTime();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  
+  const getRestDays = (formData: Array<{ date: string }> | null): number => {
+    if (!formData || formData.length === 0) return 3; // Assume well-rested if no data
+    
+    // Find most recent game before this match
+    const lastGameDate = formData
+      .map(g => new Date(g.date).getTime())
+      .filter(d => d < matchTime)
+      .sort((a, b) => b - a)[0];
+    
+    if (!lastGameDate) return 3;
+    
+    const daysSinceLastGame = Math.floor((matchTime - lastGameDate) / oneDayMs);
+    return daysSinceLastGame;
+  };
+  
+  const homeRest = getRestDays(homeFormData);
+  const awayRest = getRestDays(awayFormData);
+  
+  const parts: string[] = [];
+  
+  // Back-to-back detection (played yesterday)
+  const homeB2B = homeRest <= 1;
+  const awayB2B = awayRest <= 1;
+  
+  if (homeB2B && !awayB2B) {
+    parts.push(`⚠️ ${homeTeam} on BACK-TO-BACK (played yesterday). Expect fatigue, lower energy.`);
+    parts.push(`${awayTeam} well-rested (${awayRest} days). Significant advantage.`);
+  } else if (awayB2B && !homeB2B) {
+    parts.push(`⚠️ ${awayTeam} on BACK-TO-BACK (played yesterday). Road B2B is brutal.`);
+    parts.push(`${homeTeam} well-rested (${homeRest} days). Significant advantage.`);
+  } else if (homeB2B && awayB2B) {
+    parts.push(`Both teams on BACK-TO-BACK. Expect sloppy play, favor home court.`);
+  } else if (homeRest >= 3 && awayRest <= 1) {
+    parts.push(`REST EDGE: ${homeTeam} very rested (${homeRest} days) vs tired ${awayTeam} (${awayRest} days).`);
+  } else if (awayRest >= 3 && homeRest <= 1) {
+    parts.push(`REST EDGE: ${awayTeam} very rested (${awayRest} days) vs tired ${homeTeam} (${homeRest} days).`);
+  }
+  
+  if (parts.length === 0) return null;
+  
+  return parts.join(' ');
+}
+
+/**
  * Fetch and format injury data for a match
  * Returns a formatted string for AI prompt, or null if unavailable
  */
@@ -400,13 +463,23 @@ async function runQuickAnalysis(
       ? `INJURIES: ${injuryInfo}\n(Use this in risk assessment - missing key players matter!)`
       : 'INJURIES: No injury data available - assume full squads';
     
+    // Build rest days context for NBA/NHL
+    const restContext = getRestDaysContext(
+      sport,
+      enrichedData.homeForm,
+      enrichedData.awayForm,
+      kickoff,
+      homeTeam,
+      awayTeam
+    );
+    
     // Build AIXBT-style prompt - sharp, opinionated, data-backed
     const prompt = `${homeTeam} vs ${awayTeam} | ${league}
 
 MARKET: ${odds.home} / ${odds.away}${odds.draw ? ` / ${odds.draw}` : ''}
 FORM: ${homeTeam} ${homeFormStr} | ${awayTeam} ${awayFormStr}
 SIGNALS: ${signalsSummary}
-${injuryContext}
+${injuryContext}${restContext ? `\nREST FACTOR: ${restContext}` : ''}
 ${leagueHint ? `\n${leagueHint}\n` : ''}
 Be AIXBT. Sharp takes. Back them with numbers FROM THE DATA ABOVE ONLY.
 
@@ -419,10 +492,10 @@ JSON output:
     "THE EDGE: [team] because [stat]. Not close.",
     "MARKET MISS: [what odds undervalue]. The data screams [X].",
     "THE PATTERN: [H2H/streak with numbers]. This isn't random.",
-    "THE RISK: [caveat based on form/market data${injuryInfo ? '/injuries' : ''}]. Don't ignore this."
+    "THE RISK: [caveat based on form/market data${injuryInfo ? '/injuries' : ''}${restContext ? '/fatigue' : ''}]. Don't ignore this."
   ],
   "gameFlow": "Sharp take on how this plays out. Cite the numbers.",
-  "riskFactors": ["Risk based on form/market/H2H${injuryInfo ? '/injury' : ''} data only", "Secondary if relevant"]
+  "riskFactors": ["Risk based on form/market/H2H${injuryInfo ? '/injury' : ''}${restContext ? '/rest' : ''} data only", "Secondary if relevant"]
 }
 
 CRITICAL RULES:
