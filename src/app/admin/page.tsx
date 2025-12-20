@@ -72,6 +72,7 @@ export default async function AdminPage() {
         email: true,
         plan: true,
         createdAt: true,
+        referralSource: true,
         _count: { select: { analyses: true } },
       },
     }),

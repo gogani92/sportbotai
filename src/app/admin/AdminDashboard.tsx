@@ -19,6 +19,7 @@ interface RecentUser {
   email: string | null;
   plan: string;
   createdAt: Date;
+  referralSource: string | null;
   _count: { analyses: number };
 }
 
@@ -471,7 +472,12 @@ export default function AdminDashboard({
                     <PlanBadge plan={user.plan} />
                   </div>
                   <div className="flex justify-between text-sm text-text-secondary pl-13">
-                    <span>{user._count.analyses} analyses</span>
+                    <div className="flex items-center gap-2">
+                      <span>{user._count.analyses} analyses</span>
+                      {user.referralSource && (
+                        <span className="px-1.5 py-0.5 bg-white/10 rounded text-xs">{user.referralSource}</span>
+                      )}
+                    </div>
                     <span>{formatDate(new Date(user.createdAt))}</span>
                   </div>
                 </div>
@@ -484,6 +490,7 @@ export default function AdminDashboard({
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">User</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Plan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Source</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Analyses</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Joined</th>
                   </tr>
@@ -499,6 +506,15 @@ export default function AdminDashboard({
                       </td>
                       <td className="px-6 py-4">
                         <PlanBadge plan={user.plan} />
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.referralSource ? (
+                          <span className="px-2 py-0.5 bg-white/10 rounded text-xs text-text-secondary">
+                            {user.referralSource}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-muted">Direct</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-text-secondary">
                         {user._count.analyses}
