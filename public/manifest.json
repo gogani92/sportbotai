@@ -15,27 +15,27 @@
   },
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/icon-192.svg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/icon-512.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-maskable-192.png",
+      "src": "/icons/icon-maskable-192.svg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-maskable-512.png",
+      "src": "/icons/icon-maskable-512.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "maskable"
     },
     {
@@ -67,21 +67,21 @@
       "short_name": "AI Desk",
       "description": "Ask AI about any match",
       "url": "/ai-desk?source=shortcut",
-      "icons": [{ "src": "/icons/shortcut-ai.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/shortcut-ai.svg", "sizes": "96x96", "type": "image/svg+xml" }]
     },
     {
       "name": "Browse Matches",
       "short_name": "Matches",
       "description": "Browse upcoming matches",
       "url": "/matches?source=shortcut",
-      "icons": [{ "src": "/icons/shortcut-matches.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/shortcut-matches.svg", "sizes": "96x96", "type": "image/svg+xml" }]
     },
     {
       "name": "Analysis History",
       "short_name": "History",
       "description": "View your analysis history",
       "url": "/history?source=shortcut",
-      "icons": [{ "src": "/icons/shortcut-history.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/shortcut-history.svg", "sizes": "96x96", "type": "image/svg+xml" }]
     }
   ],
   "handle_links": "preferred",

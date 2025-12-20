@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <!-- Background -->
+  <rect width="96" height="96" rx="20" fill="#050607"/>
+  
+  <!-- Brain/AI icon -->
+  <circle cx="48" cy="48" r="24" fill="none" stroke="#2AF6A0" stroke-width="4"/>
+  <circle cx="40" cy="42" r="4" fill="#2AF6A0"/>
+  <circle cx="56" cy="42" r="4" fill="#2AF6A0"/>
+  <path d="M38 56 Q48 64 58 56" fill="none" stroke="#2AF6A0" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Neural connections -->
+  <line x1="32" y1="32" x2="24" y2="24" stroke="#2AF6A0" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="64" y1="32" x2="72" y2="24" stroke="#2AF6A0" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="48" y1="20" x2="48" y2="12" stroke="#2AF6A0" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  
+  <circle cx="24" cy="24" r="3" fill="#2AF6A0" opacity="0.8"/>
+  <circle cx="72" cy="24" r="3" fill="#2AF6A0" opacity="0.8"/>
+  <circle cx="48" cy="12" r="3" fill="#2AF6A0" opacity="0.8"/>
+</svg>

@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import ShareToX, { generatePostShareText } from './ui/ShareToX';
 
 /**
  * Strip markdown formatting from AI responses
@@ -287,7 +288,14 @@ function AgentPostCard({ post, compact }: { post: AgentPost; compact: boolean })
           <span>•</span>
           <span>{post.league}</span>
         </div>
-        <span>{timeAgo}</span>
+        <div className="flex items-center gap-3">
+          <ShareToX
+            text={generatePostShareText(post.content, post.matchRef)}
+            hashtags={['SportBot', 'AIAnalysis']}
+            variant="text"
+          />
+          <span>{timeAgo}</span>
+        </div>
       </div>
 
       {/* Hover action */}

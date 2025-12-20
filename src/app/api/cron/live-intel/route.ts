@@ -46,6 +46,74 @@ const SPORTS_TO_FETCH = [
   'icehockey_nhl',
 ];
 
+// Smart hashtag mapping by sport/league
+const HASHTAG_MAP: Record<string, string[]> = {
+  // Soccer - EPL
+  'soccer_epl': ['PremierLeague', 'EPL', 'FPL'],
+  'soccer_england_league1': ['EFL', 'League1'],
+  'soccer_england_league2': ['EFL', 'League2'],
+  'soccer_england_efl_cup': ['EFLCup', 'CarabaoCup'],
+  
+  // Soccer - Europe
+  'soccer_spain_la_liga': ['LaLiga'],
+  'soccer_germany_bundesliga': ['Bundesliga'],
+  'soccer_italy_serie_a': ['SerieA'],
+  'soccer_france_ligue_one': ['Ligue1'],
+  'soccer_uefa_champs_league': ['UCL', 'ChampionsLeague'],
+  'soccer_uefa_europa_league': ['UEL', 'EuropaLeague'],
+  
+  // US Sports
+  'basketball_nba': ['NBA', 'NBATwitter'],
+  'americanfootball_nfl': ['NFL', 'NFLTwitter'],
+  'icehockey_nhl': ['NHL', 'NHLTwitter'],
+  'baseball_mlb': ['MLB', 'MLBTwitter'],
+  
+  // Default
+  'default': ['Sports', 'SportsAI'],
+};
+
+/**
+ * Get smart hashtags for a match based on sport/league
+ */
+function getSmartHashtags(sportKey: string, homeTeam?: string): string[] {
+  // Always include brand hashtag
+  const hashtags = ['SportBot'];
+  
+  // Add sport-specific hashtags
+  const sportHashtags = HASHTAG_MAP[sportKey] || HASHTAG_MAP['default'];
+  hashtags.push(...sportHashtags);
+  
+  // For big teams, add team hashtag (drives engagement)
+  const bigTeams: Record<string, string> = {
+    'manchester united': 'MUFC',
+    'manchester city': 'MCFC',
+    'liverpool': 'LFC',
+    'arsenal': 'AFC',
+    'chelsea': 'CFC',
+    'tottenham': 'THFC',
+    'real madrid': 'RealMadrid',
+    'barcelona': 'FCBarcelona',
+    'bayern munich': 'FCBayern',
+    'lakers': 'LakeShow',
+    'celtics': 'Celtics',
+    'warriors': 'DubNation',
+    'chiefs': 'ChiefsKingdom',
+    'cowboys': 'DallasCowboys',
+  };
+  
+  if (homeTeam) {
+    const teamLower = homeTeam.toLowerCase();
+    for (const [team, hashtag] of Object.entries(bigTeams)) {
+      if (teamLower.includes(team)) {
+        hashtags.push(hashtag);
+        break;
+      }
+    }
+  }
+  
+  return hashtags;
+}
+
 /**
  * Get upcoming matches from the events API
  */
@@ -231,12 +299,22 @@ export async function GET(request: NextRequest) {
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
           (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
         
+        const headers: Record<string, string> = { 
+          'Content-Type': 'application/json',
+        };
+        
+        // Add cron auth header for internal call
+        if (CRON_SECRET) {
+          headers['Authorization'] = `Bearer ${CRON_SECRET}`;
+        }
+        
         await fetch(`${baseUrl}/api/twitter`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
-            action: 'post',
+            action: 'tweet',
             content: postResult.content,
+            hashtags: getSmartHashtags(randomMatch.sport, randomMatch.homeTeam),
           }),
         });
         console.log('[Live-Intel-Cron] Posted to Twitter');

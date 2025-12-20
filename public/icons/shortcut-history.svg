@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <!-- Background -->
+  <rect width="96" height="96" rx="20" fill="#050607"/>
+  
+  <!-- Clock/History icon -->
+  <circle cx="48" cy="48" r="28" fill="none" stroke="#2AF6A0" stroke-width="4"/>
+  
+  <!-- Clock hands -->
+  <line x1="48" y1="48" x2="48" y2="32" stroke="#2AF6A0" stroke-width="4" stroke-linecap="round"/>
+  <line x1="48" y1="48" x2="62" y2="54" stroke="#2AF6A0" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="48" cy="48" r="4" fill="#2AF6A0"/>
+  
+  <!-- History arrow -->
+  <path d="M24 48 L16 40 L16 56 Z" fill="#2AF6A0" opacity="0.8"/>
+  <path d="M20 48 Q20 32 36 24" fill="none" stroke="#2AF6A0" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+</svg>

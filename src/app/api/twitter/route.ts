@@ -28,16 +28,25 @@ const ADMIN_EMAILS = [
   'your-email@example.com', // Replace with actual admin emails
 ];
 
+// Internal cron secret for automated posting
+const CRON_SECRET = process.env.CRON_SECRET;
+
 export async function POST(request: NextRequest) {
-  // Check authentication (admin only)
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // Allow internal cron calls with secret
+  const authHeader = request.headers.get('authorization');
+  const isCronCall = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
   
-  // Check if user is admin by email
-  if (!ADMIN_EMAILS.includes(session.user.email)) {
-    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+  if (!isCronCall) {
+    // Check authentication (admin only) for non-cron requests
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Check if user is admin by email
+    if (!ADMIN_EMAILS.includes(session.user.email)) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
   }
   
   try {

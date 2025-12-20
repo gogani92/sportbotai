@@ -30,7 +30,7 @@ export default function ShareCard({
     ? `${window.location.origin}/match/${matchId}`
     : '';
 
-  const shareText = `${homeTeam} vs ${awayTeam} - AI Match Analysis\n${verdict}\n\nFull breakdown:`;
+  const shareText = `🎯 ${homeTeam} vs ${awayTeam}\n\n${verdict}\n\nFull AI analysis:`;
 
   const handleCopyLink = async () => {
     try {
@@ -43,8 +43,13 @@ export default function ShareCard({
   };
 
   const handleShareTwitter = () => {
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-    window.open(url, '_blank');
+    const params = new URLSearchParams();
+    params.set('text', shareText);
+    params.set('url', shareUrl);
+    params.set('via', 'SportBotAI');
+    params.set('hashtags', 'SportBot,AIAnalysis');
+    const url = `https://twitter.com/intent/tweet?${params.toString()}`;
+    window.open(url, '_blank', 'width=550,height=420,noopener,noreferrer');
   };
 
   const handleShareWhatsApp = () => {

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2AF6A0"/>
+      <stop offset="100%" style="stop-color:#10B981"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background - iOS requires no transparency -->
+  <rect width="180" height="180" fill="#050607"/>
+  
+  <!-- Stylized S - scaled for 180px -->
+  <path d="M112.5 39.4 
+           C112.5 39.4 101.25 39.4 90 39.4 
+           C67.5 39.4 50.625 53.4 50.625 70.3 
+           C50.625 87.2 67.5 95.6 90 95.6 
+           C104.1 95.6 112.5 95.6 121.0 95.6
+           C132.2 95.6 140.6 106.9 140.6 121.0
+           C140.6 135.0 126.6 149.1 104.1 149.1
+           C90 149.1 67.5 149.1 67.5 149.1"
+        fill="none" 
+        stroke="url(#grad)" 
+        stroke-width="19.7" 
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  
+  <!-- Speed lines -->
+  <line x1="39.4" y1="67.5" x2="28.1" y2="67.5" stroke="#2AF6A0" stroke-width="8.4" stroke-linecap="round" opacity="0.6"/>
+  <line x1="33.8" y1="84.4" x2="22.5" y2="84.4" stroke="#2AF6A0" stroke-width="5.6" stroke-linecap="round" opacity="0.4"/>
+  
+  <!-- AI dot -->
+  <circle cx="149.1" cy="47.8" r="8.4" fill="#2AF6A0"/>
+</svg>

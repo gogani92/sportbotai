@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -14,6 +14,8 @@ import TeamLogo from '@/components/ui/TeamLogo';
 import LeagueLogo from '@/components/ui/LeagueLogo';
 import { NoAnalysisHistory, ErrorState } from '@/components/ui';
 import HistoryAccessBanner from '@/components/HistoryAccessBanner';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 interface AnalysisSummary {
   id: string;
@@ -93,18 +95,7 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login?callbackUrl=/history');
-      return;
-    }
-
-    if (status === 'authenticated') {
-      fetchHistory();
-    }
-  }, [status, router]);
-
-  const fetchHistory = async (offset = 0) => {
+  const fetchHistory = useCallback(async (offset = 0) => {
     try {
       setLoading(true);
       const res = await fetch(`/api/history?limit=20&offset=${offset}`);
@@ -117,7 +108,24 @@ export default function HistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login?callbackUrl=/history');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      fetchHistory();
+    }
+  }, [status, router, fetchHistory]);
+
+  // Pull-to-refresh
+  const { isRefreshing, pullDistance } = usePullToRefresh({
+    onRefresh: () => fetchHistory(0),
+    threshold: 80,
+  });
 
   const deleteAnalysis = async (id: string) => {
     if (!confirm('Delete this analysis? This cannot be undone.')) return;
@@ -172,6 +180,12 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-bg-primary py-8 sm:py-12">
+      {/* Pull to Refresh Indicator */}
+      <PullToRefreshIndicator 
+        pullDistance={pullDistance} 
+        isRefreshing={isRefreshing} 
+      />
+      
       <div className="container-custom">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

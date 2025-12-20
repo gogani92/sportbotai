@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2AF6A0"/>
+      <stop offset="100%" style="stop-color:#10B981"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Full background for maskable (no rounded corners) -->
+  <rect width="512" height="512" fill="#050607"/>
+  
+  <!-- Stylized S - centered in safe zone (inner 80% = ~410px, offset 51px) -->
+  <g transform="translate(51, 51) scale(0.8)">
+    <path d="M320 112 
+             C320 112 288 112 256 112 
+             C192 112 144 152 144 200 
+             C144 248 192 272 256 272 
+             C296 272 320 272 344 272
+             C376 272 400 304 400 344
+             C400 384 360 424 296 424
+             C256 424 192 424 192 424"
+          fill="none" 
+          stroke="url(#grad)" 
+          stroke-width="56" 
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    
+    <!-- Speed lines -->
+    <line x1="112" y1="192" x2="80" y2="192" stroke="#2AF6A0" stroke-width="24" stroke-linecap="round" opacity="0.6"/>
+    <line x1="96" y1="240" x2="64" y2="240" stroke="#2AF6A0" stroke-width="16" stroke-linecap="round" opacity="0.4"/>
+    
+    <!-- AI dot -->
+    <circle cx="424" cy="136" r="24" fill="#2AF6A0"/>
+  </g>
+</svg>

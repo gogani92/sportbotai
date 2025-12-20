@@ -7,6 +7,7 @@
 import { AnalyzeResponse, RiskLevel, ValueFlag, Trend } from '@/types';
 import TeamLogo from './ui/TeamLogo';
 import LeagueLogo from './ui/LeagueLogo';
+import ShareToX, { generateAnalysisShareText } from './ui/ShareToX';
 
 interface ResultCardProps {
   result: AnalyzeResponse;
@@ -108,6 +109,17 @@ export default function ResultCard({ result }: ResultCardProps) {
           <span className="text-xs text-gray-500">
             Data: {result.matchInfo.sourceType === 'API' ? 'Live Data' : 'Manual Entry'}
           </span>
+          <ShareToX
+            text={generateAnalysisShareText(
+              result.matchInfo.homeTeam,
+              result.matchInfo.awayTeam,
+              result.probabilities.homeWin,
+              result.probabilities.awayWin,
+              riskLabels[riskLevel]
+            )}
+            url={typeof window !== 'undefined' ? window.location.href : undefined}
+            hashtags={['SportBot', 'AIAnalysis']}
+          />
         </div>
       </div>
 

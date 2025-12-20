@@ -8,11 +8,13 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MatchData } from '@/types';
 import MatchCard from '@/components/MatchCard';
 import LeagueLogo from '@/components/ui/LeagueLogo';
 import CountryFlag, { getCountryForLeague } from '@/components/ui/CountryFlag';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '@/components/PullToRefreshIndicator';
 
 interface MatchBrowserProps {
   initialSport?: string;
@@ -120,34 +122,46 @@ export default function MatchBrowser({ initialSport = 'soccer', maxMatches = 12 
   }, [currentSport]);
 
   // Fetch matches for selected league
-  useEffect(() => {
-    async function fetchMatches() {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const fetchMatches = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        const response = await fetch(`/api/match-data?sportKey=${selectedLeague}&includeOdds=false`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch matches');
-        }
-
-        const data = await response.json();
-        setMatches(data.events || []);
-      } catch (err) {
-        console.error('Failed to fetch matches:', err);
-        setError('Failed to load matches');
-        setMatches([]);
-      } finally {
-        setIsLoading(false);
+      const response = await fetch(`/api/match-data?sportKey=${selectedLeague}&includeOdds=false`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch matches');
       }
-    }
 
-    fetchMatches();
+      const data = await response.json();
+      setMatches(data.events || []);
+    } catch (err) {
+      console.error('Failed to fetch matches:', err);
+      setError('Failed to load matches');
+      setMatches([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [selectedLeague]);
+
+  useEffect(() => {
+    fetchMatches();
+  }, [fetchMatches]);
+
+  // Pull-to-refresh
+  const { isRefreshing, pullDistance } = usePullToRefresh({
+    onRefresh: fetchMatches,
+    threshold: 80,
+  });
 
   return (
     <section className="py-8 sm:py-12">
+      {/* Pull to Refresh Indicator */}
+      <PullToRefreshIndicator 
+        pullDistance={pullDistance} 
+        isRefreshing={isRefreshing} 
+      />
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Sport Tabs */}
