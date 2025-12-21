@@ -8,6 +8,7 @@ import AdminDashboard from './AdminDashboard';
 const ADMIN_EMAILS = [
   'gogecmaestrotib92@gmail.com',
   'aiinstamarketing@gmail.com',
+  'stefan@automateed.com',
 ];
 
 export default async function AdminPage() {
