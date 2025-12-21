@@ -364,7 +364,7 @@ const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || 'sportbot-interna
 
 async function fetchMatchAnalysis(match: MatchInfo): Promise<MatchAnalysisData | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.sportbotai.com');
     
     // Build analyze request
@@ -1060,7 +1060,7 @@ export async function generatePreviewsForUpcomingMatches(
 
   try {
     // Fetch upcoming matches from our API
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.sportbotai.com');
     const url = sportKey 
       ? `${baseUrl}/api/match-data?sportKey=${sportKey}`
