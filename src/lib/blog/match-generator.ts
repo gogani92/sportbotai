@@ -1203,6 +1203,8 @@ export async function generatePreviewsForUpcomingMatches(
   let skipped = 0;
   let failed = 0;
 
+  console.log(`[Batch Preview] Starting batch generation - sportKey: ${sportKey || 'soccer_epl'}, limit: ${limit}`);
+
   try {
     // Fetch upcoming matches from our API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 
@@ -1211,22 +1213,29 @@ export async function generatePreviewsForUpcomingMatches(
       ? `${baseUrl}/api/match-data?sportKey=${sportKey}`
       : `${baseUrl}/api/match-data?sportKey=soccer_epl`; // Default to EPL
 
+    console.log(`[Batch Preview] Fetching matches from: ${url}`);
     const response = await fetch(url);
     const data = await response.json();
 
     if (!data.success || !data.events) {
+      console.error('[Batch Preview] Failed to fetch matches:', data);
       throw new Error('Failed to fetch matches');
     }
 
     const matches = data.events.slice(0, limit);
+    console.log(`[Batch Preview] Found ${data.events.length} matches, processing ${matches.length}`);
 
-    for (const match of matches) {
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i];
+      console.log(`[Batch Preview] Processing ${i + 1}/${matches.length}: ${match.homeTeam} vs ${match.awayTeam}`);
+
       // Check if post already exists
       const existing = await prisma.blogPost.findFirst({
         where: { matchId: match.matchId },
       });
 
       if (existing) {
+        console.log(`[Batch Preview] ⏭️ Skipped (already exists): ${match.homeTeam} vs ${match.awayTeam}`);
         skipped++;
         results.push({
           success: false,
@@ -1238,6 +1247,7 @@ export async function generatePreviewsForUpcomingMatches(
       }
 
       // Generate preview
+      console.log(`[Batch Preview] 🔄 Generating: ${match.homeTeam} vs ${match.awayTeam}...`);
       const result = await generateMatchPreview({
         matchId: match.matchId,
         homeTeam: match.homeTeam,
@@ -1251,8 +1261,10 @@ export async function generatePreviewsForUpcomingMatches(
 
       results.push(result);
       if (result.success) {
+        console.log(`[Batch Preview] ✅ Generated: ${match.homeTeam} vs ${match.awayTeam} → ${result.slug}`);
         generated++;
       } else {
+        console.log(`[Batch Preview] ❌ Failed: ${match.homeTeam} vs ${match.awayTeam} - ${result.error}`);
         failed++;
       }
 
@@ -1260,6 +1272,7 @@ export async function generatePreviewsForUpcomingMatches(
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
+    console.log(`[Batch Preview] Complete: ${generated} generated, ${skipped} skipped, ${failed} failed`);
     return {
       total: matches.length,
       generated,
