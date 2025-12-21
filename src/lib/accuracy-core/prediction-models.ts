@@ -494,12 +494,12 @@ export function getExpectedScores(input: ModelInput): { home: number; away: numb
   const homeStrength = calculateTeamStrength(input.homeStats, avgPerTeam, avgPerTeam);
   const awayStrength = calculateTeamStrength(input.awayStats, avgPerTeam, avgPerTeam);
   
-  let homeExpected = homeStrength.attack * (2 - awayStrength.defense) * avgPerTeam;
-  let awayExpected = awayStrength.attack * (2 - homeStrength.defense) * avgPerTeam;
+  const baseHomeExpected = homeStrength.attack * (2 - awayStrength.defense) * avgPerTeam;
+  const awayExpected = awayStrength.attack * (2 - homeStrength.defense) * avgPerTeam;
   
   // Apply home advantage
   const homeAdv = 'homeAdvantage' in config ? config.homeAdvantage : 0.25;
-  homeExpected *= (1 + homeAdv);
+  const homeExpected = baseHomeExpected * (1 + homeAdv);
   
   return {
     home: Math.round(homeExpected * 10) / 10,

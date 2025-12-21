@@ -325,16 +325,13 @@ export function recordCalibrationResult(update: CalibrationUpdate): void {
 
 /**
  * Get current calibration quality metrics
- * NOTE: Uses metrics from prediction-logging.ts (Data-0 layer)
+ * NOTE: Inline implementation to avoid circular deps with prediction-logging.ts
  */
 export function getCalibrationQuality(sport: string): {
   brierScore: number;
   ece: number;
   sampleSize: number;
 } {
-  // Import metrics from prediction-logging at runtime to avoid circular deps
-  const { calculateBrierScore, createCalibrationBuckets, calculateECE } = require('./prediction-logging');
-  
   const sportHistory = calibrationHistory.filter(h => h.sport === sport);
   
   if (sportHistory.length < 20) {
@@ -346,13 +343,33 @@ export function getCalibrationQuality(sport: string): {
     actual: h.actualWin ? 1 as const : 0 as const,
   }));
   
-  const brierScore = calculateBrierScore(predictions);
-  const buckets = createCalibrationBuckets(predictions);
-  const ece = calculateECE(buckets);
+  // Inline Brier score calculation
+  const brierScore = predictions.length > 0 
+    ? predictions.reduce((sum, p) => sum + Math.pow(p.predicted - p.actual, 2), 0) / predictions.length
+    : 0;
+  
+  // Inline ECE calculation (simplified - 10 buckets)
+  const numBuckets = 10;
+  const bucketSize = 1 / numBuckets;
+  let weightedError = 0;
+  
+  for (let i = 0; i < numBuckets; i++) {
+    const rangeMin = i * bucketSize;
+    const rangeMax = (i + 1) * bucketSize;
+    const inBucket = predictions.filter(p => p.predicted >= rangeMin && p.predicted < rangeMax);
+    
+    if (inBucket.length > 0) {
+      const wins = inBucket.filter(p => p.actual === 1).length;
+      const expectedWinRate = (rangeMin + rangeMax) / 2;
+      const actualWinRate = wins / inBucket.length;
+      const calibrationError = Math.abs(expectedWinRate - actualWinRate);
+      weightedError += (inBucket.length / predictions.length) * calibrationError;
+    }
+  }
   
   return {
     brierScore,
-    ece,
+    ece: weightedError,
     sampleSize: sportHistory.length,
   };
 }
