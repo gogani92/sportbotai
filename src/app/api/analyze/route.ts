@@ -1250,9 +1250,9 @@ async function callOpenAI(
     (request.matchData as any).sportKey // Optional sportKey for more precise config lookup
   );
 
-  // Select model based on user tier (Premium gets GPT-4o for better analysis)
-  // TODO: Pass user tier from auth check when implementing tiered models
-  const model = 'gpt-4o-mini'; // Future: 'gpt-4o' for premium users
+  // Use GPT-4o for best prediction accuracy
+  // GPT-4o is significantly better at sports reasoning and probability calibration
+  const model = 'gpt-4o';
   
   const completion = await openai.chat.completions.create({
     model,
@@ -1260,11 +1260,11 @@ async function callOpenAI(
       { role: 'system', content: sportAwareSystemPrompt },
       { role: 'user', content: userPrompt },
     ],
-    temperature: 0.3, // Lower temp for more consistent, reliable analysis
-    max_tokens: 3500, // Increased for comprehensive analysis with briefing
+    temperature: 0.2, // Lower temp for more consistent, reliable analysis
+    max_tokens: 4000, // Increased for comprehensive analysis with briefing
     response_format: { type: 'json_object' },
     // Increase reliability
-    top_p: 0.95,
+    top_p: 0.9,
   });
 
   const content = completion.choices[0]?.message?.content || '';
