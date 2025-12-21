@@ -21,6 +21,7 @@ export const maxDuration = 300; // 5 minutes max
 const ADMIN_EMAILS = [
   'admin@sportbotai.com',
   'gogani92@gmail.com',
+  'streamentor@gmail.com',
 ];
 
 // GET - Batch generate previews for upcoming matches
