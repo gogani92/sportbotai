@@ -8,6 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { 
   generateMatchPreview, 
   generatePreviewsForUpcomingMatches 
@@ -15,6 +17,11 @@ import {
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes max
+
+const ADMIN_EMAILS = [
+  'admin@sportbotai.com',
+  'gogani92@gmail.com',
+];
 
 // GET - Batch generate previews for upcoming matches
 export async function GET(request: NextRequest) {
@@ -59,13 +66,17 @@ export async function GET(request: NextRequest) {
 // POST - Generate preview for a specific match
 export async function POST(request: NextRequest) {
   try {
-    // Verify authorization
+    // Check for admin session OR cron secret
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+    
     const authHeader = request.headers.get('Authorization');
     const cronSecret = process.env.CRON_SECRET;
+    const hasCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!isAdmin && !hasCronAuth) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - Admin access required' },
         { status: 401 }
       );
     }
