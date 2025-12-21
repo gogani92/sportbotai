@@ -28,6 +28,7 @@ interface BlogAdminPanelProps {
 }
 
 const SPORTS_OPTIONS = [
+  { value: 'all', label: '🌍 All Leagues (Trending)' },
   { value: 'soccer_spain_la_liga', label: '⚽ La Liga (Spain)' },
   { value: 'soccer_epl', label: '⚽ Premier League' },
   { value: 'soccer_germany_bundesliga', label: '⚽ Bundesliga' },
@@ -40,6 +41,18 @@ const SPORTS_OPTIONS = [
   { value: 'mma_mixed_martial_arts', label: '🥊 UFC/MMA' },
 ];
 
+// Same sports that pre-analyze cron uses
+const PRE_ANALYZE_SPORTS = [
+  'soccer_epl',
+  'soccer_spain_la_liga', 
+  'soccer_germany_bundesliga',
+  'soccer_italy_serie_a',
+  'soccer_france_ligue_one',
+  'basketball_nba',
+  'americanfootball_nfl',
+  'icehockey_nhl',
+];
+
 export default function BlogAdminPanel({ posts, stats }: BlogAdminPanelProps) {
   const [filter, setFilter] = useState<'all' | 'PUBLISHED' | 'DRAFT' | 'SCHEDULED'>('all');
   const [generating, setGenerating] = useState(false);
@@ -47,7 +60,7 @@ export default function BlogAdminPanel({ posts, stats }: BlogAdminPanelProps) {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   // Match Preview State
-  const [selectedSport, setSelectedSport] = useState('soccer_spain_la_liga');
+  const [selectedSport, setSelectedSport] = useState('all');
   const [matchGenerating, setMatchGenerating] = useState(false);
   const [upcomingMatches, setUpcomingMatches] = useState<Array<{
     matchId: string;
@@ -55,6 +68,7 @@ export default function BlogAdminPanel({ posts, stats }: BlogAdminPanelProps) {
     awayTeam: string;
     commenceTime: string;
     league: string;
+    sportKey: string;
   }>>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
@@ -63,20 +77,59 @@ export default function BlogAdminPanel({ posts, stats }: BlogAdminPanelProps) {
     ? posts 
     : posts.filter((p) => p.status === filter);
 
-  // Fetch upcoming matches for selected sport
+  // Fetch upcoming matches for selected sport (or all sports)
   const handleFetchMatches = async () => {
     setLoadingMatches(true);
     setMessage(null);
     try {
-      const res = await fetch(`/api/match-data?sportKey=${selectedSport}`);
-      const data = await res.json();
-      if (data.events && Array.isArray(data.events)) {
-        setUpcomingMatches(data.events.slice(0, 10)); // Limit to 10 matches
-        if (data.events.length === 0) {
-          setMessage({ type: 'error', text: 'No upcoming matches found for this sport' });
+      const sportsToFetch = selectedSport === 'all' ? PRE_ANALYZE_SPORTS : [selectedSport];
+      
+      const allMatches: Array<{
+        matchId: string;
+        homeTeam: string;
+        awayTeam: string;
+        commenceTime: string;
+        league: string;
+        sportKey: string;
+      }> = [];
+
+      // Fetch in parallel
+      const responses = await Promise.allSettled(
+        sportsToFetch.map(async (sport) => {
+          const res = await fetch(`/api/match-data?sportKey=${sport}&includeOdds=false`);
+          if (res.ok) {
+            const data = await res.json();
+            return { sport, events: data.events || [] };
+          }
+          return { sport, events: [] };
+        })
+      );
+
+      for (const response of responses) {
+        if (response.status === 'fulfilled' && response.value.events) {
+          for (const event of response.value.events) {
+            allMatches.push({
+              matchId: event.matchId,
+              homeTeam: event.homeTeam,
+              awayTeam: event.awayTeam,
+              commenceTime: event.commenceTime,
+              league: event.league || response.value.sport,
+              sportKey: response.value.sport,
+            });
+          }
         }
+      }
+
+      // Sort by commence time and limit
+      const sorted = allMatches
+        .sort((a, b) => new Date(a.commenceTime).getTime() - new Date(b.commenceTime).getTime())
+        .slice(0, 20); // Show 20 matches
+
+      setUpcomingMatches(sorted);
+      if (sorted.length === 0) {
+        setMessage({ type: 'error', text: 'No upcoming matches found' });
       } else {
-        setMessage({ type: 'error', text: 'Failed to fetch matches' });
+        setMessage({ type: 'success', text: `Found ${sorted.length} upcoming matches` });
       }
     } catch {
       setMessage({ type: 'error', text: 'Network error fetching matches' });
@@ -97,7 +150,9 @@ export default function BlogAdminPanel({ posts, stats }: BlogAdminPanelProps) {
     setMessage(null);
 
     try {
-      const sportLabel = SPORTS_OPTIONS.find(s => s.value === selectedSport)?.label || selectedSport;
+      // Use sportKey from the match itself, not the dropdown (for "all" mode)
+      const sportKey = match.sportKey || selectedSport;
+      const sportLabel = SPORTS_OPTIONS.find(s => s.value === sportKey)?.label || sportKey;
       const res = await fetch('/api/blog/match-preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,7 +162,7 @@ export default function BlogAdminPanel({ posts, stats }: BlogAdminPanelProps) {
           homeTeam: match.homeTeam,
           awayTeam: match.awayTeam,
           sport: sportLabel.split(' ')[1] || 'soccer',
-          sportKey: selectedSport,
+          sportKey: sportKey,
           league: match.league,
           commenceTime: match.commenceTime,
         }),
@@ -353,8 +408,10 @@ export default function BlogAdminPanel({ posts, stats }: BlogAdminPanelProps) {
               
               {/* Match List */}
               {upcomingMatches.length > 0 && (
-                <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
-                  <label className="block text-sm text-text-muted mb-2">Select Match</label>
+                <div className="mt-4 space-y-2 max-h-80 overflow-y-auto">
+                  <label className="block text-sm text-text-muted mb-2">
+                    Select Match ({upcomingMatches.length} found)
+                  </label>
                   {upcomingMatches.map((match) => (
                     <label
                       key={match.matchId}
@@ -373,9 +430,14 @@ export default function BlogAdminPanel({ posts, stats }: BlogAdminPanelProps) {
                         className="sr-only"
                       />
                       <div className="flex-1">
-                        <p className="text-white font-medium text-sm">
-                          {match.homeTeam} vs {match.awayTeam}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-medium text-sm">
+                            {match.homeTeam} vs {match.awayTeam}
+                          </p>
+                          <span className="text-xs px-1.5 py-0.5 bg-white/10 rounded text-text-muted">
+                            {match.league}
+                          </span>
+                        </div>
                         <p className="text-text-muted text-xs">
                           {new Date(match.commenceTime).toLocaleDateString('en-US', {
                             weekday: 'short',
