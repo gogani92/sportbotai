@@ -672,6 +672,12 @@ export async function POST(request: NextRequest) {
     // ========================================
     const body = await request.json();
     
+    // Check for forceRefresh flag (bypasses cache for testing)
+    const forceRefresh = body.forceRefresh === true;
+    if (forceRefresh) {
+      console.log('[Cache] Force refresh requested - will bypass cache');
+    }
+    
     // Normalize request to standard format
     const normalizedRequest = normalizeRequest(body);
     
@@ -930,7 +936,8 @@ export async function POST(request: NextRequest) {
     // Force refresh if we have real-time intel (it's time-sensitive)
     const hasRealTimeIntel = realTimeIntel?.success && realTimeIntel?.content;
     
-    if (cachedAnalysis && (!cachedMissingFormData || !hasNewFormData) && !hasRealTimeIntel) {
+    // Skip cache if forceRefresh is set (for testing new features)
+    if (cachedAnalysis && (!cachedMissingFormData || !hasNewFormData) && !hasRealTimeIntel && !forceRefresh) {
       console.log('[Cache] Using cached analysis');
       console.log('[Cache] Cached form data status:', {
         hasHomeForm: !!cachedAnalysis.momentumAndForm?.homeForm?.length,
