@@ -257,7 +257,7 @@ export default function AccountDashboard({ user }: Props) {
         </div>
 
         {/* Quick Links */}
-        <div className="mt-8">
+        <div className="mt-8 space-y-3">
           <Link 
             href="/history"
             className="flex items-center justify-between p-4 bg-bg-card rounded-xl border border-divider hover:border-primary/30 transition-colors group"
@@ -274,6 +274,26 @@ export default function AccountDashboard({ user }: Props) {
               </div>
             </div>
             <svg className="w-5 h-5 text-text-muted group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+
+          <Link 
+            href="/my-teams"
+            className="flex items-center justify-between p-4 bg-bg-card rounded-xl border border-divider hover:border-accent/30 transition-colors group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">My Teams</p>
+                <p className="text-text-muted text-sm">Track your favorite teams</p>
+              </div>
+            </div>
+            <svg className="w-5 h-5 text-text-muted group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>

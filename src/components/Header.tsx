@@ -65,6 +65,13 @@ export default function Header() {
               AI Desk
             </Link>
             <Link 
+              href="/my-teams" 
+              className="text-text-secondary hover:text-text-primary font-medium transition-colors text-sm flex items-center gap-1.5"
+            >
+              <span className="text-base">❤️</span>
+              My Teams
+            </Link>
+            <Link 
               href="/market-alerts" 
               className="text-text-secondary hover:text-text-primary font-medium transition-colors text-sm flex items-center gap-1.5"
             >
