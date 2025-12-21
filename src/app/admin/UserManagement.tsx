@@ -217,6 +217,7 @@ export default function UserManagement() {
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Plan</th>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Source</th>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Auth</th>
+                <th className="px-4 py-3 text-left font-medium text-text-muted">Registered</th>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Activity</th>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Credits</th>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Status</th>
@@ -278,6 +279,16 @@ export default function UserManagement() {
                       ) : (
                         <span title="Email/Password">🔑</span>
                       )}
+                    </div>
+                  </td>
+
+                  {/* Registered */}
+                  <td className="px-4 py-3">
+                    <div className="text-xs text-text-muted" title={user.createdAt ? new Date(user.createdAt).toLocaleString() : 'Unknown'}>
+                      {user.createdAt 
+                        ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })
+                        : 'Unknown'
+                      }
                     </div>
                   </td>
 
