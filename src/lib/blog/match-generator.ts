@@ -1188,6 +1188,19 @@ ${recapContent}
 // BATCH: GENERATE PREVIEWS FOR ALL UPCOMING MATCHES
 // ============================================
 
+// All sports/leagues to generate blog posts for
+const ALL_BLOG_SPORTS = [
+  'soccer_epl',           // Premier League
+  'soccer_spain_la_liga', // La Liga
+  'soccer_germany_bundesliga', // Bundesliga
+  'soccer_italy_serie_a', // Serie A
+  'soccer_france_ligue_one', // Ligue 1
+  'soccer_uefa_champs_league', // Champions League
+  'basketball_nba',       // NBA
+  'americanfootball_nfl', // NFL
+  'icehockey_nhl',        // NHL
+];
+
 export async function generatePreviewsForUpcomingMatches(
   sportKey?: string,
   limit: number = 10
@@ -1202,86 +1215,87 @@ export async function generatePreviewsForUpcomingMatches(
   let generated = 0;
   let skipped = 0;
   let failed = 0;
+  let totalChecked = 0;
 
-  console.log(`[Batch Preview] Starting batch generation - sportKey: ${sportKey || 'soccer_epl'}, limit: ${limit} (will generate up to ${limit} NEW posts)`);
+  // If specific sport requested, use that; otherwise cycle through all sports
+  const sportsToProcess = sportKey ? [sportKey] : ALL_BLOG_SPORTS;
+  
+  console.log(`[Batch Preview] Starting batch generation - sports: ${sportsToProcess.length}, limit: ${limit} NEW posts`);
 
   try {
-    // Fetch upcoming matches from our API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.sportbotai.com');
-    const url = sportKey 
-      ? `${baseUrl}/api/match-data?sportKey=${sportKey}`
-      : `${baseUrl}/api/match-data?sportKey=soccer_epl`; // Default to EPL
 
-    console.log(`[Batch Preview] Fetching matches from: ${url}`);
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!data.success || !data.events) {
-      console.error('[Batch Preview] Failed to fetch matches:', data);
-      throw new Error('Failed to fetch matches');
-    }
-
-    // Process ALL matches, but stop after generating 'limit' new posts
-    const allMatches = data.events;
-    console.log(`[Batch Preview] Found ${allMatches.length} matches, will generate up to ${limit} new posts`);
-
-    for (let i = 0; i < allMatches.length; i++) {
-      // Stop if we've generated enough new posts
+    // Process each sport until we hit the limit
+    for (const sport of sportsToProcess) {
       if (generated >= limit) {
         console.log(`[Batch Preview] Reached limit of ${limit} new posts, stopping`);
         break;
       }
 
-      const match = allMatches[i];
-      console.log(`[Batch Preview] Checking ${i + 1}/${allMatches.length}: ${match.homeTeam} vs ${match.awayTeam}`);
+      const url = `${baseUrl}/api/match-data?sportKey=${sport}`;
+      console.log(`[Batch Preview] 🏟️ Fetching ${sport}...`);
+      
+      const response = await fetch(url);
+      const data = await response.json();
 
-      // Check if post already exists
-      const existing = await prisma.blogPost.findFirst({
-        where: { matchId: match.matchId },
-      });
-
-      if (existing) {
-        console.log(`[Batch Preview] ⏭️ Skipped (already exists): ${match.homeTeam} vs ${match.awayTeam}`);
-        skipped++;
-        results.push({
-          success: false,
-          error: 'Already exists',
-          postId: existing.id,
-          slug: existing.slug,
-        });
+      if (!data.success || !data.events) {
+        console.log(`[Batch Preview] ⚠️ No matches for ${sport}, skipping`);
         continue;
       }
 
-      // Generate preview
-      console.log(`[Batch Preview] 🔄 Generating (${generated + 1}/${limit}): ${match.homeTeam} vs ${match.awayTeam}...`);
-      const result = await generateMatchPreview({
-        matchId: match.matchId,
-        homeTeam: match.homeTeam,
-        awayTeam: match.awayTeam,
-        sport: match.sport,
-        sportKey: match.sportKey,
-        league: match.league,
-        commenceTime: match.commenceTime,
-        odds: match.averageOdds,
-      });
+      const allMatches = data.events;
+      console.log(`[Batch Preview] Found ${allMatches.length} matches in ${sport}`);
 
-      results.push(result);
-      if (result.success) {
-        console.log(`[Batch Preview] ✅ Generated: ${match.homeTeam} vs ${match.awayTeam} → ${result.slug}`);
-        generated++;
-      } else {
-        console.log(`[Batch Preview] ❌ Failed: ${match.homeTeam} vs ${match.awayTeam} - ${result.error}`);
-        failed++;
+      for (let i = 0; i < allMatches.length; i++) {
+        // Stop if we've generated enough new posts
+        if (generated >= limit) {
+          break;
+        }
+
+        const match = allMatches[i];
+        totalChecked++;
+
+        // Check if post already exists
+        const existing = await prisma.blogPost.findFirst({
+          where: { matchId: match.matchId },
+        });
+
+        if (existing) {
+          skipped++;
+          continue; // Don't log every skip to reduce noise
+        }
+
+        // Generate preview
+        console.log(`[Batch Preview] 🔄 Generating (${generated + 1}/${limit}): ${match.homeTeam} vs ${match.awayTeam} [${sport}]`);
+        const result = await generateMatchPreview({
+          matchId: match.matchId,
+          homeTeam: match.homeTeam,
+          awayTeam: match.awayTeam,
+          sport: match.sport,
+          sportKey: match.sportKey,
+          league: match.league,
+          commenceTime: match.commenceTime,
+          odds: match.averageOdds,
+        });
+
+        results.push(result);
+        if (result.success) {
+          console.log(`[Batch Preview] ✅ Generated: ${match.homeTeam} vs ${match.awayTeam} → ${result.slug}`);
+          generated++;
+        } else {
+          console.log(`[Batch Preview] ❌ Failed: ${match.homeTeam} vs ${match.awayTeam} - ${result.error}`);
+          failed++;
+        }
+
+        // Rate limiting - wait between generations
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
-
-      // Rate limiting - wait between generations
-      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    console.log(`[Batch Preview] Complete: ${generated} generated, ${skipped} skipped, ${failed} failed (checked ${allMatches.length} total)`);
+    console.log(`[Batch Preview] Complete: ${generated} generated, ${skipped} skipped, ${failed} failed (checked ${totalChecked} matches across ${sportsToProcess.length} sports)`);
     return {
-      total: allMatches.length,
+      total: totalChecked,
       generated,
       skipped,
       failed,
@@ -1291,7 +1305,7 @@ export async function generatePreviewsForUpcomingMatches(
   } catch (error) {
     console.error('[Batch Preview] Error:', error);
     return {
-      total: 0,
+      total: totalChecked,
       generated,
       skipped,
       failed: failed + 1,
