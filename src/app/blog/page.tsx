@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { BLOG_CATEGORIES } from '@/lib/blog';
-import { META, SITE_CONFIG, getBlogSchema } from '@/lib/seo';
+import { META, SITE_CONFIG, getBlogSchema, getBlogBreadcrumb } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: META.blog.title,
@@ -110,9 +110,15 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   const category = params.category;
 
   const { posts, pagination } = await getBlogPosts(page, category);
+  const breadcrumbSchema = getBlogBreadcrumb();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       {/* Header */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">

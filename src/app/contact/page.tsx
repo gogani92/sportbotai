@@ -11,6 +11,9 @@ import { SITE_CONFIG } from '@/lib/seo';
 export const metadata: Metadata = {
   title: 'Contact Us',
   description: 'Get in touch with SportBot AI. Questions, feedback, or partnership inquiries - we\'d love to hear from you.',
+  alternates: {
+    canonical: '/contact',
+  },
 };
 
 export default function ContactPage() {

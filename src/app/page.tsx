@@ -7,6 +7,7 @@
  * A/B TEST ACTIVE: Hero section (hero-2024-12)
  */
 
+import { Metadata } from 'next';
 import HeroABTest from '@/components/HeroABTest';
 import TrendingSection from '@/components/TrendingSection';
 import HowItWorks from '@/components/HowItWorks';
@@ -15,7 +16,14 @@ import Features from '@/components/Features';
 import PricingTeaser from '@/components/PricingTeaser';
 import ResponsibleGamblingBlock from '@/components/ResponsibleGamblingBlock';
 import { StatsStrip, TestimonialsSection, TrustBadges } from '@/components/SocialProof';
-import { getOrganizationSchema, getWebsiteSchema, getMatchAnalyzerSchema, getAIDeskSchema, getHomepageFAQSchema } from '@/lib/seo';
+import { getOrganizationSchema, getWebsiteSchema, getMatchAnalyzerSchema, getAIDeskSchema, getHomepageFAQSchema, getHomeBreadcrumb } from '@/lib/seo';
+
+// Homepage metadata with canonical
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
 
 export default function HomePage() {
   // Structured data for rich search results
@@ -24,6 +32,7 @@ export default function HomePage() {
   const analyzerSchema = getMatchAnalyzerSchema();
   const aiDeskSchema = getAIDeskSchema();
   const faqSchema = getHomepageFAQSchema();
+  const breadcrumbSchema = getHomeBreadcrumb();
   
   return (
     <>
@@ -47,6 +56,10 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       
       {/* Hero section - A/B TEST ACTIVE */}

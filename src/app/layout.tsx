@@ -97,9 +97,8 @@ export const metadata: Metadata = {
   
   // Canonical & Base
   metadataBase: new URL(SITE_CONFIG.url),
-  alternates: {
-    canonical: '/',
-  },
+  // NOTE: Do NOT set alternates.canonical here - it will be inherited by all pages
+  // Each page should set its own canonical URL
   
   // Robots
   robots: {

@@ -63,29 +63,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[Sitemap] Error fetching blog posts:', error);
   }
 
-  // Fetch popular teams for team pages
-  let teamEntries: MetadataRoute.Sitemap = [];
-  try {
-    // Get most favorited teams
-    const popularTeams = await prisma.favoriteTeam.groupBy({
-      by: ['teamName', 'sport'],
-      _count: { teamName: true },
-      orderBy: { _count: { teamName: 'desc' } },
-      take: 50,
-    });
-
-    teamEntries = popularTeams.map(team => {
-      const slug = team.teamName.toLowerCase().replace(/\s+/g, '-');
-      return {
-        url: `${BASE_URL}/team/${slug}`,
-        lastModified: currentDate,
-        changeFrequency: 'daily' as const,
-        priority: 0.6,
-      };
-    });
-  } catch (error) {
-    console.error('[Sitemap] Error fetching teams:', error);
-  }
+  // NOTE: Team pages removed from sitemap - they require numeric teamId from API-Football,
+  // but sitemap was generating slug-based URLs which cause 500 errors.
+  // TODO: Implement proper team slug -> teamId resolution before re-adding to sitemap.
+  const teamEntries: MetadataRoute.Sitemap = [];
 
   return [...staticEntries, ...blogEntries, ...teamEntries];
 }

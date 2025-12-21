@@ -11,6 +11,9 @@ import { META } from '@/lib/seo';
 export const metadata: Metadata = {
   title: META.responsibleGambling.title,
   description: META.responsibleGambling.description,
+  alternates: {
+    canonical: '/responsible-gambling',
+  },
   robots: {
     index: true,
     follow: true,

@@ -10,6 +10,9 @@ import { META } from '@/lib/seo';
 export const metadata: Metadata = {
   title: META.privacy.title,
   description: META.privacy.description,
+  alternates: {
+    canonical: '/privacy',
+  },
   robots: {
     index: true,
     follow: true,

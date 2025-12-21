@@ -6,7 +6,7 @@
 
 import { Metadata } from 'next';
 import PricingCards from '@/components/PricingCards';
-import { META, SITE_CONFIG, getFAQSchema, getPricingSchema } from '@/lib/seo';
+import { META, SITE_CONFIG, getFAQSchema, getPricingSchema, getPricingBreadcrumb } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: META.pricing.title,
@@ -53,9 +53,15 @@ const pricingFAQs = [
 export default function PricingPage() {
   const faqSchema = getFAQSchema(pricingFAQs);
   const pricingSchema = getPricingSchema();
+  const breadcrumbSchema = getPricingBreadcrumb();
 
   return (
     <div className="bg-bg min-h-screen">
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       {/* FAQ Schema */}
       <script
         type="application/ld+json"

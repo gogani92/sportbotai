@@ -9,7 +9,7 @@
 
 import { Metadata } from 'next';
 import AIDeskClient from './AIDeskClient';
-import { META, SITE_CONFIG, getAIDeskSchema } from '@/lib/seo';
+import { META, SITE_CONFIG, getAIDeskSchema, getAIDeskBreadcrumb } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: META.aiDesk.title,
@@ -43,9 +43,15 @@ export const metadata: Metadata = {
 
 export default function AIDeskPage() {
   const jsonLd = getAIDeskSchema();
+  const breadcrumbSchema = getAIDeskBreadcrumb();
   
   return (
     <>
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { getBlogPostBreadcrumb } from '@/lib/seo';
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -73,6 +74,9 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     title: post.metaTitle || `${post.title} | SportBot AI Blog`,
     description: post.metaDescription || post.excerpt,
     keywords: post.tags.join(', '),
+    alternates: {
+      canonical: `/blog/${slug}`,
+    },
     openGraph: {
       title: post.metaTitle || post.title,
       description: post.metaDescription || post.excerpt,
@@ -141,8 +145,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     },
   };
 
+  const breadcrumbSchema = getBlogPostBreadcrumb(post.title, post.category || undefined);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

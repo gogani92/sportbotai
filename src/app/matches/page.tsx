@@ -7,7 +7,7 @@
 
 import { Metadata } from 'next';
 import MatchBrowser from '@/components/MatchBrowser';
-import { META, SITE_CONFIG, getMatchAnalyzerSchema } from '@/lib/seo';
+import { META, SITE_CONFIG, getMatchAnalyzerSchema, getMatchesBreadcrumb } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: META.matches.title,
@@ -41,9 +41,15 @@ export const metadata: Metadata = {
 
 export default function MatchesPage() {
   const jsonLd = getMatchAnalyzerSchema();
+  const breadcrumbSchema = getMatchesBreadcrumb();
   
   return (
     <>
+      {/* Breadcrumb Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"

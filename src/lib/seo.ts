@@ -490,6 +490,81 @@ export function getHomepageFAQSchema() {
 }
 
 // ==============================================
+// BREADCRUMB SCHEMA
+// ==============================================
+
+export interface BreadcrumbItem {
+  name: string;
+  url?: string; // Optional for last item (current page)
+}
+
+/**
+ * Generate BreadcrumbList schema for any page
+ * Usage: getBreadcrumbSchema([
+ *   { name: 'Home', url: '/' },
+ *   { name: 'Blog', url: '/blog' },
+ *   { name: 'Article Title' }
+ * ])
+ */
+export function getBreadcrumbSchema(items: BreadcrumbItem[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      ...(item.url && { item: `${SITE_CONFIG.url}${item.url}` }),
+    })),
+  };
+}
+
+// Pre-built breadcrumbs for common pages
+export function getHomeBreadcrumb() {
+  return getBreadcrumbSchema([{ name: 'Home' }]);
+}
+
+export function getBlogBreadcrumb() {
+  return getBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Blog' },
+  ]);
+}
+
+export function getBlogPostBreadcrumb(title: string, category?: string) {
+  const items: BreadcrumbItem[] = [
+    { name: 'Home', url: '/' },
+    { name: 'Blog', url: '/blog' },
+  ];
+  if (category) {
+    items.push({ name: category, url: `/blog?category=${encodeURIComponent(category)}` });
+  }
+  items.push({ name: title });
+  return getBreadcrumbSchema(items);
+}
+
+export function getPricingBreadcrumb() {
+  return getBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Pricing' },
+  ]);
+}
+
+export function getMatchesBreadcrumb() {
+  return getBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Matches' },
+  ]);
+}
+
+export function getAIDeskBreadcrumb() {
+  return getBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'AI Sports Desk' },
+  ]);
+}
+
+// ==============================================
 // SAFE KEYWORDS (Stripe/AdSense compliant)
 // ==============================================
 

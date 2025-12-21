@@ -10,6 +10,9 @@ import { META } from '@/lib/seo';
 export const metadata: Metadata = {
   title: META.terms.title,
   description: META.terms.description,
+  alternates: {
+    canonical: '/terms',
+  },
   robots: {
     index: true,
     follow: true,
