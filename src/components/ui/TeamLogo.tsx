@@ -63,20 +63,18 @@ export default function TeamLogo({
   className = '',
   priority = false 
 }: TeamLogoProps) {
-  // For MMA/UFC/Boxing - show fighter's country flag instead of team logo
-  if (isIndividualSport(sport)) {
-    return <FighterFlag fighterName={teamName} size={size} className={className} />;
-  }
+  // Compute these values before any hooks
+  const isIndividual = isIndividualSport(sport);
+  const logoUrl = isIndividual ? '' : getTeamLogo(teamName, sport, league);
+  const isFallback = !isIndividual && logoUrl.startsWith('data:');
   
-  const logoUrl = getTeamLogo(teamName, sport, league);
-  const isFallback = logoUrl.startsWith('data:');
-  
+  // All hooks must be called unconditionally at the top level
   const [hasError, setHasError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(() => loadedLogos.has(logoUrl));
+  const [isLoaded, setIsLoaded] = useState(() => !isIndividual && loadedLogos.has(logoUrl));
   
   // Preload logo image
   useEffect(() => {
-    if (isFallback || loadedLogos.has(logoUrl)) return;
+    if (isIndividual || isFallback || loadedLogos.has(logoUrl)) return;
     
     const img = new Image();
     img.onload = () => {
@@ -85,7 +83,12 @@ export default function TeamLogo({
     };
     img.onerror = () => setHasError(true);
     img.src = logoUrl;
-  }, [logoUrl, isFallback]);
+  }, [logoUrl, isFallback, isIndividual]);
+
+  // For MMA/UFC/Boxing - show fighter's country flag instead of team logo
+  if (isIndividual) {
+    return <FighterFlag fighterName={teamName} size={size} className={className} />;
+  }
 
   // Generate fallback initials
   const getInitials = (name: string) => {
