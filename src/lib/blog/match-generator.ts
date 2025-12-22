@@ -74,25 +74,18 @@ interface GeneratedMatchContent {
 // PLACEHOLDER REPLACEMENT
 // ============================================
 
-interface AnalysisData {
-  probabilities: {
-    homeWin: number;
-    draw: number | null;
-    awayWin: number;
-  };
-  homeForm: { wins: number; draws: number; losses: number };
-  awayForm: { wins: number; draws: number; losses: number };
-  headToHead: { homeWins: number; draws: number; awayWins: number };
-  [key: string]: unknown;
-}
-
 /**
  * Replace placeholder values in generated content with actual data
  */
 function replacePlaceholders(
   content: string,
   match: MatchInfo,
-  analysis: AnalysisData | null
+  analysis: {
+    probabilities: { homeWin: number; draw: number | null; awayWin: number };
+    homeForm: { wins: number; draws: number; losses: number };
+    awayForm: { wins: number; draws: number; losses: number };
+    headToHead: { homeWins: number; draws: number; awayWins: number };
+  } | null
 ): string {
   let result = content;
   
