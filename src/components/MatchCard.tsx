@@ -20,6 +20,9 @@ interface LiveScore {
   status: { short: string; elapsed: number | null };
 }
 
+// Status codes that indicate finished games
+const FINISHED_STATUSES = ['FT', 'AET', 'PEN', 'AOT', 'AP', 'POST', 'FT/OT', 'CANC', 'ABD', 'AWD', 'WO'];
+
 interface MatchCardProps {
   matchId: string;
   homeTeam: string;
@@ -42,6 +45,7 @@ export default function MatchCard({
 }: MatchCardProps) {
   const [liveScore, setLiveScore] = useState<LiveScore | null>(null);
   const [isLive, setIsLive] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
 
   // Detect sport type for live scores API
   const getSportType = (sport: string): string => {
@@ -55,36 +59,52 @@ export default function MatchCard({
     return 'soccer';
   };
 
-  // Check if match might be live
+  // Check if match might be live or finished
   useEffect(() => {
     const kickoff = new Date(commenceTime);
     const now = new Date();
-    const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
     
-    // Only check if match started within last 3 hours
-    if (kickoff <= now && kickoff >= threeHoursAgo) {
+    // Only check if match started within last 6 hours (covers live + recently finished)
+    if (kickoff <= now && kickoff >= sixHoursAgo) {
       const checkLive = async () => {
         try {
           const sportType = getSportType(sportKey);
           const res = await fetch(`/api/live-scores?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}&sport=${sportType}`);
           if (!res.ok) return;
           const data = await res.json();
-          if (data.status === 'live' && data.match) {
-            setIsLive(true);
-            setLiveScore({
-              homeScore: data.match.homeScore,
-              awayScore: data.match.awayScore,
-              status: data.match.status,
-            });
+          if (data.match) {
+            const statusShort = data.match.status?.short || '';
+            const isGameFinished = FINISHED_STATUSES.includes(statusShort);
+            
+            if (isGameFinished) {
+              setIsFinished(true);
+              setIsLive(false);
+              setLiveScore({
+                homeScore: data.match.homeScore,
+                awayScore: data.match.awayScore,
+                status: data.match.status,
+              });
+            } else if (data.status === 'live') {
+              setIsLive(true);
+              setIsFinished(false);
+              setLiveScore({
+                homeScore: data.match.homeScore,
+                awayScore: data.match.awayScore,
+                status: data.match.status,
+              });
+            }
           }
         } catch {}
       };
       checkLive();
-      // Refresh every 60 seconds for list views
-      const interval = setInterval(checkLive, 60000);
-      return () => clearInterval(interval);
+      // Refresh every 60 seconds for list views (only if not finished)
+      if (!isFinished) {
+        const interval = setInterval(checkLive, 60000);
+        return () => clearInterval(interval);
+      }
     }
-  }, [homeTeam, awayTeam, commenceTime, sportKey]);
+  }, [homeTeam, awayTeam, commenceTime, sportKey, isFinished]);
 
   // Generate match preview URL - use Buffer for consistent encoding
   const matchData = {
@@ -122,7 +142,7 @@ export default function MatchCard({
     <Link
       href={`/match/${encodedMatchId}`}
       scroll={false}
-      className={`group relative bg-bg-card rounded-xl border ${isLive ? 'border-red-500/40 ring-1 ring-red-500/20' : 'border-divider'} p-3 sm:p-4 hover:border-primary/30 hover:bg-bg-elevated transition-all duration-300 ease-out block hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation`}
+      className={`group relative bg-bg-card rounded-xl border ${isLive ? 'border-red-500/40 ring-1 ring-red-500/20' : isFinished ? 'border-gray-600/40' : 'border-divider'} p-3 sm:p-4 hover:border-primary/30 hover:bg-bg-elevated transition-all duration-300 ease-out block hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation ${isFinished ? 'opacity-80' : ''}`}
       data-card
     >
       {/* Live Badge */}
@@ -136,8 +156,15 @@ export default function MatchCard({
         </div>
       )}
       
-      {/* Hot Score Badge (only if not live) */}
-      {!isLive && hotScore >= 8 && (
+      {/* Finished Badge */}
+      {isFinished && liveScore && (
+        <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-gray-600 rounded-full text-[10px] font-bold text-white shadow-lg">
+          FT
+        </div>
+      )}
+      
+      {/* Hot Score Badge (only if not live or finished) */}
+      {!isLive && !isFinished && hotScore >= 8 && (
         <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full text-[10px] font-bold text-white shadow-lg">
           HOT
         </div>
@@ -153,12 +180,16 @@ export default function MatchCard({
           <span className="text-xs text-red-400 font-mono font-medium">
             {liveScore.status.elapsed ? `${liveScore.status.elapsed}'` : liveScore.status.short}
           </span>
+        ) : isFinished && liveScore ? (
+          <span className="text-xs text-gray-500 font-medium">
+            Full Time
+          </span>
         ) : (
           <MatchCountdown commenceTime={commenceTime} size="sm" />
         )}
       </div>
 
-      {/* Teams with Live Score */}
+      {/* Teams with Score */}
       <div className="flex items-center justify-between">
         {/* Home Team */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -166,26 +197,33 @@ export default function MatchCard({
             <TeamLogo teamName={homeTeam} sport={sportKey} league={league} size="md" />
           </div>
           <span className="text-sm font-semibold text-white truncate">{homeTeam}</span>
-          {isLive && liveScore && (
-            <span className={`text-lg font-bold font-mono ${liveScore.homeScore > liveScore.awayScore ? 'text-green-400' : 'text-white'}`}>
-              {liveScore.homeScore}
-            </span>
-          )}
         </div>
 
-        {isLive && liveScore ? (
-          <span className="text-gray-600 text-lg font-medium px-1">-</span>
+        {/* Score Display - Live or Finished */}
+        {(isLive || isFinished) && liveScore ? (
+          <div className="flex items-center gap-1 px-2">
+            <span className={`text-xl font-bold font-mono ${
+              isLive 
+                ? (liveScore.homeScore > liveScore.awayScore ? 'text-green-400' : 'text-white')
+                : (liveScore.homeScore > liveScore.awayScore ? 'text-green-400' : liveScore.homeScore < liveScore.awayScore ? 'text-gray-400' : 'text-white')
+            }`}>
+              {liveScore.homeScore}
+            </span>
+            <span className="text-gray-600 text-lg font-medium">-</span>
+            <span className={`text-xl font-bold font-mono ${
+              isLive 
+                ? (liveScore.awayScore > liveScore.homeScore ? 'text-green-400' : 'text-white')
+                : (liveScore.awayScore > liveScore.homeScore ? 'text-green-400' : liveScore.awayScore < liveScore.homeScore ? 'text-gray-400' : 'text-white')
+            }`}>
+              {liveScore.awayScore}
+            </span>
+          </div>
         ) : (
           <span className="text-gray-600 text-sm font-medium px-2 group-hover:text-gray-400 transition-colors">vs</span>
         )}
 
         {/* Away Team */}
         <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          {isLive && liveScore && (
-            <span className={`text-lg font-bold font-mono ${liveScore.awayScore > liveScore.homeScore ? 'text-green-400' : 'text-white'}`}>
-              {liveScore.awayScore}
-            </span>
-          )}
           <span className="text-sm font-semibold text-white truncate text-right">{awayTeam}</span>
           <div className="transition-transform duration-300 group-hover:scale-110">
             <TeamLogo teamName={awayTeam} sport={sportKey} league={league} size="md" />
@@ -217,6 +255,11 @@ export default function MatchCard({
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-400 group-hover:bg-white"></span>
             </span>
             Watch Live
+          </span>
+        ) : isFinished ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-gray-500/15 text-gray-400 border border-gray-500/30 rounded-full group-hover:bg-gray-500 group-hover:text-white group-hover:border-gray-500 transition-all">
+            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full group-hover:bg-white"></span>
+            View Recap
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-accent/15 text-accent border border-accent/30 rounded-full group-hover:bg-accent group-hover:text-white group-hover:border-accent transition-all">
