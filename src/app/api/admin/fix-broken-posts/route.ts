@@ -1,15 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// DELETE /api/admin/fix-broken-posts
+// DELETE /api/admin/fix-broken-posts?secret=xxx
 // Finds and deletes blog posts with unresolved placeholders
 export async function DELETE(request: Request) {
   try {
-    // Check for admin auth
+    // Check for admin auth via header or query param
     const authHeader = request.headers.get('authorization');
+    const url = new URL(request.url);
+    const secretParam = url.searchParams.get('secret');
     const cronSecret = process.env.CRON_SECRET;
     
-    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    const isAuthorized = 
+      (authHeader && authHeader === `Bearer ${cronSecret}`) ||
+      (secretParam && secretParam === cronSecret);
+    
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -61,14 +67,20 @@ export async function DELETE(request: Request) {
   }
 }
 
-// GET /api/admin/fix-broken-posts
+// GET /api/admin/fix-broken-posts?secret=xxx
 // Lists posts with unresolved placeholders (preview before delete)
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get('authorization');
+    const url = new URL(request.url);
+    const secretParam = url.searchParams.get('secret');
     const cronSecret = process.env.CRON_SECRET;
     
-    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    const isAuthorized = 
+      (authHeader && authHeader === `Bearer ${cronSecret}`) ||
+      (secretParam && secretParam === cronSecret);
+    
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
