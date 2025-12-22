@@ -199,22 +199,27 @@ async function getMatchResult(homeTeam: string, awayTeam: string, matchDate: Dat
 
 /**
  * Calculate the correct season string based on date
- * NBA/NHL seasons run October to June, so:
- * - Oct 2024 - Jun 2025 = "2024-2025"
- * - Oct 2025 - Jun 2026 = "2025-2026"
+ * NBA seasons run October to June: "2024-2025" format
+ * NHL seasons use integer year: 2024, 2025
+ * NFL seasons use integer year: 2024, 2025
  */
-function getSeasonForDate(dateStr: string, isNFL: boolean = false): string {
+function getSeasonForDate(dateStr: string, sport: 'nba' | 'nhl' | 'nfl' = 'nba'): string {
   const date = new Date(dateStr);
   const year = date.getFullYear();
   const month = date.getMonth() + 1; // 1-12
   
-  if (isNFL) {
+  if (sport === 'nfl') {
     // NFL season is just the year (e.g., "2025" for 2025-2026 season)
-    // Season starts in September
-    return month >= 9 ? String(year) : String(year);
+    return String(year);
   }
   
-  // NBA/NHL: Season spans two years
+  if (sport === 'nhl') {
+    // NHL API uses integer season (2024, 2025)
+    // Season starts in October, ends in June
+    return month >= 10 ? String(year) : String(year - 1);
+  }
+  
+  // NBA: Season spans two years in format "2024-2025"
   // October-December = first year of season
   // January-June = second year of season
   if (month >= 10) {
@@ -240,7 +245,8 @@ async function fetchSportResult(
       ? 'https://v1.basketball.api-sports.io' 
       : 'https://v1.hockey.api-sports.io';
     
-    const season = getSeasonForDate(dateStr);
+    const seasonType = sport === 'basketball' ? 'nba' : 'nhl';
+    const season = getSeasonForDate(dateStr, seasonType);
     console.log(`[Track-Predictions] Fetching ${sport} games for ${dateStr}, season ${season}`);
     
     const response = await fetch(
@@ -297,7 +303,7 @@ async function fetchNFLResult(
   apiKey: string
 ): Promise<MatchResult | null> {
   try {
-    const season = getSeasonForDate(dateStr, true);
+    const season = getSeasonForDate(dateStr, 'nfl');
     console.log(`[Track-Predictions] Fetching NFL games for ${dateStr}, season ${season}`);
     
     const response = await fetch(
