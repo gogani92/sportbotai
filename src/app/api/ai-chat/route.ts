@@ -1147,21 +1147,81 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
     }
   }
   
-  // Sport-specific search sources
+  // Comprehensive sport-specific search sources for accurate real-time data
   const sportSources: Record<string, string> = {
-    basketball: 'basketball-reference nba.com espn',
-    nba: 'basketball-reference nba.com espn',
-    football: 'fbref sofascore transfermarkt',
-    soccer: 'fbref sofascore transfermarkt',
-    hockey: 'hockey-reference nhl.com espn',
-    nhl: 'hockey-reference nhl.com espn',
-    american_football: 'pro-football-reference espn nfl.com',
-    nfl: 'pro-football-reference espn nfl.com',
-    tennis: 'atptour.com wtatennis.com espn',
-    mma: 'ufc.com sherdog tapology',
+    // Basketball / NBA
+    basketball: 'basketball-reference.com ESPN NBA.com statmuse hoopshype realgm spotrac',
+    nba: 'basketball-reference.com ESPN NBA.com statmuse hoopshype realgm spotrac',
+    euroleague: 'euroleaguebasketball.net basketnews.com eurohoops.net',
+    
+    // Football / Soccer
+    football: 'fbref.com transfermarkt sofascore whoscored soccerway flashscore fotmob',
+    soccer: 'fbref.com transfermarkt sofascore whoscored soccerway flashscore fotmob',
+    premier_league: 'premierleague.com fbref.com transfermarkt skysports',
+    la_liga: 'laliga.com fbref.com transfermarkt marca as.com',
+    serie_a: 'legaseriea.it fbref.com transfermarkt gazzetta.it',
+    bundesliga: 'bundesliga.com fbref.com transfermarkt kicker.de',
+    ligue_1: 'ligue1.com fbref.com transfermarkt lequipe.fr',
+    champions_league: 'uefa.com fbref.com transfermarkt',
+    
+    // Ice Hockey / NHL
+    hockey: 'hockey-reference.com NHL.com ESPN eliteprospects.com hockeydb.com naturalstattrick.com',
+    nhl: 'hockey-reference.com NHL.com ESPN eliteprospects.com hockeydb.com naturalstattrick.com',
+    khl: 'en.khl.ru eliteprospects.com hockeydb.com',
+    
+    // American Football / NFL
+    american_football: 'pro-football-reference.com ESPN NFL.com statmuse pfref.com rotowire',
+    nfl: 'pro-football-reference.com ESPN NFL.com statmuse pfref.com rotowire',
+    college_football: 'sports-reference.com/cfb ESPN ncaa.com 247sports',
+    
+    // Tennis
+    tennis: 'atptour.com wtatennis.com ESPN tennisabstract.com flashscore ultimatetennisstatistics.com',
+    atp: 'atptour.com tennisabstract.com ESPN flashscore',
+    wta: 'wtatennis.com tennisabstract.com ESPN flashscore',
+    
+    // MMA / UFC
+    mma: 'ufc.com sherdog.com tapology.com ufcstats.com ESPN mmafighting.com',
+    ufc: 'ufc.com sherdog.com tapology.com ufcstats.com ESPN mmafighting.com',
+    bellator: 'bellator.com sherdog.com tapology.com',
+    
+    // Boxing
+    boxing: 'boxrec.com ESPN ringtv.com boxingscene.com',
+    
+    // Baseball / MLB
+    baseball: 'baseball-reference.com MLB.com ESPN fangraphs.com baseballsavant.mlb.com',
+    mlb: 'baseball-reference.com MLB.com ESPN fangraphs.com baseballsavant.mlb.com',
+    
+    // Formula 1 / Motorsport
+    f1: 'formula1.com ESPN motorsport.com autosport.com racefans.net',
+    formula1: 'formula1.com ESPN motorsport.com autosport.com racefans.net',
+    motorsport: 'motorsport.com autosport.com ESPN',
+    nascar: 'nascar.com racing-reference.info ESPN',
+    
+    // Golf
+    golf: 'pgatour.com ESPN golfchannel.com golfdigest.com owgr.com',
+    pga: 'pgatour.com ESPN golfchannel.com owgr.com',
+    
+    // Cricket
+    cricket: 'espncricinfo.com cricbuzz.com icc-cricket.com howstat.com',
+    
+    // Rugby
+    rugby: 'world.rugby ESPN ultimaterugby.com rugbypass.com',
+    
+    // Esports
+    esports: 'liquipedia.net hltv.org vlr.gg gol.gg lolesports.com',
+    csgo: 'hltv.org liquipedia.net',
+    valorant: 'vlr.gg liquipedia.net thespike.gg',
+    lol: 'lolesports.com gol.gg liquipedia.net',
+    dota2: 'liquipedia.net dotabuff.com',
+    
+    // Cycling
+    cycling: 'procyclingstats.com cyclingnews.com firstcycling.com',
+    
+    // Olympics / Multi-sport
+    olympics: 'olympics.com ESPN worldathletics.org',
   };
   
-  const sources = sportSources[sport] || 'espn sofascore';
+  const sources = sportSources[sport] || 'ESPN sofascore flashscore sports-reference';
   
   switch (route.source) {
     case 'GPT_ONLY':
@@ -1211,39 +1271,79 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
 function detectSport(message: string): string | undefined {
   const lower = message.toLowerCase();
   
-  // Football/Soccer
-  if (/football|soccer|premier league|la liga|serie a|bundesliga|ligue 1|champions league|europa|fc |united|city|real madrid|barcelona|bayern|goal|striker|midfielder/i.test(lower)) {
-    return 'football';
-  }
-  
-  // Basketball
-  if (/basketball|nba|euroleague|lakers|celtics|warriors|nets|point guard|center|forward|dunk|three.?pointer/i.test(lower)) {
+  // Basketball / NBA
+  if (/basketball|nba|euroleague|lakers|celtics|warriors|nets|76ers|sixers|bucks|heat|knicks|bulls|suns|mavericks|nuggets|clippers|spurs|rockets|point guard|shooting guard|small forward|power forward|center|dunk|three.?pointer|ppg|rebounds|assists|embiid|lebron|curry|giannis|jokic|dončić|doncic|tatum|durant/i.test(lower)) {
     return 'basketball';
   }
   
+  // American Football / NFL
+  if (/nfl|american football|quarterback|touchdown|super bowl|chiefs|eagles|cowboys|patriots|bills|dolphins|ravens|49ers|bengals|lions|packers|yards|rushing|passing|sack|interception|mahomes|allen|burrow|hurts|herbert/i.test(lower)) {
+    return 'american_football';
+  }
+  
+  // Ice Hockey / NHL
+  if (/hockey|nhl|ice hockey|puck|goalie|goaltender|rangers|bruins|maple leafs|canadiens|oilers|avalanche|lightning|panthers|penguins|capitals|power play|hat trick|mcdavid|crosby|ovechkin|draisaitl|mackinnon/i.test(lower)) {
+    return 'hockey';
+  }
+  
+  // Football/Soccer (check after American sports to avoid false positives)
+  if (/soccer|premier league|la liga|serie a|bundesliga|ligue 1|champions league|europa league|epl|fc barcelona|real madrid|manchester|liverpool|arsenal|chelsea|bayern|psg|juventus|inter milan|ac milan|borussia|atletico|tottenham|goal|striker|midfielder|defender|haaland|mbappe|mbappé|vinicius|bellingham|salah|de bruyne|rodri/i.test(lower)) {
+    return 'football';
+  }
+  
   // Tennis
-  if (/tennis|atp|wta|grand slam|wimbledon|us open|french open|australian open|nadal|djokovic|federer|serve|backhand/i.test(lower)) {
+  if (/tennis|atp|wta|grand slam|wimbledon|us open|french open|roland garros|australian open|nadal|djokovic|federer|alcaraz|sinner|swiatek|sabalenka|gauff|medvedev|zverev|serve|backhand|forehand|ace|break point/i.test(lower)) {
     return 'tennis';
   }
   
   // MMA/UFC
-  if (/mma|ufc|bellator|knockout|submission|fighter|octagon|weight class|pound.for.pound/i.test(lower)) {
+  if (/mma|ufc|bellator|pfl|one championship|knockout|submission|fighter|octagon|weight class|pound.for.pound|heavyweight|lightweight|welterweight|featherweight|bantamweight|jones|adesanya|pereira|makhachev|volkanovski|o'malley|chimaev/i.test(lower)) {
     return 'mma';
   }
   
-  // American Football
-  if (/nfl|american football|quarterback|touchdown|super bowl|chiefs|eagles|cowboys|patriots/i.test(lower)) {
-    return 'american_football';
+  // Boxing
+  if (/boxing|boxer|heavyweight champion|world title fight|canelo|fury|usyk|joshua|crawford|spence|haney|davis|knockdown|tko|uppercut|jab/i.test(lower)) {
+    return 'boxing';
   }
   
-  // Baseball
-  if (/baseball|mlb|yankees|dodgers|red sox|home run|pitcher|batting/i.test(lower)) {
+  // Baseball / MLB
+  if (/baseball|mlb|yankees|dodgers|red sox|mets|cubs|cardinals|braves|astros|phillies|padres|home run|pitcher|batting average|era|strikeout|rbi|ohtani|judge|trout|betts|acuña|soto/i.test(lower)) {
     return 'baseball';
   }
   
-  // Hockey
-  if (/hockey|nhl|ice hockey|puck|goalie|rangers|bruins|maple leafs/i.test(lower)) {
-    return 'hockey';
+  // Formula 1 / Motorsport
+  if (/formula.?1|f1|grand prix|verstappen|hamilton|leclerc|norris|russell|sainz|perez|alonso|red bull racing|ferrari|mercedes|mclaren|pit stop|pole position|fastest lap|drs|nascar|indycar/i.test(lower)) {
+    return 'f1';
+  }
+  
+  // Golf
+  if (/golf|pga|lpga|masters|us open golf|british open|pga championship|ryder cup|scottie scheffler|rory mcilroy|jon rahm|brooks koepka|birdie|eagle|bogey|fairway|green/i.test(lower)) {
+    return 'golf';
+  }
+  
+  // Cricket
+  if (/cricket|ipl|test match|odi|t20|ashes|world cup cricket|kohli|sharma|babar|root|stokes|williamson|wicket|bowler|batsman|innings|century/i.test(lower)) {
+    return 'cricket';
+  }
+  
+  // Rugby
+  if (/rugby|six nations|rugby world cup|all blacks|springboks|wallabies|england rugby|try|scrum|lineout|ruck/i.test(lower)) {
+    return 'rugby';
+  }
+  
+  // Esports
+  if (/esports|e-sports|csgo|cs2|counter.?strike|valorant|league of legends|lol|dota|overwatch|call of duty|fortnite|hltv|liquipedia|major tournament/i.test(lower)) {
+    return 'esports';
+  }
+  
+  // Cycling
+  if (/cycling|tour de france|giro|vuelta|pogačar|pogacar|vingegaard|evenepoel|van aert|wout|peloton|stage race/i.test(lower)) {
+    return 'cycling';
+  }
+  
+  // Generic "football" without other context - default to soccer (more global)
+  if (/\bfootball\b/i.test(lower) && !/american|nfl|super bowl|touchdown|quarterback/i.test(lower)) {
+    return 'football';
   }
   
   return undefined;
@@ -1311,17 +1411,41 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       // Get sport-specific season and sources
       const statsSport = detectSport(query) || 'football';
       const statsSeason = getCurrentSeasonForSport(statsSport);
+      // Comprehensive stats sources by sport
       const statsSourcesMap: Record<string, string> = {
-        basketball: 'basketball-reference ESPN NBA.com',
-        nba: 'basketball-reference ESPN NBA.com',
-        football: 'transfermarkt fbref sofascore',
-        soccer: 'transfermarkt fbref sofascore',
-        hockey: 'hockey-reference NHL.com ESPN',
-        nhl: 'hockey-reference NHL.com ESPN',
-        american_football: 'pro-football-reference ESPN NFL.com',
-        nfl: 'pro-football-reference ESPN NFL.com',
+        // Basketball
+        basketball: 'basketball-reference.com ESPN NBA.com statmuse hoopshype',
+        nba: 'basketball-reference.com ESPN NBA.com statmuse hoopshype',
+        euroleague: 'euroleaguebasketball.net basketnews.com eurohoops.net',
+        // Football/Soccer
+        football: 'fbref.com transfermarkt sofascore whoscored flashscore',
+        soccer: 'fbref.com transfermarkt sofascore whoscored flashscore',
+        premier_league: 'fbref.com premierleague.com transfermarkt',
+        la_liga: 'fbref.com laliga.com transfermarkt',
+        // Ice Hockey
+        hockey: 'hockey-reference.com NHL.com ESPN eliteprospects.com naturalstattrick.com',
+        nhl: 'hockey-reference.com NHL.com ESPN eliteprospects.com naturalstattrick.com',
+        // American Football
+        american_football: 'pro-football-reference.com ESPN NFL.com statmuse',
+        nfl: 'pro-football-reference.com ESPN NFL.com statmuse',
+        // Tennis
+        tennis: 'atptour.com wtatennis.com tennisabstract.com flashscore',
+        atp: 'atptour.com tennisabstract.com flashscore',
+        wta: 'wtatennis.com tennisabstract.com flashscore',
+        // MMA
+        mma: 'ufcstats.com sherdog.com tapology.com ESPN',
+        ufc: 'ufcstats.com sherdog.com tapology.com ESPN',
+        // Baseball
+        baseball: 'baseball-reference.com fangraphs.com MLB.com ESPN',
+        mlb: 'baseball-reference.com fangraphs.com MLB.com ESPN',
+        // F1
+        f1: 'formula1.com motorsport.com ESPN',
+        // Golf
+        golf: 'pgatour.com ESPN owgr.com',
+        // Cricket
+        cricket: 'espncricinfo.com cricbuzz.com',
       };
-      const statsSources = statsSourcesMap[statsSport] || 'ESPN sports-reference';
+      const statsSources = statsSourcesMap[statsSport] || 'ESPN sports-reference.com flashscore';
       
       // Extract player name if mentioned and build better search query
       const statsPlayerMatch = query.match(/([A-Z][a-zćčšžđ]+(?:\s+[A-Z][a-zćčšžđ]+)+)|Filip\s+\w+|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
