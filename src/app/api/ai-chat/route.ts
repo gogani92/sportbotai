@@ -1147,81 +1147,27 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
     }
   }
   
-  // Comprehensive sport-specific search sources for accurate real-time data
-  const sportSources: Record<string, string> = {
-    // Basketball / NBA
-    basketball: 'basketball-reference.com ESPN NBA.com statmuse hoopshype realgm spotrac',
-    nba: 'basketball-reference.com ESPN NBA.com statmuse hoopshype realgm spotrac',
-    euroleague: 'euroleaguebasketball.net basketnews.com eurohoops.net',
-    
-    // Football / Soccer
-    football: 'fbref.com transfermarkt sofascore whoscored soccerway flashscore fotmob',
-    soccer: 'fbref.com transfermarkt sofascore whoscored soccerway flashscore fotmob',
-    premier_league: 'premierleague.com fbref.com transfermarkt skysports',
-    la_liga: 'laliga.com fbref.com transfermarkt marca as.com',
-    serie_a: 'legaseriea.it fbref.com transfermarkt gazzetta.it',
-    bundesliga: 'bundesliga.com fbref.com transfermarkt kicker.de',
-    ligue_1: 'ligue1.com fbref.com transfermarkt lequipe.fr',
-    champions_league: 'uefa.com fbref.com transfermarkt',
-    
-    // Ice Hockey / NHL
-    hockey: 'hockey-reference.com NHL.com ESPN eliteprospects.com hockeydb.com naturalstattrick.com',
-    nhl: 'hockey-reference.com NHL.com ESPN eliteprospects.com hockeydb.com naturalstattrick.com',
-    khl: 'en.khl.ru eliteprospects.com hockeydb.com',
-    
-    // American Football / NFL
-    american_football: 'pro-football-reference.com ESPN NFL.com statmuse pfref.com rotowire',
-    nfl: 'pro-football-reference.com ESPN NFL.com statmuse pfref.com rotowire',
-    college_football: 'sports-reference.com/cfb ESPN ncaa.com 247sports',
-    
-    // Tennis
-    tennis: 'atptour.com wtatennis.com ESPN tennisabstract.com flashscore ultimatetennisstatistics.com',
-    atp: 'atptour.com tennisabstract.com ESPN flashscore',
-    wta: 'wtatennis.com tennisabstract.com ESPN flashscore',
-    
-    // MMA / UFC
-    mma: 'ufc.com sherdog.com tapology.com ufcstats.com ESPN mmafighting.com',
-    ufc: 'ufc.com sherdog.com tapology.com ufcstats.com ESPN mmafighting.com',
-    bellator: 'bellator.com sherdog.com tapology.com',
-    
-    // Boxing
-    boxing: 'boxrec.com ESPN ringtv.com boxingscene.com',
-    
-    // Baseball / MLB
-    baseball: 'baseball-reference.com MLB.com ESPN fangraphs.com baseballsavant.mlb.com',
-    mlb: 'baseball-reference.com MLB.com ESPN fangraphs.com baseballsavant.mlb.com',
-    
-    // Formula 1 / Motorsport
-    f1: 'formula1.com ESPN motorsport.com autosport.com racefans.net',
-    formula1: 'formula1.com ESPN motorsport.com autosport.com racefans.net',
-    motorsport: 'motorsport.com autosport.com ESPN',
-    nascar: 'nascar.com racing-reference.info ESPN',
-    
-    // Golf
-    golf: 'pgatour.com ESPN golfchannel.com golfdigest.com owgr.com',
-    pga: 'pgatour.com ESPN golfchannel.com owgr.com',
-    
-    // Cricket
-    cricket: 'espncricinfo.com cricbuzz.com icc-cricket.com howstat.com',
-    
-    // Rugby
-    rugby: 'world.rugby ESPN ultimaterugby.com rugbypass.com',
-    
-    // Esports
-    esports: 'liquipedia.net hltv.org vlr.gg gol.gg lolesports.com',
-    csgo: 'hltv.org liquipedia.net',
-    valorant: 'vlr.gg liquipedia.net thespike.gg',
-    lol: 'lolesports.com gol.gg liquipedia.net',
-    dota2: 'liquipedia.net dotabuff.com',
-    
-    // Cycling
-    cycling: 'procyclingstats.com cyclingnews.com firstcycling.com',
-    
-    // Olympics / Multi-sport
-    olympics: 'olympics.com ESPN worldathletics.org',
+  // Sport-specific stat keywords (what to search for, not site names)
+  const sportStatTerms: Record<string, string> = {
+    basketball: 'PPG RPG APG points rebounds assists',
+    nba: 'PPG RPG APG points rebounds assists',
+    football: 'goals assists appearances matches',
+    soccer: 'goals assists appearances matches',
+    hockey: 'goals assists points games',
+    nhl: 'goals assists points games',
+    american_football: 'passing yards touchdowns rushing',
+    nfl: 'passing yards touchdowns rushing',
+    tennis: 'wins losses ranking titles',
+    mma: 'wins losses knockouts submissions record',
+    ufc: 'wins losses knockouts submissions record',
+    baseball: 'batting average home runs RBI ERA',
+    mlb: 'batting average home runs RBI ERA',
+    f1: 'wins podiums points championship',
+    golf: 'wins ranking earnings',
+    cricket: 'runs wickets average',
   };
   
-  const sources = sportSources[sport] || 'ESPN sofascore flashscore sports-reference';
+  const statTerms = sportStatTerms[sport] || 'stats statistics';
   
   switch (route.source) {
     case 'GPT_ONLY':
@@ -1229,7 +1175,7 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
       
     case 'WIKIPEDIA':
       if (extractedName) {
-        return `"${extractedName}" site:wikipedia.org footballer OR basketball player OR athlete career biography nationality`;
+        return `"${extractedName}" site:wikipedia.org athlete career biography`;
       }
       return `${query} site:wikipedia.org`;
       
@@ -1237,28 +1183,27 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
       if (extractedName) {
         // For current status queries (where does X play)
         if (REALTIME_TRIGGERS.currentStatus.test(message)) {
-          return `"${extractedName}" ${currentSeason} season current club team ${sources}`;
+          return `"${extractedName}" ${currentSeason} current team club`;
         }
         // For stats queries (how many goals/points, season stats)
         if (REALTIME_TRIGGERS.currentSeason.test(message)) {
-          return `"${extractedName}" ${currentSeason} season statistics stats ${sources}`;
+          return `"${extractedName}" ${currentSeason} season ${statTerms}`;
         }
         // For injury queries
         if (REALTIME_TRIGGERS.breakingNews.test(message)) {
-          return `"${extractedName}" injury news update ${currentMonth}`;
+          return `"${extractedName}" injury update ${currentMonth}`;
         }
-        // Default: combined current team + stats search
-        return `"${extractedName}" ${currentSeason} season statistics ${sources}`;
+        // Default: current season stats
+        return `"${extractedName}" ${currentSeason} season ${statTerms}`;
       }
       // Default real-time enhancement
-      return `${query} ${route.recency === 'hour' ? 'today' : route.recency === 'day' ? currentMonth : currentSeason + ' season'}`;
+      return `${query} ${route.recency === 'hour' ? 'today' : route.recency === 'day' ? currentMonth : currentSeason}`;
       
     case 'HYBRID':
-      // Use real-time with some Wikipedia context
       if (extractedName) {
-        return `"${extractedName}" ${currentSeason} season current team stats career ${sources}`;
+        return `"${extractedName}" ${currentSeason} ${statTerms} career`;
       }
-      return `${query} ${currentSeason} season`;
+      return `${query} ${currentSeason}`;
       
     default:
       return query;
@@ -1362,6 +1307,10 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
     .trim();
   
   // Category-specific query optimization
+  // Get current date/season dynamically
+  const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const currentSeason = getCurrentSeasonForSport(detectSport(message) || 'football');
+  
   let recency: 'hour' | 'day' | 'week' | 'month' = 'day';
   
   switch (category) {
@@ -1373,129 +1322,114 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       if (playerNameMatch) {
         const playerName = playerNameMatch[0];
         if (asksCurrentTeam) {
-          // Asking about current team - search Transfermarkt/FBRef not Wikipedia
-          query = `"${playerName}" 2025-2026 current club team transfermarkt December 2025`;
+          // Asking about current team
+          query = `"${playerName}" ${currentSeason} current team club`;
           recency = 'week';
         } else {
           // General biography question - Wikipedia is fine
-          query = `"${playerName}" site:wikipedia.org footballer OR basketball player OR athlete career club team nationality born`;
+          query = `"${playerName}" site:wikipedia.org athlete career biography`;
           recency = 'month';
         }
       } else {
-        query += ' 2025-2026 current club team career';
+        query += ` ${currentSeason} current team`;
         recency = 'week';
       }
       break;
       
     case 'ROSTER':
-      query += ' 2025-2026 season current roster squad players';
+      query += ` ${currentSeason} current roster squad players`;
       recency = 'week';
       break;
       
     case 'FIXTURE':
-      query += ' upcoming fixture schedule next match kickoff time December 2025';
+      query += ` upcoming match schedule ${currentMonth}`;
       recency = 'day';
       break;
       
     case 'RESULT':
-      query += ' final score result match report';
+      query += ' final score result';
       recency = 'day';
       break;
       
     case 'STANDINGS':
-      query += ' 2025-2026 league table standings points';
+      query += ` ${currentSeason} league table standings`;
       recency = 'day';
       break;
       
     case 'STATS':
-      // Get sport-specific season and sources
+      // Get sport-specific season and stat terms
       const statsSport = detectSport(query) || 'football';
       const statsSeason = getCurrentSeasonForSport(statsSport);
-      // Comprehensive stats sources by sport
-      const statsSourcesMap: Record<string, string> = {
-        // Basketball
-        basketball: 'basketball-reference.com ESPN NBA.com statmuse hoopshype',
-        nba: 'basketball-reference.com ESPN NBA.com statmuse hoopshype',
-        euroleague: 'euroleaguebasketball.net basketnews.com eurohoops.net',
-        // Football/Soccer
-        football: 'fbref.com transfermarkt sofascore whoscored flashscore',
-        soccer: 'fbref.com transfermarkt sofascore whoscored flashscore',
-        premier_league: 'fbref.com premierleague.com transfermarkt',
-        la_liga: 'fbref.com laliga.com transfermarkt',
-        // Ice Hockey
-        hockey: 'hockey-reference.com NHL.com ESPN eliteprospects.com naturalstattrick.com',
-        nhl: 'hockey-reference.com NHL.com ESPN eliteprospects.com naturalstattrick.com',
-        // American Football
-        american_football: 'pro-football-reference.com ESPN NFL.com statmuse',
-        nfl: 'pro-football-reference.com ESPN NFL.com statmuse',
-        // Tennis
-        tennis: 'atptour.com wtatennis.com tennisabstract.com flashscore',
-        atp: 'atptour.com tennisabstract.com flashscore',
-        wta: 'wtatennis.com tennisabstract.com flashscore',
-        // MMA
-        mma: 'ufcstats.com sherdog.com tapology.com ESPN',
-        ufc: 'ufcstats.com sherdog.com tapology.com ESPN',
-        // Baseball
-        baseball: 'baseball-reference.com fangraphs.com MLB.com ESPN',
-        mlb: 'baseball-reference.com fangraphs.com MLB.com ESPN',
-        // F1
-        f1: 'formula1.com motorsport.com ESPN',
-        // Golf
-        golf: 'pgatour.com ESPN owgr.com',
-        // Cricket
-        cricket: 'espncricinfo.com cricbuzz.com',
+      // Sport-specific stat keywords (what matters for each sport)
+      const statsTermsMap: Record<string, string> = {
+        basketball: 'PPG RPG APG points rebounds assists',
+        nba: 'PPG RPG APG points rebounds assists',
+        football: 'goals assists appearances',
+        soccer: 'goals assists appearances',
+        hockey: 'goals assists points',
+        nhl: 'goals assists points',
+        american_football: 'passing yards touchdowns',
+        nfl: 'passing yards touchdowns',
+        tennis: 'wins losses ranking',
+        mma: 'wins losses record',
+        ufc: 'wins losses record',
+        baseball: 'batting average home runs',
+        mlb: 'batting average home runs',
+        f1: 'wins podiums points',
+        golf: 'wins ranking',
+        cricket: 'runs wickets',
       };
-      const statsSources = statsSourcesMap[statsSport] || 'ESPN sports-reference.com flashscore';
+      const statsTerms = statsTermsMap[statsSport] || 'stats statistics';
       
-      // Extract player name if mentioned and build better search query
+      // Extract player name if mentioned and build focused search query
       const statsPlayerMatch = query.match(/([A-Z][a-zćčšžđ]+(?:\s+[A-Z][a-zćčšžđ]+)+)|Filip\s+\w+|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
       if (statsPlayerMatch) {
         const playerName = statsPlayerMatch[0];
-        // Search for current season stats with sport-specific sources
-        query = `"${playerName}" ${statsSeason} season stats current ${statsSources}`;
+        // Clean, focused query: "Player Name" season stats
+        query = `"${playerName}" ${statsSeason} season ${statsTerms}`;
       } else {
-        query += ` ${statsSeason} season statistics stats`;
+        query += ` ${statsSeason} season stats`;
       }
       recency = 'week';
       break;
       
     case 'INJURY':
-      query += ' injury update news team news fitness December 2025';
+      query += ` injury update ${currentMonth}`;
       recency = 'day';
       break;
       
     case 'TRANSFER':
-      query += ' transfer news rumors latest December 2025';
+      query += ` transfer news ${currentMonth}`;
       recency = 'day';
       break;
       
     case 'MANAGER':
-      query += ' manager coach press conference tactics news';
+      query += ' manager coach press conference';
       recency = 'day';
       break;
       
     case 'ODDS':
-      query += ' betting odds market prices bookmakers';
+      query += ' betting odds';
       recency = 'day';
       break;
       
     case 'COMPARISON':
-      query += ' comparison stats 2025-2026 head to head';
+      query += ` comparison stats ${currentSeason}`;
       recency = 'week';
       break;
       
     case 'HISTORY':
-      query += ' history record all time statistics';
+      query += ' history record all time';
       recency = 'month';
       break;
       
     case 'BROADCAST':
-      query += ' TV channel stream where to watch broadcast';
+      query += ' TV channel stream where to watch';
       recency = 'day';
       break;
       
     case 'VENUE':
-      query += ' stadium venue arena ground';
+      query += ' stadium venue arena';
       recency = 'month';
       break;
       
@@ -1503,9 +1437,9 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       // For player prop questions - get current stats and recent performance
       const propIntent = detectBettingIntent(message);
       if (propIntent.playerMentioned) {
-        query = `${propIntent.playerMentioned} 2025-2026 season stats averages points rebounds assists per game recent form last 5 games`;
+        query = `"${propIntent.playerMentioned}" ${currentSeason} season stats averages recent form`;
       } else {
-        query += ' 2025-2026 season player stats averages performance';
+        query += ` ${currentSeason} player stats averages`;
       }
       recency = 'day';
       break;
@@ -1514,16 +1448,16 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       // For betting questions - still get stats but we'll reframe the response
       const bettingIntent = detectBettingIntent(message);
       if (bettingIntent.playerMentioned) {
-        query = `${bettingIntent.playerMentioned} 2025-2026 season stats averages points rebounds assists performance recent form injury status`;
+        query = `"${bettingIntent.playerMentioned}" ${currentSeason} season stats recent form injury`;
       } else {
-        query += ' 2025-2026 recent performance stats form';
+        query += ` ${currentSeason} recent form stats`;
       }
       recency = 'day';
       break;
       
     case 'GENERAL':
     default:
-      query += ' latest news December 2025';
+      query += ` ${currentMonth}`;
       recency = 'day';
       break;
   }
