@@ -1070,8 +1070,8 @@ function needsRealTimeSearch(message: string): boolean {
  */
 /**
  * Get current season string based on sport and current date
- * NBA/NHL: Oct-Jun = year-year+1 (e.g., 2024-25 for Oct 2024 - Jun 2025)
- * Football (Soccer): Aug-May = year-year+1 (e.g., 2024-25)
+ * NBA/NHL: Oct-Jun = year-year+1 (e.g., 2025-26 for Oct 2025 - Jun 2026)
+ * Football (Soccer): Aug-May = year-year+1 (e.g., 2025-26)
  * NFL: Sep-Feb = year-year+1
  */
 function getCurrentSeasonForSport(sport: string): string {

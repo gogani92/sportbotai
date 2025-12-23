@@ -42,7 +42,7 @@ IMPORTANT GUIDELINES:
 - Focus on educational, analytical content
 - Never promote gambling or guarantee wins
 - Include statistical facts and data
-- Cite recent developments (2024-2025)
+- Cite recent developments (2025-2026)
 - Focus on the analytical/educational aspect
 - Include responsible gambling considerations when relevant
 
@@ -61,7 +61,7 @@ Focus on:
 1. Core concepts and definitions
 2. Practical applications for sports analysis
 3. Statistical evidence and data
-4. Recent trends (2024-2025)
+4. Recent trends (2025-2026)
 5. Expert opinions and best practices
 6. Responsible gambling angle if applicable
 

@@ -84,7 +84,7 @@ CRITICAL RULES:
 FOR PLAYER STATS QUERIES:
 - Report current season statistics with EXACT numbers
 - Include: PPG/Goals, Assists, Games Played, Minutes
-- Specify the season (e.g., "2024-25 NBA season")
+- Specify the season (e.g., "2025-26 NBA season")
 - Name the source (e.g., "per Basketball-Reference", "per ESPN")
 
 FOR MATCH/TEAM QUERIES:
@@ -100,8 +100,8 @@ OUTPUT FORMAT:
 - If no reliable data found, clearly state that
 
 EXAMPLES OF GOOD RESPONSES:
-✓ "Joel Embiid: 24.3 PPG, 7.8 RPG in 12 games (2024-25 season, per ESPN)"
-✓ "Luka Dončić: 28.1 PPG, 8.3 APG, 7.9 RPG (per Basketball-Reference)"
+✓ "Joel Embiid: 24.3 PPG, 7.8 RPG in 12 games (2025-26 season, per ESPN)"
+✓ "Luka Dončić: 28.1 PPG, 8.3 APG, 7.9 RPG (2025-26 season, per Basketball-Reference)"
 ✓ "No current season statistics found for this player"
 
 EXAMPLES OF BAD RESPONSES:
