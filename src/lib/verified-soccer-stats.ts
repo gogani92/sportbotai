@@ -204,6 +204,7 @@ function extractPlayerFromMessage(message: string): SoccerPlayerMapping | null {
       searchName: searchName,
       displayName: fullName,
       variations: [fullName.toLowerCase()],
+      position: 'unknown',
     };
   }
   
