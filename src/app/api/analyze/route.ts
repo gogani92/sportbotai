@@ -78,6 +78,17 @@ import { getPerplexityClient, type ResearchResult } from '@/lib/perplexity';
 import * as Sentry from '@sentry/nextjs';
 
 // ============================================
+// VERIFIED DATA LAYER - GUARDRAILS
+// All numeric stats MUST come from verified sources
+// ============================================
+import {
+  getVerifiedMatchData,
+  formatVerifiedMatchDataForLLM,
+  isDataSufficientForAnalysis,
+  type VerifiedMatchData,
+} from '@/lib/verified-match-data';
+
+// ============================================
 // ACCURACY-CORE PIPELINE INTEGRATION
 // Uses computed probabilities instead of LLM guesses
 // ============================================
@@ -870,6 +881,47 @@ export async function POST(request: NextRequest) {
     }
 
     // ========================================
+    // VERIFIED DATA LAYER (GUARDRAILS)
+    // Ensures all numeric stats are from verified API sources
+    // ========================================
+    let verifiedMatchData: VerifiedMatchData | null = null;
+    
+    try {
+      console.log('[VerifiedData] Fetching verified match data with source metadata...');
+      const verificationResult = await getVerifiedMatchData({
+        sport: sportInput,
+        league: normalizedRequest.matchData.league,
+        homeTeam: normalizedRequest.matchData.homeTeam,
+        awayTeam: normalizedRequest.matchData.awayTeam,
+        matchDate: normalizedRequest.matchData.matchDate,
+        seasonType: 'regular',
+      });
+      
+      if (verificationResult.success && verificationResult.data) {
+        verifiedMatchData = verificationResult.data;
+        
+        // Check if data is sufficient for reliable analysis
+        const sufficiencyCheck = isDataSufficientForAnalysis(verifiedMatchData);
+        console.log('[VerifiedData] Data quality:', {
+          quality: verifiedMatchData.dataQuality,
+          sufficient: sufficiencyCheck.sufficient,
+          reason: sufficiencyCheck.reason,
+          warnings: verifiedMatchData.warnings.length,
+          apiCalls: verifiedMatchData.source.apiCallsMade,
+        });
+        
+        if (!sufficiencyCheck.sufficient) {
+          console.warn('[VerifiedData] WARNING: Insufficient verified data for reliable analysis');
+        }
+      } else {
+        console.warn('[VerifiedData] Could not get verified data:', verificationResult.error);
+      }
+    } catch (verifyError) {
+      console.error('[VerifiedData] Error fetching verified data:', verifyError);
+      // Continue with enriched data as fallback
+    }
+
+    // ========================================
     // FETCH MATCH CONTEXT (Injuries, Weather)
     // ========================================
     let matchContext: MatchContext | null = null;
@@ -1027,9 +1079,9 @@ export async function POST(request: NextRequest) {
         console.log('[Pipeline] No computed probabilities (insufficient data), LLM will estimate');
       }
       
-      // Call OpenAI API with sport-aware prompt, enriched data, match context, real-time intel, and computed probabilities
+      // Call OpenAI API with sport-aware prompt, enriched data, match context, real-time intel, computed probabilities, and VERIFIED data
       console.log('[OpenAI] Generating fresh analysis...');
-      analysis = await callOpenAI(openai, normalizedRequest, enrichedData, matchContext, realTimeIntel, computedProbs);
+      analysis = await callOpenAI(openai, normalizedRequest, enrichedData, matchContext, realTimeIntel, computedProbs, verifiedMatchData);
       
       // Cache the analysis for future requests (shorter TTL if real-time intel used)
       const cacheTTL = hasRealTimeIntel ? 1800 : CACHE_TTL.ANALYSIS; // 30 min if real-time, else 1 hour
@@ -1549,7 +1601,8 @@ async function callOpenAI(
   enrichedData?: MultiSportEnrichedData | null,
   matchContext?: MatchContext | null,
   realTimeIntel?: ResearchResult | null,
-  computedProbs?: ComputedProbabilities | null
+  computedProbs?: ComputedProbabilities | null,
+  verifiedData?: VerifiedMatchData | null
 ): Promise<AnalyzeResponse> {
   // Build base user prompt
   let userPrompt = buildUserPrompt(
@@ -1558,7 +1611,27 @@ async function callOpenAI(
     request.userStake
   );
 
-  // Append real form data if available
+  // PRIORITY: Inject VERIFIED data first (with source metadata)
+  // This ensures LLM only sees verified stats, not guesses
+  if (verifiedData && verifiedData.dataQuality !== 'UNAVAILABLE') {
+    const verifiedSection = formatVerifiedMatchDataForLLM(verifiedData);
+    userPrompt += '\n' + verifiedSection + '\n';
+    console.log('[OpenAI] Injected VERIFIED data with source metadata');
+    
+    // Add explicit guardrail instructions
+    userPrompt += `
+=== VERIFIED DATA GUARDRAILS ===
+CRITICAL: The stats above are VERIFIED from API-Sports.
+- DO NOT use any stats not listed above
+- DO NOT hallucinate additional statistics
+- If a stat is missing, say "data not available"
+- All numbers in your response MUST come from the verified data above
+- Include data source in your analysis ("According to API-Sports data...")
+
+`;
+  }
+
+  // Append real form data if available (as additional context)
   if (enrichedData) {
     const formDataSection = formatFormDataForPrompt(enrichedData);
     if (formDataSection) {
@@ -1656,7 +1729,8 @@ Include the catchphrase naturally in your headline or verdict. Work the motif in
   
   try {
     const parsed = JSON.parse(content);
-    return validateAndSanitizeResponse(parsed, request, enrichedData, computedProbs);
+    const hasRealTimeIntel = !!(realTimeIntel?.success && realTimeIntel?.content);
+    return validateAndSanitizeResponse(parsed, request, enrichedData, computedProbs, verifiedData, hasRealTimeIntel);
   } catch (parseError) {
     console.error('Failed to parse OpenAI response:', content);
     return generateFallbackAnalysis(request, enrichedData);
@@ -1840,7 +1914,9 @@ function validateAndSanitizeResponse(
   raw: any,
   request: AnalyzeRequest,
   enrichedData?: MultiSportEnrichedData | null,
-  computedProbs?: ComputedProbabilities | null
+  computedProbs?: ComputedProbabilities | null,
+  verifiedData?: VerifiedMatchData | null,
+  hasRealTimeIntel?: boolean
 ): AnalyzeResponse {
   const now = new Date().toISOString();
   const sport = request.matchData.sport?.toLowerCase() || 'soccer';
@@ -2030,6 +2106,36 @@ function validateAndSanitizeResponse(
       modelVersion: '1.0.0',
       analysisGeneratedAt: now,
       warnings: Array.isArray(raw.meta?.warnings) ? raw.meta.warnings : [],
+      // Include verified data sources
+      dataSources: {
+        teamStats: verifiedData ? {
+          provider: verifiedData.source.provider,
+          verified: verifiedData.verified,
+          fetchedAt: verifiedData.source.fetchedAt.toISOString(),
+        } : enrichedData ? {
+          provider: 'API-Sports',
+          verified: false,
+          fetchedAt: now,
+        } : undefined,
+        h2h: verifiedData?.h2h ? {
+          provider: verifiedData.source.provider,
+          verified: verifiedData.h2h.verified,
+          fetchedAt: verifiedData.h2h.source.fetchedAt.toISOString(),
+        } : enrichedData?.headToHead ? {
+          provider: 'API-Sports',
+          verified: false,
+          fetchedAt: now,
+        } : undefined,
+        realTimeIntel: hasRealTimeIntel ? {
+          provider: 'Perplexity',
+          verified: true,
+          fetchedAt: now,
+        } : undefined,
+        probabilities: {
+          source: computedProbs ? 'computed' : 'llm_estimate',
+          confidence: computedProbs?.confidence || 'medium',
+        },
+      },
     },
     
     error: raw.error,

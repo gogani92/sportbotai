@@ -480,6 +480,28 @@ export interface AnalysisMeta {
   modelVersion: string;
   analysisGeneratedAt: string;
   warnings: string[];
+  /** Data sources used in analysis with verification status */
+  dataSources?: {
+    teamStats?: {
+      provider: string;
+      verified: boolean;
+      fetchedAt?: string;
+    };
+    h2h?: {
+      provider: string;
+      verified: boolean;
+      fetchedAt?: string;
+    };
+    realTimeIntel?: {
+      provider: string;
+      verified: boolean;
+      fetchedAt?: string;
+    };
+    probabilities?: {
+      source: 'computed' | 'llm_estimate';
+      confidence: 'high' | 'medium' | 'low';
+    };
+  };
 }
 
 /**
