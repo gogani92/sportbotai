@@ -18,6 +18,7 @@ import {
   NormalizedTeam,
   NormalizedMatch,
   NormalizedTeamStats,
+  NormalizedPlayerStats,
   NormalizedH2H,
   NormalizedRecentGames,
   NormalizedInjury,
@@ -433,6 +434,118 @@ export class DataLayer {
     }
     
     const result = await (adapter as any).getTeamRoster(teamId);
+    
+    if (result.success) {
+      this.setCache(cacheKey, result);
+    }
+    
+    return result;
+  }
+  
+  /**
+   * Get player statistics for a season
+   * Currently supported for basketball (NBA, Euroleague)
+   */
+  async getPlayerStats(
+    sport: Sport,
+    playerId: string,
+    season?: string
+  ): Promise<DataLayerResponse<NormalizedPlayerStats>> {
+    const cacheKey = this.getCacheKey('getPlayerStats', { sport, playerId, season });
+    const cached = this.getFromCache<DataLayerResponse<NormalizedPlayerStats>>(cacheKey);
+    if (cached) return cached;
+    
+    this.log('getPlayerStats', { sport, playerId, season });
+    
+    const adapter = this.getAdapter(sport);
+    if (!adapter) {
+      return {
+        success: false,
+        error: {
+          code: 'SPORT_NOT_SUPPORTED',
+          message: `Sport "${sport}" is not supported`,
+        },
+        metadata: {
+          provider: 'api-sports',
+          cached: false,
+          fetchedAt: new Date(),
+        },
+      };
+    }
+    
+    // Check if adapter has getPlayerStats method
+    if (!('getPlayerStats' in adapter) || typeof (adapter as any).getPlayerStats !== 'function') {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_SUPPORTED',
+          message: `Player stats are not available for ${sport}`,
+        },
+        metadata: {
+          provider: 'api-sports',
+          cached: false,
+          fetchedAt: new Date(),
+        },
+      };
+    }
+    
+    const result = await (adapter as any).getPlayerStats(playerId, season);
+    
+    if (result.success) {
+      this.setCache(cacheKey, result);
+    }
+    
+    return result;
+  }
+  
+  /**
+   * Search for a player by name
+   * Currently supported for basketball
+   */
+  async searchPlayer(
+    sport: Sport,
+    name: string,
+    season?: string
+  ): Promise<DataLayerResponse<NormalizedPlayer[]>> {
+    const cacheKey = this.getCacheKey('searchPlayer', { sport, name, season });
+    const cached = this.getFromCache<DataLayerResponse<NormalizedPlayer[]>>(cacheKey);
+    if (cached) return cached;
+    
+    this.log('searchPlayer', { sport, name });
+    
+    const adapter = this.getAdapter(sport);
+    if (!adapter) {
+      return {
+        success: false,
+        error: {
+          code: 'SPORT_NOT_SUPPORTED',
+          message: `Sport "${sport}" is not supported`,
+        },
+        metadata: {
+          provider: 'api-sports',
+          cached: false,
+          fetchedAt: new Date(),
+        },
+      };
+    }
+    
+    // Check if adapter has searchPlayer method
+    if (!('searchPlayer' in adapter) || typeof (adapter as any).searchPlayer !== 'function') {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_SUPPORTED',
+          message: `Player search is not available for ${sport}`,
+        },
+        metadata: {
+          provider: 'api-sports',
+          cached: false,
+          fetchedAt: new Date(),
+        },
+      };
+    }
+    
+    const result = await (adapter as any).searchPlayer(name, season);
     
     if (result.success) {
       this.setCache(cacheKey, result);

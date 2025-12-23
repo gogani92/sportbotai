@@ -13,6 +13,7 @@ import {
   NormalizedTeam,
   NormalizedMatch,
   NormalizedTeamStats,
+  NormalizedPlayerStats,
   NormalizedH2H,
   NormalizedRecentGames,
   NormalizedPlayer,
@@ -29,6 +30,7 @@ import {
   BasketballGameResponse,
   BasketballStandingsResponse,
   BasketballPlayerResponse,
+  BasketballPlayerStatsResponse,
 } from '../providers/api-sports';
 import { resolveTeamName, getSearchVariations } from '../team-resolver';
 
@@ -706,6 +708,152 @@ export class BasketballAdapter extends BaseSportAdapter {
       provider: 'api-sports',
       fetchedAt: new Date(),
     };
+  }
+  
+  /**
+   * Get player statistics for a season
+   * Returns aggregated stats (averages) calculated from all games
+   */
+  async getPlayerStats(playerId: string, season?: string): Promise<DataLayerResponse<NormalizedPlayerStats>> {
+    const seasonStr = season || this.getCurrentSeason();
+    
+    console.log(`[Basketball] Getting player stats for ${playerId} in season ${seasonStr}`);
+    
+    const result = await this.apiProvider.getBasketballPlayerStats({
+      player: parseInt(playerId),
+      season: seasonStr,
+    });
+    
+    if (!result.success || !result.data || result.data.length === 0) {
+      return this.error('PLAYER_STATS_NOT_FOUND', `Could not find stats for player ${playerId}`);
+    }
+    
+    // Aggregate all game stats into season averages
+    const games = result.data;
+    const gamesPlayed = games.length;
+    
+    // Sum up all stats
+    let totalPoints = 0;
+    let totalAssists = 0;
+    let totalRebounds = 0;
+    let totalSteals = 0;
+    let totalBlocks = 0;
+    let totalMinutes = 0;
+    let totalFGM = 0, totalFGA = 0;
+    let totalTPM = 0, totalTPA = 0;
+    let totalFTM = 0, totalFTA = 0;
+    let teamId = '';
+    
+    for (const game of games) {
+      totalPoints += game.points || 0;
+      totalAssists += game.assists || 0;
+      totalRebounds += game.totReb || 0;
+      totalSteals += game.steals || 0;
+      totalBlocks += game.blocks || 0;
+      totalFGM += game.fgm || 0;
+      totalFGA += game.fga || 0;
+      totalTPM += game.tpm || 0;
+      totalTPA += game.tpa || 0;
+      totalFTM += game.ftm || 0;
+      totalFTA += game.fta || 0;
+      teamId = String(game.team.id);
+      
+      // Parse minutes (format: "32:15")
+      if (game.min) {
+        const [mins, secs] = game.min.split(':').map(Number);
+        totalMinutes += mins + (secs || 0) / 60;
+      }
+    }
+    
+    // Calculate averages
+    const ppg = gamesPlayed > 0 ? totalPoints / gamesPlayed : 0;
+    const apg = gamesPlayed > 0 ? totalAssists / gamesPlayed : 0;
+    const rpg = gamesPlayed > 0 ? totalRebounds / gamesPlayed : 0;
+    const spg = gamesPlayed > 0 ? totalSteals / gamesPlayed : 0;
+    const bpg = gamesPlayed > 0 ? totalBlocks / gamesPlayed : 0;
+    const mpg = gamesPlayed > 0 ? totalMinutes / gamesPlayed : 0;
+    
+    const stats: NormalizedPlayerStats = {
+      playerId,
+      teamId,
+      season: seasonStr,
+      sport: 'basketball',
+      
+      games: {
+        played: gamesPlayed,
+        minutes: Math.round(mpg * 10) / 10, // Round to 1 decimal
+      },
+      
+      scoring: {
+        points: Math.round(ppg * 10) / 10,
+        assists: Math.round(apg * 10) / 10,
+        fieldGoals: {
+          made: Math.round((totalFGM / gamesPlayed) * 10) / 10,
+          attempted: Math.round((totalFGA / gamesPlayed) * 10) / 10,
+          percentage: totalFGA > 0 ? Math.round((totalFGM / totalFGA) * 1000) / 10 : 0,
+        },
+        threePointers: {
+          made: Math.round((totalTPM / gamesPlayed) * 10) / 10,
+          attempted: Math.round((totalTPA / gamesPlayed) * 10) / 10,
+          percentage: totalTPA > 0 ? Math.round((totalTPM / totalTPA) * 1000) / 10 : 0,
+        },
+        freeThrows: {
+          made: Math.round((totalFTM / gamesPlayed) * 10) / 10,
+          attempted: Math.round((totalFTA / gamesPlayed) * 10) / 10,
+          percentage: totalFTA > 0 ? Math.round((totalFTM / totalFTA) * 1000) / 10 : 0,
+        },
+      },
+      
+      defense: {
+        rebounds: Math.round(rpg * 10) / 10,
+        steals: Math.round(spg * 10) / 10,
+        blocks: Math.round(bpg * 10) / 10,
+      },
+      
+      provider: 'api-sports',
+      fetchedAt: new Date(),
+    };
+    
+    console.log(`[Basketball] Player ${playerId} season ${seasonStr}: ${ppg.toFixed(1)} PPG, ${rpg.toFixed(1)} RPG, ${apg.toFixed(1)} APG (${gamesPlayed} games)`);
+    
+    return this.success(stats);
+  }
+  
+  /**
+   * Search for a player by name
+   * Returns the player ID and basic info
+   */
+  async searchPlayer(name: string, season?: string): Promise<DataLayerResponse<NormalizedPlayer[]>> {
+    const seasonStr = season || this.getCurrentSeason();
+    
+    console.log(`[Basketball] Searching for player: "${name}"`);
+    
+    const result = await this.apiProvider.getBasketballPlayers({
+      search: name,
+      season: seasonStr,
+    });
+    
+    if (!result.success || !result.data || result.data.length === 0) {
+      return this.error('PLAYER_NOT_FOUND', `Could not find player matching "${name}"`);
+    }
+    
+    // Transform to normalized players
+    const players: NormalizedPlayer[] = result.data.map(p => ({
+      id: String(p.id),
+      externalId: String(p.id),
+      name: p.name,
+      firstName: p.firstname,
+      lastName: p.lastname,
+      position: p.leagues?.standard?.pos || undefined,
+      number: p.leagues?.standard?.jersey || undefined,
+      nationality: p.nationality || undefined,
+      height: p.height?.meters || undefined,
+      weight: p.weight?.kilograms ? `${p.weight.kilograms} kg` : undefined,
+    }));
+    
+    console.log(`[Basketball] Found ${players.length} players matching "${name}"`);
+    
+    return this.success(players);
   }
   
   private transformStandingsToStats(standing: BasketballStandingsResponse, season: string): NormalizedTeamStats {

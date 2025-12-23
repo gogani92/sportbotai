@@ -21,6 +21,7 @@ import { getPerplexityClient } from '@/lib/perplexity';
 import { detectChatMode, buildSystemPrompt, type BrainMode } from '@/lib/sportbot-brain';
 import { trackQuery } from '@/lib/sportbot-memory';
 import { saveKnowledge, buildLearnedContext, getTerminologyForSport } from '@/lib/sportbot-knowledge';
+import { routeQuery, type DataSource } from '@/lib/data-router';
 
 // ============================================
 // TYPES
@@ -1514,31 +1515,20 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       // Get sport-specific season
       const statsSport = detectSport(query) || 'football';
       const statsSeason = getCurrentSeasonForSport(statsSport);
-      
-      // Detect specific league for authoritative sources
-      const statsLeague = detectLeague(query);
-      const statsSources = getLeagueSources(statsLeague, statsSport);
+      const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       
       // Extract player name if mentioned
       const statsPlayerMatch = query.match(/([A-Z][a-zćčšžđ]+(?:\s+[A-Z][a-zćčšžđ]+)+)|Filip\s+\w+|(\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b)/i);
       
       if (statsPlayerMatch) {
         const playerName = statsPlayerMatch[0];
-        if (statsSources) {
-          // Use league-specific authoritative sources
-          query = `"${playerName}" ${statsSeason} season stats (${statsSources})`;
-        } else {
-          // No specific sources - just add season context
-          query = `"${playerName}" ${statsSeason} season stats`;
-        }
+        // VERY explicit about current stats - include exact date
+        query = `${playerName} current ${statsSeason} season stats as of ${today}`;
       } else {
-        if (statsSources) {
-          query += ` ${statsSeason} season stats (${statsSources})`;
-        } else {
-          query += ` ${statsSeason} season stats`;
-        }
+        query += ` ${statsSeason} season stats as of ${today}`;
       }
-      recency = 'day';
+      // Use hour recency to get the freshest data
+      recency = 'hour';
       break;
       
     case 'INJURY':
@@ -1649,6 +1639,7 @@ export async function POST(request: NextRequest) {
 
     let perplexityContext = '';
     let citations: string[] = [];
+    let dataLayerContext = '';
     
     // Use intelligent routing engine (with English query for better detection)
     const route = getOptimalRoute(searchMessage);
@@ -1685,8 +1676,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Step 0: Try DataLayer first for stats/roster queries
+    // This gives us accurate API data instead of web search
+    const dataRoute = await routeQuery(searchMessage, queryCategory);
+    console.log(`[AI-Chat] Data Router: source=${dataRoute.source}, hasContext=${!!dataRoute.context}`);
+    
+    if (dataRoute.source === 'datalayer' && dataRoute.context) {
+      // We have accurate API data - use it instead of Perplexity
+      dataLayerContext = dataRoute.context;
+      console.log(`[AI-Chat] Using DataLayer context: ${dataLayerContext.slice(0, 200)}...`);
+    }
+
     // Step 1: Use Perplexity for real-time search if needed
-    if (shouldSearch) {
+    // Skip Perplexity if we already have DataLayer context for stats
+    if (shouldSearch && !dataLayerContext) {
       const perplexity = getPerplexityClient();
       
       if (perplexity.isConfigured()) {
@@ -1846,6 +1849,24 @@ DO NOT:
 - Say "bet on this" or "I recommend"
 - Invent stats for players not in your LIVE DATA
 - Be wishy-washy when the data is actually clear`;
+    } else if (dataLayerContext) {
+      // DataLayer has accurate API data for this query - use it with high confidence
+      userContent = `USER QUESTION: ${message}
+
+═══════════════════════════════════════════════════
+✅ VERIFIED DATA FROM OFFICIAL API (100% ACCURATE):
+═══════════════════════════════════════════════════
+${dataLayerContext}
+═══════════════════════════════════════════════════
+
+This data is from our official sports data API - it is AUTHORITATIVE and ACCURATE.
+Use EXACTLY these numbers in your response. Do not modify or round them.
+
+RESPONSE FORMAT:
+- Lead with the stats directly: "This season, [Player] is averaging..."
+- Include all relevant stats from the data
+- Be concise and factual
+- If asked about something not in the data, say you don't have that specific info`;
     } else if (perplexityContext) {
       // For STATS and PLAYER queries, be extra strict about using only real-time data
       if (queryCategory === 'STATS' || queryCategory === 'PLAYER') {
@@ -1907,12 +1928,15 @@ Please answer the user's question using the real-time data above. Cite sources i
     console.log('[AI-Chat] Response generated successfully');
 
     // Track query in memory system (async, don't block response)
+    const usedDataLayer = !!dataLayerContext;
+    const usedPerplexity = !!perplexityContext;
+    
     trackQuery({
       query: message,
       category: queryCategory,
       brainMode,
       sport: detectSport(message),
-      usedRealTimeSearch: !!perplexityContext,
+      usedRealTimeSearch: usedPerplexity || usedDataLayer,
       responseLength: response.length,
       hadCitations: citations.length > 0,
     }).catch(err => console.error('[AI-Chat] Memory tracking failed:', err));
@@ -1924,17 +1948,29 @@ Please answer the user's question using the real-time data above. Cite sources i
       answer: response,
       sport: detectSport(message),
       category: queryCategory,
-      hadRealTimeData: !!perplexityContext,
+      hadRealTimeData: usedPerplexity || usedDataLayer,
       citations,
     }).catch(err => console.error('[AI-Chat] Knowledge save failed:', err));
+
+    // Determine routing decision for response metadata
+    let routingDecision = 'gpt-only';
+    let model = 'gpt-4o-mini';
+    if (usedDataLayer) {
+      routingDecision = 'datalayer+gpt';
+      model = 'gpt-4o-mini + api-sports';
+    } else if (usedPerplexity) {
+      routingDecision = 'perplexity+gpt';
+      model = 'gpt-4o-mini + sonar-pro';
+    }
 
     return NextResponse.json({
       success: true,
       response,
       citations,
-      usedRealTimeSearch: !!perplexityContext,
-      routingDecision: shouldSearch ? 'perplexity+gpt' : 'gpt-only',
-      model: shouldSearch ? 'gpt-4o-mini + sonar-pro' : 'gpt-4o-mini',
+      usedRealTimeSearch: usedPerplexity || usedDataLayer,
+      usedDataLayer,
+      routingDecision,
+      model,
     });
 
   } catch (error) {

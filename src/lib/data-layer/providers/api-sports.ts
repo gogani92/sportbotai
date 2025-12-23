@@ -231,10 +231,22 @@ export class APISportsProvider {
     );
   }
   
-  async getBasketballPlayers(params: { team: number; season: string }) {
+  async getBasketballPlayers(params: { team?: number; season?: string; id?: number; search?: string }) {
     return this.request<BasketballPlayerResponse[]>(
       API_SPORTS_URLS.basketball,
       '/players',
+      params as Record<string, string | number>
+    );
+  }
+  
+  /**
+   * Get player statistics for a season
+   * Use player + season to get season averages
+   */
+  async getBasketballPlayerStats(params: { player: number; season: string }) {
+    return this.request<BasketballPlayerStatsResponse[]>(
+      API_SPORTS_URLS.basketball,
+      '/games/statistics/players',
       params as Record<string, string | number>
     );
   }
@@ -607,6 +619,48 @@ export interface BasketballPlayerResponse {
     standard?: { jersey: number | null; active: boolean; pos: string | null };
     [key: string]: { jersey: number | null; active: boolean; pos: string | null } | undefined;
   };
+}
+
+/**
+ * Player game statistics from /games/statistics/players endpoint
+ * Returns per-game stats that can be aggregated for season averages
+ */
+export interface BasketballPlayerStatsResponse {
+  player: {
+    id: number;
+    name: string;
+    photo: string | null;
+  };
+  team: {
+    id: number;
+    name: string;
+    logo: string;
+  };
+  game: {
+    id: number;
+  };
+  points: number;
+  pos: string; // Position
+  min: string; // Minutes played (e.g. "32:15")
+  fgm: number; // Field goals made
+  fga: number; // Field goals attempted
+  fgp: string; // Field goal percentage
+  ftm: number; // Free throws made
+  fta: number; // Free throws attempted
+  ftp: string; // Free throw percentage
+  tpm: number; // Three pointers made
+  tpa: number; // Three pointers attempted
+  tpp: string; // Three pointer percentage
+  offReb: number; // Offensive rebounds
+  defReb: number; // Defensive rebounds
+  totReb: number; // Total rebounds
+  assists: number;
+  pFouls: number; // Personal fouls
+  steals: number;
+  turnovers: number;
+  blocks: number;
+  plusMinus: string;
+  comment: string | null;
 }
 
 export interface HockeyPlayerResponse {
