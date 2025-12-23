@@ -24,6 +24,7 @@ import { cacheGet, cacheSet, CACHE_KEYS, hashChatQuery, getChatTTL } from '@/lib
 import { checkChatRateLimit, getClientIp, CHAT_RATE_LIMITS } from '@/lib/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { getEnrichedMatchDataV2, normalizeSport } from '@/lib/data-layer/bridge';
+import { isStatsQuery, getVerifiedPlayerStats, formatVerifiedPlayerStats } from '@/lib/verified-nba-stats';
 
 // ============================================
 // TYPES
@@ -743,7 +744,11 @@ export async function POST(request: NextRequest) {
     const queryCategory = detectQueryCategory(message);
     const detectedSport = detectSport(message);
     
-    if (history.length === 0) {
+    // Skip cache for player stats queries to ensure verified stats are used
+    const isPlayerStatsQuery = /\b(average|averaging|ppg|rpg|apg|points|rebounds|assists|stats|statistics)\b/i.test(message) &&
+      /\b(player|embiid|jokic|lebron|curry|durant|wembanyama|tatum|doncic|giannis|morant)\b/i.test(message);
+    
+    if (history.length === 0 && !isPlayerStatsQuery) {
       const cached = await cacheGet<CachedChatResponse>(cacheKey);
       if (cached) {
         console.log(`[AI-Chat-Stream] Cache HIT for: "${message.slice(0, 50)}..."`);
@@ -867,6 +872,26 @@ export async function POST(request: NextRequest) {
             }
           }
 
+          // Step 1.6: Verified NBA Player Stats (bypasses Perplexity for accurate stats)
+          let verifiedPlayerStatsContext = '';
+          if (isStatsQuery(searchMessage)) {
+            console.log('[AI-Chat-Stream] Stats query detected, fetching verified stats...');
+            console.log(`[AI-Chat-Stream] API_FOOTBALL_KEY configured: ${!!process.env.API_FOOTBALL_KEY}`);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'status', status: '🔍 Fetching verified player stats...' })}\n\n`));
+            
+            const verifiedStats = await getVerifiedPlayerStats(searchMessage);
+            if (verifiedStats) {
+              verifiedPlayerStatsContext = formatVerifiedPlayerStats(verifiedStats);
+              console.log(`[AI-Chat-Stream] ✅ Verified player stats: ${verifiedStats.playerFullName} - ${verifiedStats.stats.points} PPG`);
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'status', status: `✅ Found verified stats for ${verifiedStats.playerFullName}` })}\n\n`));
+              // Override Perplexity context if we have verified stats to prevent wrong data
+              perplexityContext = '';
+              citations = [];
+            } else {
+              console.log('[AI-Chat-Stream] ⚠️ Could not get verified player stats, using fallback');
+            }
+          }
+
           // Send status: generating
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'status', status: 'Generating response...' })}\n\n`));
 
@@ -921,17 +946,20 @@ export async function POST(request: NextRequest) {
 
           // Add user message with context
           let userContent = message;
-          const hasContext = perplexityContext || dataLayerContext;
+          const hasContext = perplexityContext || dataLayerContext || verifiedPlayerStatsContext;
           
           if (hasContext) {
             // For STATS queries, use strict real-time data instructions
             if (queryCategory === 'STATS') {
+              // Prioritize verified player stats over Perplexity
+              const statsData = verifiedPlayerStatsContext || perplexityContext || 'No real-time data available';
+              
               userContent = `USER QUESTION: ${message}
 
 ⚠️ CRITICAL: The user is asking about CURRENT SEASON STATISTICS. Your training data is OUTDATED.
 
 REAL-TIME DATA (December 2025 - USE ONLY THIS):
-${perplexityContext || 'No real-time data available'}
+${statsData}
 ${dataLayerContext ? `\nSTRUCTURED STATS:\n${dataLayerContext}` : ''}
 
 STRICT RULES:
