@@ -465,35 +465,60 @@ async function searchPlayer(
       return { success: false, error: `Player "${searchName}" not found in Euroleague` };
     }
     
+    // Normalize diacritics for matching (ž→z, ć→c, etc.)
+    const normalizeName = (name: string): string => {
+      return name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+        .replace(/đ/g, 'd')
+        .replace(/ł/g, 'l')
+        .replace(/ø/g, 'o')
+        .replace(/ß/g, 'ss');
+    };
+    
     // Find best matching player - prioritize exact name match
-    const expectedLower = expectedFullName.toLowerCase();
-    const expectedParts = expectedLower.split(/\s+/);
+    const expectedNorm = normalizeName(expectedFullName);
+    const expectedParts = expectedNorm.split(/\s+/);
+    
+    console.log(`[VerifiedEuroleagueStats] Searching for "${expectedFullName}" (normalized: "${expectedNorm}") among ${data.response.length} players`);
     
     let bestMatch = data.response[0];
     let bestScore = 0;
     
     for (const player of data.response) {
-      const fullName = `${player.firstname} ${player.lastname}`.toLowerCase();
-      const firstLower = (player.firstname || '').toLowerCase();
-      const lastLower = (player.lastname || '').toLowerCase();
+      const firstName = player.firstname || '';
+      const lastName = player.lastname || '';
+      const fullName = `${firstName} ${lastName}`;
+      const fullNorm = normalizeName(fullName);
+      const firstNorm = normalizeName(firstName);
+      const lastNorm = normalizeName(lastName);
       
       let score = 0;
       
-      // Exact full name match = highest score
-      if (fullName === expectedLower) {
+      // Exact full name match (normalized) = highest score
+      if (fullNorm === expectedNorm) {
         score = 100;
       }
-      // Last name + first name partial match
-      else if (expectedParts.some(p => lastLower.includes(p) || p.includes(lastLower))) {
-        score += 50;
-        if (expectedParts.some(p => firstLower.includes(p) || p.includes(firstLower))) {
-          score += 30;
+      // Check if first AND last name both match
+      else {
+        const hasFirstMatch = expectedParts.some(p => 
+          firstNorm.includes(p) || p.includes(firstNorm)
+        );
+        const hasLastMatch = expectedParts.some(p => 
+          lastNorm === p || lastNorm.includes(p) || p.includes(lastNorm)
+        );
+        
+        if (hasLastMatch && hasFirstMatch) {
+          score = 80; // Both names match
+        } else if (hasLastMatch) {
+          score = 50; // Only last name matches
+        } else if (hasFirstMatch) {
+          score = 20; // Only first name matches
         }
       }
-      // Partial first name match
-      else if (expectedParts.some(p => firstLower.includes(p))) {
-        score += 20;
-      }
+      
+      console.log(`[VerifiedEuroleagueStats] Player: "${fullName}" (${fullNorm}) → score: ${score}`);
       
       if (score > bestScore) {
         bestScore = score;
@@ -505,9 +530,13 @@ async function searchPlayer(
     const playerName = `${bestMatch.firstname} ${bestMatch.lastname}`;
     const teamName = bestMatch.team?.name || 'Unknown';
     
-    // Warn if match is weak
+    // REJECT weak matches - don't return wrong player data
     if (bestScore < 50) {
-      console.warn(`[VerifiedEuroleagueStats] Weak match: searched "${expectedFullName}", found "${playerName}" (score: ${bestScore})`);
+      console.warn(`[VerifiedEuroleagueStats] Rejecting weak match: searched "${expectedFullName}", found "${playerName}" (score: ${bestScore})`);
+      return { 
+        success: false, 
+        error: `Player "${expectedFullName}" not found in Euroleague. Found "${playerName}" but names don't match closely enough.` 
+      };
     }
     
     console.log(`[VerifiedEuroleagueStats] Best match: "${playerName}" (score: ${bestScore}, team: ${teamName})`);
