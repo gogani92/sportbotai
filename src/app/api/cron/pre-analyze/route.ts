@@ -732,10 +732,12 @@ ${!hasDraw ? 'NO DRAWS in this sport. Pick a winner.' : ''}`;
 // ============================================
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret - allow Vercel cron OR manual Bearer token
+  // Verify cron secret - allow Vercel cron OR Bearer token OR query param
   const authHeader = request.headers.get('authorization');
   const isVercelCron = request.headers.get('x-vercel-cron') === '1';
-  const isAuthorized = authHeader === `Bearer ${CRON_SECRET}`;
+  const url = new URL(request.url);
+  const secretParam = url.searchParams.get('secret');
+  const isAuthorized = authHeader === `Bearer ${CRON_SECRET}` || secretParam === CRON_SECRET;
   
   if (CRON_SECRET && !isVercelCron && !isAuthorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
