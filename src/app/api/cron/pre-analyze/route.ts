@@ -744,6 +744,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   
+  // Optional: filter to specific sport via query param
+  const sportFilter = url.searchParams.get('sport');
+  if (sportFilter) {
+    console.log(`[Pre-Analyze] Filtering to sport: ${sportFilter}`);
+  }
+  
   console.log('[Pre-Analyze] Starting daily pre-analysis cron job...');
   
   if (!theOddsClient.isConfigured()) {
@@ -762,8 +768,20 @@ export async function GET(request: NextRequest) {
     analyzedMatches: [] as string[],
   };
   
+  // Filter sports if query param provided
+  const sportsToProcess = sportFilter 
+    ? PRE_ANALYZE_SPORTS.filter(s => s.key === sportFilter || s.key.includes(sportFilter))
+    : PRE_ANALYZE_SPORTS;
+  
+  if (sportFilter && sportsToProcess.length === 0) {
+    return NextResponse.json({ 
+      error: `Sport not found: ${sportFilter}`, 
+      availableSports: PRE_ANALYZE_SPORTS.map(s => s.key) 
+    }, { status: 400 });
+  }
+  
   // Process each sport
-  for (const sport of PRE_ANALYZE_SPORTS) {
+  for (const sport of sportsToProcess) {
     try {
       console.log(`[Pre-Analyze] Fetching events for ${sport.key}...`);
       
