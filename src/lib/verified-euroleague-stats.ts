@@ -396,15 +396,56 @@ function extractPlayerFromMessage(message: string): EuroleaguePlayerMapping | nu
     const fullName = nameMatch[1];
     const parts = fullName.split(/\s+/);
     const lastName = parts[parts.length - 1].toLowerCase();
-    console.log(`[VerifiedEuroleagueStats] Unknown player: "${fullName}" (search: ${lastName})`);
+    
+    // Try to extract team hint from message
+    const teamHint = extractTeamHint(message);
+    
+    console.log(`[VerifiedEuroleagueStats] Unknown player: "${fullName}" (search: ${lastName}, teamHint: ${teamHint || 'none'})`);
     return {
       searchName: lastName,
       displayName: fullName,
       variations: [fullName.toLowerCase()],
+      teamHint,
     };
   }
   
   return null;
+}
+
+/**
+ * Extract team name hint from message for better player matching
+ */
+function extractTeamHint(message: string): string | undefined {
+  const lower = message.toLowerCase();
+  
+  const teamPatterns: [RegExp, string][] = [
+    [/al.?ahli|dubai/i, 'Dubai'],
+    [/real madrid/i, 'Real Madrid'],
+    [/barcelona|barca/i, 'Barcelona'],
+    [/olympiacos|olympiakos/i, 'Olympiacos'],
+    [/panathinaikos|pao/i, 'Panathinaikos'],
+    [/fenerbahce|fener/i, 'Fenerbahce'],
+    [/anadolu efes|efes/i, 'Efes'],
+    [/partizan/i, 'Partizan'],
+    [/crvena zvezda|zvezda|red star/i, 'Crvena Zvezda'],
+    [/maccabi/i, 'Maccabi'],
+    [/monaco/i, 'Monaco'],
+    [/virtus bologna|bologna/i, 'Virtus'],
+    [/zalgiris/i, 'Zalgiris'],
+    [/baskonia/i, 'Baskonia'],
+    [/bayern/i, 'Bayern'],
+    [/alba berlin|alba/i, 'Alba'],
+    [/asvel|ldlc/i, 'ASVEL'],
+    [/milano|olimpia/i, 'Milano'],
+  ];
+  
+  for (const [pattern, teamName] of teamPatterns) {
+    if (pattern.test(lower)) {
+      return teamName;
+    }
+  }
+  
+  return undefined;
 }
 
 // ============================================================================
@@ -430,9 +471,10 @@ const STATS_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 async function searchPlayer(
   searchName: string,
   expectedFullName: string,  // The full name we're looking for
-  season: string
+  season: string,
+  teamHint?: string  // Optional team name to prioritize
 ): Promise<{ success: boolean; playerId?: string; playerName?: string; teamName?: string; error?: string }> {
-  const cacheKey = `euroleague:${expectedFullName.toLowerCase()}`;
+  const cacheKey = `euroleague:${expectedFullName.toLowerCase()}:${teamHint || ''}`;
   const cached = playerCache[cacheKey];
   
   if (cached && cached.expiry > new Date()) {
@@ -480,8 +522,9 @@ async function searchPlayer(
     // Find best matching player - prioritize exact name match
     const expectedNorm = normalizeName(expectedFullName);
     const expectedParts = expectedNorm.split(/\s+/);
+    const teamHintNorm = teamHint ? normalizeName(teamHint) : '';
     
-    console.log(`[VerifiedEuroleagueStats] Searching for "${expectedFullName}" (normalized: "${expectedNorm}") among ${data.response.length} players`);
+    console.log(`[VerifiedEuroleagueStats] Searching for "${expectedFullName}" (normalized: "${expectedNorm}", teamHint: "${teamHint || 'none'}") among ${data.response.length} players`);
     
     let bestMatch = data.response[0];
     let bestScore = 0;
@@ -493,6 +536,8 @@ async function searchPlayer(
       const fullNorm = normalizeName(fullName);
       const firstNorm = normalizeName(firstName);
       const lastNorm = normalizeName(lastName);
+      const playerTeam = player.team?.name || '';
+      const playerTeamNorm = normalizeName(playerTeam);
       
       let score = 0;
       
@@ -518,7 +563,13 @@ async function searchPlayer(
         }
       }
       
-      console.log(`[VerifiedEuroleagueStats] Player: "${fullName}" (${fullNorm}) → score: ${score}`);
+      // BONUS: If team hint matches, add significant bonus
+      if (teamHintNorm && playerTeamNorm.includes(teamHintNorm)) {
+        score += 30;
+        console.log(`[VerifiedEuroleagueStats] Team bonus: "${playerTeam}" matches hint "${teamHint}" (+30)`);
+      }
+      
+      console.log(`[VerifiedEuroleagueStats] Player: "${fullName}" @ ${playerTeam} → score: ${score}`);
       
       if (score > bestScore) {
         bestScore = score;
@@ -703,8 +754,13 @@ export async function getVerifiedEuroleaguePlayerStats(
   const season = EuroleagueSeasonNormalizer.normalize(message);
   console.log(`[VerifiedEuroleagueStats] Season resolved: ${season}`);
   
-  // Search for player - pass full display name for better matching
-  const playerResult = await searchPlayer(playerMapping.searchName, playerMapping.displayName, season);
+  // Search for player - pass full display name and team hint for better matching
+  const playerResult = await searchPlayer(
+    playerMapping.searchName, 
+    playerMapping.displayName, 
+    season,
+    playerMapping.teamHint  // Pass team hint if user mentioned a team
+  );
   
   if (!playerResult.success || !playerResult.playerId) {
     return {
