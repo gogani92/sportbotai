@@ -798,7 +798,7 @@ interface RoutingDecision {
 // Time-sensitive keywords that ALWAYS need real-time data
 const REALTIME_TRIGGERS = {
   // Current season/form (changes weekly) - includes Serbian/Croatian
-  currentSeason: /this season|current season|sez[oó]n|2024.?2025|form|recent|últim|dernièr|letzte|koliko (golova|asistencija)|how many goals|goals (this|scored)|postig(ao|la)/i,
+  currentSeason: /this season|current season|sez[oó]n|2024.?2025|2025.?2026|form|recent|últim|dernièr|letzte|koliko (golova|asistencija)|how many goals|goals (this|scored)|postig(ao|la)/i,
   
   // Live/Today (changes hourly)  
   liveData: /today|tonight|now|live|score|result|playing|won|lost|beat|sinoć|večeras|hoy|heute|aujourd/i,
@@ -1121,28 +1121,28 @@ function buildOptimizedSearchQuery(message: string, route: RoutingDecision): str
       if (extractedName) {
         // For current status queries (where does X play)
         if (REALTIME_TRIGGERS.currentStatus.test(message)) {
-          return `"${extractedName}" 2024-2025 current club team transfermarkt sofascore`;
+          return `"${extractedName}" 2025-2026 current club team transfermarkt sofascore`;
         }
         // For stats queries (how many goals, season stats)
         if (REALTIME_TRIGGERS.currentSeason.test(message)) {
-          return `"${extractedName}" 2024-25 goals scored season statistics fbref sofascore transfermarkt appearances matches`;
+          return `"${extractedName}" 2025-26 goals scored season statistics fbref sofascore transfermarkt appearances matches`;
         }
         // For injury queries
         if (REALTIME_TRIGGERS.breakingNews.test(message)) {
-          return `"${extractedName}" injury news update December 2024`;
+          return `"${extractedName}" injury news update December 2025`;
         }
         // Default: combined current team + stats search
-        return `"${extractedName}" 2024-25 goals statistics fbref sofascore transfermarkt`;
+        return `"${extractedName}" 2025-26 goals statistics fbref sofascore transfermarkt`;
       }
       // Default real-time enhancement
-      return `${query} ${route.recency === 'hour' ? 'today' : route.recency === 'day' ? 'December 2024' : '2024-2025'}`;
+      return `${query} ${route.recency === 'hour' ? 'today' : route.recency === 'day' ? 'December 2025' : '2025-2026'}`;
       
     case 'HYBRID':
       // Use real-time with some Wikipedia context
       if (extractedName) {
-        return `"${extractedName}" 2024-2025 current team stats career transfermarkt soccerway`;
+        return `"${extractedName}" 2025-2026 current team stats career transfermarkt soccerway`;
       }
-      return `${query} 2024-2025`;
+      return `${query} 2025-2026`;
       
     default:
       return query;
@@ -1218,7 +1218,7 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
         const playerName = playerNameMatch[0];
         if (asksCurrentTeam) {
           // Asking about current team - search Transfermarkt/FBRef not Wikipedia
-          query = `"${playerName}" 2024-2025 current club team transfermarkt December 2024`;
+          query = `"${playerName}" 2025-2026 current club team transfermarkt December 2025`;
           recency = 'week';
         } else {
           // General biography question - Wikipedia is fine
@@ -1226,18 +1226,18 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
           recency = 'month';
         }
       } else {
-        query += ' 2024-2025 current club team career';
+        query += ' 2025-2026 current club team career';
         recency = 'week';
       }
       break;
       
     case 'ROSTER':
-      query += ' 2024-2025 season current roster squad players';
+      query += ' 2025-2026 season current roster squad players';
       recency = 'week';
       break;
       
     case 'FIXTURE':
-      query += ' upcoming fixture schedule next match kickoff time December 2024';
+      query += ' upcoming fixture schedule next match kickoff time December 2025';
       recency = 'day';
       break;
       
@@ -1247,7 +1247,7 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       break;
       
     case 'STANDINGS':
-      query += ' 2024-2025 league table standings points';
+      query += ' 2025-2026 league table standings points';
       recency = 'day';
       break;
       
@@ -1257,20 +1257,20 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       if (statsPlayerMatch) {
         const playerName = statsPlayerMatch[0];
         // Search for current season stats from Transfermarkt, SofaScore, FBRef
-        query = `"${playerName}" 2024-2025 season stats goals assists current club team transfermarkt`;
+        query = `"${playerName}" 2025-2026 season stats goals assists current club team transfermarkt`;
       } else {
-        query += ' 2024-2025 season statistics stats goals assists';
+        query += ' 2025-2026 season statistics stats goals assists';
       }
       recency = 'week';
       break;
       
     case 'INJURY':
-      query += ' injury update news team news fitness December 2024';
+      query += ' injury update news team news fitness December 2025';
       recency = 'day';
       break;
       
     case 'TRANSFER':
-      query += ' transfer news rumors latest December 2024';
+      query += ' transfer news rumors latest December 2025';
       recency = 'day';
       break;
       
@@ -1285,7 +1285,7 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       break;
       
     case 'COMPARISON':
-      query += ' comparison stats 2024-2025 head to head';
+      query += ' comparison stats 2025-2026 head to head';
       recency = 'week';
       break;
       
@@ -1308,9 +1308,9 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       // For player prop questions - get current stats and recent performance
       const propIntent = detectBettingIntent(message);
       if (propIntent.playerMentioned) {
-        query = `${propIntent.playerMentioned} 2024-2025 season stats averages points rebounds assists per game recent form last 5 games`;
+        query = `${propIntent.playerMentioned} 2025-2026 season stats averages points rebounds assists per game recent form last 5 games`;
       } else {
-        query += ' 2024-2025 season player stats averages performance';
+        query += ' 2025-2026 season player stats averages performance';
       }
       recency = 'day';
       break;
@@ -1319,16 +1319,16 @@ function extractSearchQuery(message: string): { query: string; category: QueryCa
       // For betting questions - still get stats but we'll reframe the response
       const bettingIntent = detectBettingIntent(message);
       if (bettingIntent.playerMentioned) {
-        query = `${bettingIntent.playerMentioned} 2024-2025 season stats averages points rebounds assists performance recent form injury status`;
+        query = `${bettingIntent.playerMentioned} 2025-2026 season stats averages points rebounds assists performance recent form injury status`;
       } else {
-        query += ' 2024-2025 recent performance stats form';
+        query += ' 2025-2026 recent performance stats form';
       }
       recency = 'day';
       break;
       
     case 'GENERAL':
     default:
-      query += ' latest news December 2024';
+      query += ' latest news December 2025';
       recency = 'day';
       break;
   }
@@ -1570,12 +1570,36 @@ DO NOT:
 - Invent stats for players not in your LIVE DATA
 - Be wishy-washy when the data is actually clear`;
     } else if (perplexityContext) {
-      userContent = `USER QUESTION: ${message}
+      // For STATS queries, be extra strict about using only real-time data
+      if (queryCategory === 'STATS') {
+        userContent = `USER QUESTION: ${message}
+
+⚠️ CRITICAL: The user is asking about CURRENT SEASON STATISTICS. Your training data is OUTDATED.
+
+REAL-TIME DATA (December 2025 - USE ONLY THIS):
+${perplexityContext}
+
+STRICT RULES:
+1. ONLY use the numbers from the REAL-TIME DATA above
+2. DO NOT use any statistics from your training data (it's from 2023 or earlier)
+3. If the real-time data doesn't have the exact stat requested, say "Based on the available data..." and give what you have
+4. NEVER guess or estimate numbers - only report what's in the real-time data
+5. Lead with the current stats, then add context
+
+RESPONSE FORMAT:
+- Start with the CURRENT SEASON stat: "In the 2025-26 season, [Player] is averaging..."
+- Then add recent performance context
+- Keep it factual and concise`;
+      } else {
+        userContent = `USER QUESTION: ${message}
 
 REAL-TIME SPORTS DATA (from web search, use this for your answer):
 ${perplexityContext}
 
+IMPORTANT: Use ONLY the real-time data above for current season stats and recent information. Your training data may be outdated. If the data doesn't have what the user needs, acknowledge that and share what you do have.
+
 Please answer the user's question using the real-time data above. Cite sources if relevant.`;
+      }
     }
 
     messages.push({ role: 'user', content: userContent });
