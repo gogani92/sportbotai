@@ -330,17 +330,29 @@ async function generatePostFromPrediction(prediction: PredictionWithEdge, catego
         ? prediction.awayTeam 
         : null;
     const hasContrarianValue = valueSideTeam && valueSideTeam !== favoriteTeam;
+    const hasAlignedValue = valueSideTeam && valueSideTeam === favoriteTeam && (prediction.valueBetEdge || 0) > 5;
     
     // Include the actual prediction reasoning for better content
     // CRITICAL: Make it clear who is FAVORITE vs who has VALUE EDGE
+    let narrativeHint = '';
+    if (hasAlignedValue) {
+      // RARE: Both winner AND value align with significant edge - strong conviction play
+      narrativeHint = `
+STRONG ALIGNMENT: ${favoriteTeam} is BOTH the most likely winner AND offers +${prediction.valueBetEdge?.toFixed(1)}% value edge at ${prediction.valueBetOdds?.toFixed(2) || 'N/A'} odds.
+NARRATIVE: This is rare. The model says ${favoriteTeam} wins AND the market is underpricing them. High conviction spot. Emphasize this alignment - "everything points one way" / "data is screaming" / "when the numbers agree, pay attention."`;
+    } else if (hasContrarianValue) {
+      // Contrarian: Favorite differs from value edge
+      narrativeHint = `
+VALUE EDGE: ${valueSideTeam} (underdog) at ${prediction.valueBetOdds?.toFixed(2) || 'N/A'} odds (+${prediction.valueBetEdge?.toFixed(1) || 'N/A'}% edge)
+NARRATIVE: ${favoriteTeam} is favored, but ${valueSideTeam} offers interesting value and could surprise.`;
+    }
+    
     const predictionContext = `
 [PRE-ANALYZED PREDICTION]
 FAVORITE (most likely to win): ${favoriteTeam}
 Call: ${prediction.prediction}
 Conviction: ${prediction.conviction}/5
-${hasContrarianValue ? `
-VALUE EDGE: ${valueSideTeam} (underdog) at ${prediction.valueBetOdds?.toFixed(2) || 'N/A'} odds (+${prediction.valueBetEdge?.toFixed(1) || 'N/A'}% edge)
-NARRATIVE: ${favoriteTeam} is favored, but ${valueSideTeam} offers interesting value and could surprise.` : ''}
+${narrativeHint}
 Reasoning: ${prediction.reasoning}
 `;
     
