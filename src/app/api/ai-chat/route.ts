@@ -21,7 +21,7 @@ import { getPerplexityClient } from '@/lib/perplexity';
 import { detectChatMode, buildSystemPrompt, type BrainMode } from '@/lib/sportbot-brain';
 import { trackQuery } from '@/lib/sportbot-memory';
 import { saveKnowledge, buildLearnedContext, getTerminologyForSport } from '@/lib/sportbot-knowledge';
-import { routeQuery, type DataSource } from '@/lib/data-router';
+import { routeQuery as routeToDataSource } from '@/lib/data-router';
 
 // ============================================
 // TYPES
@@ -1678,12 +1678,12 @@ export async function POST(request: NextRequest) {
 
     // Step 0: Try DataLayer first for stats/roster queries
     // This gives us accurate API data instead of web search
-    const dataRoute = await routeQuery(searchMessage, queryCategory);
-    console.log(`[AI-Chat] Data Router: source=${dataRoute.source}, hasContext=${!!dataRoute.context}`);
+    const dataRoute = await routeToDataSource(searchMessage, queryCategory);
+    console.log(`[AI-Chat] Data Router: source=${dataRoute.source}, hasData=${!!dataRoute.data}`);
     
-    if (dataRoute.source === 'datalayer' && dataRoute.context) {
+    if (dataRoute.source === 'datalayer' && dataRoute.data) {
       // We have accurate API data - use it instead of Perplexity
-      dataLayerContext = dataRoute.context;
+      dataLayerContext = dataRoute.data;
       console.log(`[AI-Chat] Using DataLayer context: ${dataLayerContext.slice(0, 200)}...`);
     }
 
