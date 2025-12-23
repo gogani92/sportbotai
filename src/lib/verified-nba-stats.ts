@@ -480,7 +480,7 @@ async function fetchPlayerSeasonAverages(
   const verifiedStats: VerifiedPlayerStats = {
     playerFullName: playerName,
     playerId,
-    teamName: rawStats.teamId || 'Unknown',
+    teamName: rawStats.teamName || rawStats.teamId || 'Unknown',  // Prefer team name from latest game
     season: rawStats.season,
     seasonType,
     gamesPlayed: rawStats.games.played,

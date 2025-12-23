@@ -523,6 +523,16 @@ async function fetchPlayerStats(
       return { success: false, error: `No games played in ${season}` };
     }
     
+    // Get team from most recent game (more accurate than player search)
+    // Sort games by date descending to get latest team
+    const sortedGames = [...games].sort((a: any, b: any) => {
+      const dateA = a.game?.date || a.date || '';
+      const dateB = b.game?.date || b.date || '';
+      return dateB.localeCompare(dateA);
+    });
+    const currentTeam = sortedGames[0]?.team?.name || teamName;
+    console.log(`[VerifiedEuroleagueStats] Current team from stats: ${currentTeam}`);
+    
     // Calculate averages
     let totalPoints = 0, totalRebounds = 0, totalAssists = 0;
     let totalSteals = 0, totalBlocks = 0, totalMinutes = 0;
@@ -556,7 +566,7 @@ async function fetchPlayerStats(
     const stats: VerifiedEuroleaguePlayerStats = {
       playerFullName: playerName,
       playerId,
-      teamName,
+      teamName: currentTeam,  // Use team from most recent game, not player search
       season,
       seasonType: 'regular',
       gamesPlayed,

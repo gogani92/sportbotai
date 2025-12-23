@@ -124,6 +124,7 @@ export interface NormalizedTeamStats {
 export interface NormalizedPlayerStats {
   playerId: string;
   teamId: string;
+  teamName?: string;  // Current team name (from most recent game)
   season: string;
   sport: Sport;
   

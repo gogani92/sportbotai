@@ -750,6 +750,20 @@ export class BasketballAdapter extends BaseSportAdapter {
     let totalTPM = 0, totalTPA = 0;
     let totalFTM = 0, totalFTA = 0;
     let teamId = '';
+    let teamName = '';
+    
+    // Sort games by date to ensure we get the most recent team
+    const sortedGames = [...games].sort((a: any, b: any) => {
+      const dateA = a.game?.date || a.date || '';
+      const dateB = b.game?.date || b.date || '';
+      return dateB.localeCompare(dateA);
+    });
+    
+    // Get current team from most recent game
+    if (sortedGames.length > 0) {
+      teamId = String(sortedGames[0].team?.id || '');
+      teamName = sortedGames[0].team?.name || '';
+    }
     
     for (const game of games) {
       totalPoints += game.points || 0;
@@ -765,7 +779,6 @@ export class BasketballAdapter extends BaseSportAdapter {
       totalTPA += game.threepoint_goals?.attempts || game.tpa || 0;
       totalFTM += game.freethrows_goals?.total || game.ftm || 0;
       totalFTA += game.freethrows_goals?.attempts || game.fta || 0;
-      teamId = String(game.team.id);
       
       // Parse minutes (format: "32:15") - handle both field names
       const minStr = game.minutes || game.min;
@@ -786,6 +799,7 @@ export class BasketballAdapter extends BaseSportAdapter {
     const stats: NormalizedPlayerStats = {
       playerId,
       teamId,
+      teamName,  // Current team from most recent game
       season: seasonStr,
       sport: 'basketball',
       
