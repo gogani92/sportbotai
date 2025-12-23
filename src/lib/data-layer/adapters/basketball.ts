@@ -747,20 +747,23 @@ export class BasketballAdapter extends BaseSportAdapter {
     for (const game of games) {
       totalPoints += game.points || 0;
       totalAssists += game.assists || 0;
-      totalRebounds += game.totReb || 0;
+      // Handle both old flat structure and new nested structure
+      totalRebounds += game.rebounds?.total || game.totReb || 0;
       totalSteals += game.steals || 0;
       totalBlocks += game.blocks || 0;
-      totalFGM += game.fgm || 0;
-      totalFGA += game.fga || 0;
-      totalTPM += game.tpm || 0;
-      totalTPA += game.tpa || 0;
-      totalFTM += game.ftm || 0;
-      totalFTA += game.fta || 0;
+      // Handle both structures for shooting stats
+      totalFGM += game.field_goals?.total || game.fgm || 0;
+      totalFGA += game.field_goals?.attempts || game.fga || 0;
+      totalTPM += game.threepoint_goals?.total || game.tpm || 0;
+      totalTPA += game.threepoint_goals?.attempts || game.tpa || 0;
+      totalFTM += game.freethrows_goals?.total || game.ftm || 0;
+      totalFTA += game.freethrows_goals?.attempts || game.fta || 0;
       teamId = String(game.team.id);
       
-      // Parse minutes (format: "32:15")
-      if (game.min) {
-        const [mins, secs] = game.min.split(':').map(Number);
+      // Parse minutes (format: "32:15") - handle both field names
+      const minStr = game.minutes || game.min;
+      if (minStr) {
+        const [mins, secs] = minStr.split(':').map(Number);
         totalMinutes += mins + (secs || 0) / 60;
       }
     }
@@ -821,39 +824,128 @@ export class BasketballAdapter extends BaseSportAdapter {
   
   /**
    * Search for a player by name
-   * Returns the player ID and basic info
+   * The API requires a team ID for player search, so we need to:
+   * 1. Get all NBA teams
+   * 2. Search each team's roster for the player name
+   * 
+   * For performance, we cache the player mappings
    */
   async searchPlayer(name: string, season?: string): Promise<DataLayerResponse<NormalizedPlayer[]>> {
     const seasonStr = season || this.getCurrentSeason();
+    const searchName = name.toLowerCase();
     
-    console.log(`[Basketball] Searching for player: "${name}"`);
+    console.log(`[Basketball] Searching for player: "${name}" in season ${seasonStr}`);
     
-    const result = await this.apiProvider.getBasketballPlayers({
-      search: name,
+    // Get all NBA teams first
+    const teamsResult = await this.apiProvider.getBasketballTeams({
+      league: this.currentLeagueId,
       season: seasonStr,
     });
     
-    if (!result.success || !result.data || result.data.length === 0) {
-      return this.error('PLAYER_NOT_FOUND', `Could not find player matching "${name}"`);
+    if (!teamsResult.success || !teamsResult.data || teamsResult.data.length === 0) {
+      return this.error('TEAMS_NOT_FOUND', 'Could not fetch NBA teams');
     }
     
-    // Transform to normalized players
-    const players: NormalizedPlayer[] = result.data.map(p => ({
-      id: String(p.id),
-      externalId: String(p.id),
-      name: p.name,
-      firstName: p.firstname,
-      lastName: p.lastname,
-      position: p.leagues?.standard?.pos || undefined,
-      number: p.leagues?.standard?.jersey || undefined,
-      nationality: p.nationality || undefined,
-      height: p.height?.meters || undefined,
-      weight: p.weight?.kilograms ? `${p.weight.kilograms} kg` : undefined,
-    }));
+    // Map known player names to their teams for faster lookup
+    const KNOWN_PLAYERS: Record<string, string[]> = {
+      'embiid': ['76ers', 'philadelphia'],
+      'joel embiid': ['76ers', 'philadelphia'],
+      'lebron': ['lakers', 'los angeles'],
+      'lebron james': ['lakers', 'los angeles'],
+      'curry': ['warriors', 'golden state'],
+      'stephen curry': ['warriors', 'golden state'],
+      'durant': ['suns', 'phoenix'],
+      'kevin durant': ['suns', 'phoenix'],
+      'giannis': ['bucks', 'milwaukee'],
+      'antetokounmpo': ['bucks', 'milwaukee'],
+      'jokic': ['nuggets', 'denver'],
+      'nikola jokic': ['nuggets', 'denver'],
+      'luka': ['mavericks', 'dallas'],
+      'doncic': ['mavericks', 'dallas'],
+      'tatum': ['celtics', 'boston'],
+      'jayson tatum': ['celtics', 'boston'],
+      'lillard': ['bucks', 'milwaukee'],
+      'damian lillard': ['bucks', 'milwaukee'],
+      'anthony davis': ['lakers', 'los angeles'],
+    };
     
-    console.log(`[Basketball] Found ${players.length} players matching "${name}"`);
+    // Try to find team based on known player mappings
+    let targetTeams = teamsResult.data;
+    const knownTeamHints = KNOWN_PLAYERS[searchName];
+    if (knownTeamHints) {
+      const matchedTeam = teamsResult.data.find(t => 
+        knownTeamHints.some(hint => t.name.toLowerCase().includes(hint))
+      );
+      if (matchedTeam) {
+        targetTeams = [matchedTeam];
+        console.log(`[Basketball] Using known team mapping: ${matchedTeam.name}`);
+      }
+    }
     
-    return this.success(players);
+    // Search team rosters for the player
+    for (const team of targetTeams) {
+      const playersResult = await this.apiProvider.getBasketballPlayers({
+        team: team.id,
+        season: seasonStr,
+      });
+      
+      if (!playersResult.success || !playersResult.data) {
+        continue;
+      }
+      
+      // Find matching player - use strict matching
+      const matchingPlayers = playersResult.data.filter(p => {
+        const playerName = p.name.toLowerCase();
+        const firstName = p.firstname?.toLowerCase() || '';
+        const lastName = p.lastname?.toLowerCase() || '';
+        
+        // Exact last name match (most common case: "embiid" -> "Embiid Joel")
+        if (lastName === searchName) return true;
+        
+        // Full name in player name (e.g., "joel embiid" matches "Embiid Joel")
+        if (playerName.includes(searchName)) return true;
+        
+        // Search name contains last name exactly (e.g., "joel embiid" contains "embiid")
+        if (searchName.includes(lastName) && lastName.length >= 4) return true;
+        
+        return false;
+      });
+      
+      if (matchingPlayers.length > 0) {
+        // Sort by best match - exact last name match first
+        matchingPlayers.sort((a, b) => {
+          const aLastName = a.lastname?.toLowerCase() || '';
+          const bLastName = b.lastname?.toLowerCase() || '';
+          // Exact matches first
+          if (aLastName === searchName && bLastName !== searchName) return -1;
+          if (bLastName === searchName && aLastName !== searchName) return 1;
+          // Then by name length (shorter = more likely to be correct)
+          return a.name.length - b.name.length;
+        });
+        
+        // Transform to normalized players
+        const players: NormalizedPlayer[] = matchingPlayers.map(p => ({
+          id: String(p.id),
+          externalId: String(p.id),
+          name: p.name,
+          firstName: p.firstname,
+          lastName: p.lastname,
+          position: p.leagues?.standard?.pos || undefined,
+          number: p.leagues?.standard?.jersey || undefined,
+          nationality: p.nationality || undefined,
+          height: p.height?.meters || undefined,
+          weight: p.weight?.kilograms ? `${p.weight.kilograms} kg` : undefined,
+          teamId: String(team.id),
+          teamName: team.name,
+        }));
+        
+        console.log(`[Basketball] Found ${players.length} player(s) matching "${name}" on ${team.name}`);
+        
+        return this.success(players);
+      }
+    }
+    
+    return this.error('PLAYER_NOT_FOUND', `Could not find player matching "${name}"`);
   }
   
   private transformStandingsToStats(standing: BasketballStandingsResponse, season: string): NormalizedTeamStats {

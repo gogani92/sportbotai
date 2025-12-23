@@ -42,6 +42,8 @@ export interface NormalizedPlayer {
   weight?: string;
   injured?: boolean;
   injuryType?: string;
+  teamId?: string;
+  teamName?: string;
 }
 
 export interface NormalizedMatch {

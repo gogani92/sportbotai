@@ -624,43 +624,67 @@ export interface BasketballPlayerResponse {
 /**
  * Player game statistics from /games/statistics/players endpoint
  * Returns per-game stats that can be aggregated for season averages
+ * 
+ * NOTE: The actual API returns different field names than the docs suggest.
+ * Using the actual response structure as seen in testing.
  */
 export interface BasketballPlayerStatsResponse {
   player: {
     id: number;
     name: string;
-    photo: string | null;
   };
   team: {
     id: number;
-    name: string;
-    logo: string;
   };
   game: {
     id: number;
   };
+  type: string; // "starters" or "bench"
+  minutes: string; // Minutes played (e.g. "32:15")
   points: number;
-  pos: string; // Position
-  min: string; // Minutes played (e.g. "32:15")
-  fgm: number; // Field goals made
-  fga: number; // Field goals attempted
-  fgp: string; // Field goal percentage
-  ftm: number; // Free throws made
-  fta: number; // Free throws attempted
-  ftp: string; // Free throw percentage
-  tpm: number; // Three pointers made
-  tpa: number; // Three pointers attempted
-  tpp: string; // Three pointer percentage
-  offReb: number; // Offensive rebounds
-  defReb: number; // Defensive rebounds
-  totReb: number; // Total rebounds
   assists: number;
-  pFouls: number; // Personal fouls
-  steals: number;
-  turnovers: number;
-  blocks: number;
-  plusMinus: string;
-  comment: string | null;
+  
+  // Actual API structure uses nested objects
+  field_goals: {
+    total: number;
+    attempts: number;
+    percentage: number | null;
+  };
+  threepoint_goals: {
+    total: number;
+    attempts: number;
+    percentage: number | null;
+  };
+  freethrows_goals: {
+    total: number;
+    attempts: number;
+    percentage: number | null;
+  };
+  rebounds: {
+    total: number;
+  };
+  
+  // Legacy flat fields (may still work for some endpoints)
+  pos?: string;
+  min?: string;
+  fgm?: number;
+  fga?: number;
+  fgp?: string;
+  ftm?: number;
+  fta?: number;
+  ftp?: string;
+  tpm?: number;
+  tpa?: number;
+  tpp?: string;
+  offReb?: number;
+  defReb?: number;
+  totReb?: number;
+  pFouls?: number;
+  steals?: number;
+  turnovers?: number;
+  blocks?: number;
+  plusMinus?: string;
+  comment?: string | null;
 }
 
 export interface HockeyPlayerResponse {
