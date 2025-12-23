@@ -889,16 +889,12 @@ export async function POST(request: NextRequest) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'status', status: '🔍 Fetching verified player stats...' })}\n\n`));
             
             // Try each sport in order of likelihood based on query
-            // Check Euroleague BEFORE NBA to avoid false positives (Euroleague is more specific)
+            // DISABLED: Euroleague stats - API data unreliable for team assignments
+            // TODO: Re-enable when we have reliable Euroleague data source
             if (isEuroleagueStatsQuery(searchMessage)) {
-              // Euroleague stats
-              const verifiedStatsResult = await getVerifiedEuroleaguePlayerStats(searchMessage);
-              if (verifiedStatsResult.success && verifiedStatsResult.data) {
-                const stats = verifiedStatsResult.data;
-                verifiedPlayerStatsContext = formatVerifiedEuroleaguePlayerStats(stats);
-                console.log(`[AI-Chat-Stream] ✅ Euroleague stats: ${stats.playerFullName} - ${stats.stats.pointsPerGame} PPG`);
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'status', status: `✅ Found Euroleague stats for ${stats.playerFullName}` })}\n\n`));
-              }
+              // Euroleague stats DISABLED - unreliable team/player data
+              console.log('[AI-Chat-Stream] ⚠️ Euroleague stats disabled - data quality issues');
+              // Let Perplexity handle Euroleague queries instead
             } else if (isStatsQuery(searchMessage)) {
               // NBA stats
               const verifiedStatsResult = await getVerifiedPlayerStats(searchMessage);
