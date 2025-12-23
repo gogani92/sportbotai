@@ -336,6 +336,13 @@ const EUROLEAGUE_CONTEXT_PATTERNS = [
   /zalgiris/i,
   /baskonia/i,
   /bayern.*basket/i,
+  /al.?ahli.*dubai/i,
+  /dubai.*basket/i,
+  /alba berlin/i,
+  /ldlc asvel/i,
+  /asvel/i,
+  /milan.*basket/i,
+  /olimpia milano/i,
 ];
 
 /**
@@ -422,9 +429,10 @@ const STATS_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
 async function searchPlayer(
   searchName: string,
+  expectedFullName: string,  // The full name we're looking for
   season: string
 ): Promise<{ success: boolean; playerId?: string; playerName?: string; teamName?: string; error?: string }> {
-  const cacheKey = `euroleague:${searchName}`;
+  const cacheKey = `euroleague:${expectedFullName.toLowerCase()}`;
   const cached = playerCache[cacheKey];
   
   if (cached && cached.expiry > new Date()) {
@@ -457,10 +465,52 @@ async function searchPlayer(
       return { success: false, error: `Player "${searchName}" not found in Euroleague` };
     }
     
-    const player = data.response[0];
-    const playerId = String(player.id);
-    const playerName = `${player.firstname} ${player.lastname}`;
-    const teamName = player.team?.name || 'Unknown';
+    // Find best matching player - prioritize exact name match
+    const expectedLower = expectedFullName.toLowerCase();
+    const expectedParts = expectedLower.split(/\s+/);
+    
+    let bestMatch = data.response[0];
+    let bestScore = 0;
+    
+    for (const player of data.response) {
+      const fullName = `${player.firstname} ${player.lastname}`.toLowerCase();
+      const firstLower = (player.firstname || '').toLowerCase();
+      const lastLower = (player.lastname || '').toLowerCase();
+      
+      let score = 0;
+      
+      // Exact full name match = highest score
+      if (fullName === expectedLower) {
+        score = 100;
+      }
+      // Last name + first name partial match
+      else if (expectedParts.some(p => lastLower.includes(p) || p.includes(lastLower))) {
+        score += 50;
+        if (expectedParts.some(p => firstLower.includes(p) || p.includes(firstLower))) {
+          score += 30;
+        }
+      }
+      // Partial first name match
+      else if (expectedParts.some(p => firstLower.includes(p))) {
+        score += 20;
+      }
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = player;
+      }
+    }
+    
+    const playerId = String(bestMatch.id);
+    const playerName = `${bestMatch.firstname} ${bestMatch.lastname}`;
+    const teamName = bestMatch.team?.name || 'Unknown';
+    
+    // Warn if match is weak
+    if (bestScore < 50) {
+      console.warn(`[VerifiedEuroleagueStats] Weak match: searched "${expectedFullName}", found "${playerName}" (score: ${bestScore})`);
+    }
+    
+    console.log(`[VerifiedEuroleagueStats] Best match: "${playerName}" (score: ${bestScore}, team: ${teamName})`);
     
     // Cache the result
     playerCache[cacheKey] = {
@@ -624,8 +674,8 @@ export async function getVerifiedEuroleaguePlayerStats(
   const season = EuroleagueSeasonNormalizer.normalize(message);
   console.log(`[VerifiedEuroleagueStats] Season resolved: ${season}`);
   
-  // Search for player
-  const playerResult = await searchPlayer(playerMapping.searchName, season);
+  // Search for player - pass full display name for better matching
+  const playerResult = await searchPlayer(playerMapping.searchName, playerMapping.displayName, season);
   
   if (!playerResult.success || !playerResult.playerId) {
     return {
