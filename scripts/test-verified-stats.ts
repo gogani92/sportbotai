@@ -68,12 +68,15 @@ const TEAM_TESTS = [
 ];
 
 const SEASON_TESTS = [
-  { input: undefined, expected: SeasonNormalizer.getCurrentSeason() },
-  { input: 'this season', expected: SeasonNormalizer.getCurrentSeason() },
-  { input: 'current season', expected: SeasonNormalizer.getCurrentSeason() },
+  // Today is Dec 23, 2025 = 2025-2026 NBA season
+  { input: undefined, expected: '2025-2026' },
+  { input: 'this season', expected: '2025-2026' },
+  { input: 'current season', expected: '2025-2026' },
   { input: '2024-2025', expected: '2024-2025' },
   { input: '2024-25', expected: '2024-2025' },
   { input: '2024', expected: '2024-2025' },
+  { input: '2025-2026', expected: '2025-2026' },
+  { input: '2025-26', expected: '2025-2026' },
 ];
 
 const STATS_QUERY_TESTS = [

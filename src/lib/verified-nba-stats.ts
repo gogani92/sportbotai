@@ -87,15 +87,19 @@ export interface VerifiedStatsResult<T> {
 export class SeasonNormalizer {
   /**
    * Get current NBA season in YYYY-YYYY format
-   * NBA season runs Oct-June, so Dec 2024 = 2024-2025 season
+   * NBA season runs Oct-June, so:
+   * - Dec 2025 = 2025-2026 season
+   * - Sep 2025 = 2024-2025 season (before Oct)
+   * - Jan 2026 = 2025-2026 season
    */
   static getCurrentSeason(): string {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1; // 1-12
     
-    // If before October, we're in the previous year's season
-    // Oct 2024 - June 2025 = "2024-2025"
+    // NBA season starts in October
+    // If before October, we're still in last year's season
+    // Oct 2025 - June 2026 = "2025-2026"
     if (month < 10) {
       return `${year - 1}-${year}`;
     }
