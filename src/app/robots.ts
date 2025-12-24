@@ -5,11 +5,29 @@ export default function robots(): MetadataRoute.Robots {
   
   return {
     rules: [
+      // Twitterbot - MUST allow /api/og for social sharing images
+      {
+        userAgent: 'Twitterbot',
+        allow: [
+          '/',
+          '/api/og',  // OG images for Twitter cards - CRITICAL
+          '/blog',
+          '/blog/*',
+          '/matches',
+        ],
+        disallow: [
+          '/admin/',
+          '/account/',
+          '/login',
+          '/register',
+        ],
+      },
       // Default rules for all crawlers
       {
         userAgent: '*',
         allow: [
           '/',
+          '/api/og',  // Allow OG images for social sharing
           '/matches',
           '/ai-desk',
           '/blog',
@@ -22,7 +40,11 @@ export default function robots(): MetadataRoute.Robots {
           '/responsible-gambling',
         ],
         disallow: [
-          '/api/',
+          '/api/analyze',
+          '/api/ai-chat',
+          '/api/stripe',
+          '/api/cron',
+          '/api/admin',
           '/admin/',
           '/account/',
           '/history/',
@@ -40,6 +62,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: 'Googlebot',
         allow: [
           '/',
+          '/api/og',  // Allow OG images
           '/matches',
           '/ai-desk',
           '/blog/',
@@ -47,7 +70,10 @@ export default function robots(): MetadataRoute.Robots {
           '/pricing',
         ],
         disallow: [
-          '/api/',
+          '/api/analyze',
+          '/api/ai-chat',
+          '/api/stripe',
+          '/api/cron',
           '/admin/',
           '/account/',
           '/login',
@@ -57,8 +83,8 @@ export default function robots(): MetadataRoute.Robots {
       // Bingbot
       {
         userAgent: 'Bingbot',
-        allow: '/',
-        disallow: ['/api/', '/admin/', '/account/'],
+        allow: ['/', '/api/og'],
+        disallow: ['/api/analyze', '/api/ai-chat', '/api/stripe', '/admin/', '/account/'],
       },
       // Block AI training crawlers
       {
