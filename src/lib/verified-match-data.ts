@@ -35,8 +35,7 @@ import {
   isSoccerStatsQuery 
 } from './verified-soccer-stats';
 import { 
-  getVerifiedEuroleaguePlayerStats, 
-  isEuroleagueStatsQuery 
+  getVerifiedEuroleaguePlayerStats 
 } from './verified-euroleague-stats';
 
 // ============================================================================
@@ -189,7 +188,7 @@ class SeasonNormalizer {
   static validateSeason(
     requested: string | number,
     received: string | number | undefined,
-    sport: string
+    _sport: string
   ): { valid: boolean; warning?: string } {
     if (!received) {
       return { valid: false, warning: 'No season in response' };

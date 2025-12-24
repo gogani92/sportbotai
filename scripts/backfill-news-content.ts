@@ -10,13 +10,16 @@
  * Run with: npx ts-node scripts/backfill-news-content.ts
  */
 
+import { config } from 'dotenv';
+config({ path: '.env.local' }); // Load .env.local file
+
 import { PrismaClient } from '@prisma/client';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 const prisma = new PrismaClient();
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Transform blog content to news content
@@ -85,8 +88,8 @@ Return your response in this exact JSON format:
 IMPORTANT: Return ONLY valid JSON, no markdown code blocks.`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 8000,
       messages: [
         {
@@ -96,7 +99,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown code blocks.`;
       ],
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    const text = response.choices[0]?.message?.content || '';
     
     // Parse JSON response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -139,7 +142,11 @@ function stripCTAs(content: string): string {
 }
 
 async function backfillNewsContent() {
-  console.log('🔍 Finding match previews without news content...\n');
+  // Check for --test flag to only process 2 posts
+  const isTest = process.argv.includes('--test');
+  const limit = isTest ? 2 : 50;
+  
+  console.log(`🔍 Finding match previews without news content... (${isTest ? 'TEST MODE - 2 posts' : 'batch of 50'})\n`);
 
   const posts = await prisma.blogPost.findMany({
     where: {
@@ -148,7 +155,7 @@ async function backfillNewsContent() {
       newsContent: null,
     },
     orderBy: { publishedAt: 'desc' },
-    take: 50, // Process in batches
+    take: limit,
   });
 
   console.log(`Found ${posts.length} posts to process\n`);
