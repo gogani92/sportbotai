@@ -21,6 +21,7 @@ const AUTHOR = {
   name: 'Stefan Mitrovic',
   url: `${SITE_CONFIG.url}/about`,
   jobTitle: 'Sports Analyst & Editor',
+  photo: 'https://www.upwork.com/profile-portraits/c1QVpOOlRVMXCujp1syLSScOWIl0cbOsxFl4HtH9scBn6y1CaZPeWLI5v_eg78VPCd',
   sameAs: [
     'https://www.upwork.com/freelancers/~017b8c67c94029389f',
     'https://www.linkedin.com/company/automateed/',
@@ -307,9 +308,13 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
               {/* Meta - with author link */}
               <div className="flex flex-wrap items-center gap-4 text-slate-400 text-sm mb-8">
                 <Link href="/about" className="flex items-center gap-2 hover:text-emerald-400 transition-colors">
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white">
-                    SM
-                  </span>
+                  <Image
+                    src={AUTHOR.photo}
+                    alt={AUTHOR.name}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
                   <span>{AUTHOR.name}</span>
                 </Link>
                 <span>•</span>
@@ -397,9 +402,13 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
               <div className="mt-8 p-6 bg-slate-800/50 rounded-xl border border-slate-700">
                 <div className="flex items-start gap-4">
                   <Link href="/about" className="flex-shrink-0">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-xl font-bold text-white">
-                      SM
-                    </div>
+                    <Image
+                      src={AUTHOR.photo}
+                      alt={AUTHOR.name}
+                      width={64}
+                      height={64}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
                   </Link>
                   <div className="flex-1">
                     <Link href="/about" className="text-lg font-semibold text-white hover:text-emerald-400 transition-colors">
