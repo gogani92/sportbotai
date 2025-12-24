@@ -224,23 +224,23 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
               {posts[0] && (
                 <article className="mb-8">
                   <Link href={`/news/${posts[0].slug}`} className="group block">
-                    <div className="grid md:grid-cols-2 gap-6 bg-slate-800/50 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all">
-                      <div className="aspect-video md:aspect-auto relative bg-gradient-to-br from-slate-700 to-slate-800">
+                    <div className="grid md:grid-cols-5 gap-6 bg-slate-800/50 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all">
+                      {/* Image container - 2 columns on md+ */}
+                      <div className="md:col-span-2 aspect-[4/3] md:aspect-auto relative bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center p-4 min-h-[200px] md:min-h-[280px]">
                         {posts[0].featuredImage ? (
                           <Image
                             src={posts[0].featuredImage}
                             alt={posts[0].imageAlt || posts[0].title}
                             fill
-                            className="object-cover"
+                            className="object-contain p-2"
                             priority
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center min-h-[300px]">
-                            <span className="text-6xl opacity-50">📰</span>
-                          </div>
+                          <span className="text-6xl opacity-50">📰</span>
                         )}
                       </div>
-                      <div className="p-6 flex flex-col justify-center">
+                      {/* Content - 3 columns on md+ */}
+                      <div className="md:col-span-3 p-6 flex flex-col justify-center">
                         <div className="flex items-center gap-3 mb-3">
                           {posts[0].league && (
                             <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold rounded-full">
@@ -251,10 +251,10 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                             {posts[0].publishedAt && formatTimeAgo(new Date(posts[0].publishedAt))}
                           </span>
                         </div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 group-hover:text-emerald-300 transition-colors">
+                        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-3 group-hover:text-emerald-300 transition-colors line-clamp-2">
                           {posts[0].newsTitle || posts[0].title}
                         </h2>
-                        <p className="text-slate-400 line-clamp-3 mb-4">
+                        <p className="text-slate-400 line-clamp-2 md:line-clamp-3 mb-4 text-sm md:text-base">
                           {posts[0].excerpt}
                         </p>
                         {posts[0].matchDate && (
