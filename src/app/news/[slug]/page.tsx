@@ -105,15 +105,18 @@ export async function generateMetadata({ params }: NewsArticlePageProps): Promis
       : `${baseUrl}${post.featuredImage || '/og-news.png'}`;
   }
 
+  // Use news title for news section (more journalistic)
+  const displayTitle = post.newsTitle || post.title;
+
   const ogImage = {
     url: ogImageUrl,
     width: 1200,
     height: 630,
-    alt: post.title,
+    alt: displayTitle,
   };
 
   return {
-    title: post.metaTitle || `${post.title} | SportBot AI News`,
+    title: post.metaTitle || `${displayTitle} | SportBot AI News`,
     description: post.metaDescription || post.excerpt,
     keywords: post.tags.join(', '),
     authors: [{ name: AUTHOR.name, url: AUTHOR.url }],
@@ -121,7 +124,7 @@ export async function generateMetadata({ params }: NewsArticlePageProps): Promis
       canonical: `/news/${slug}`,
     },
     openGraph: {
-      title: post.metaTitle || post.title,
+      title: post.metaTitle || displayTitle,
       description: post.metaDescription || post.excerpt,
       type: 'article',
       publishedTime: post.publishedAt?.toISOString(),
@@ -133,7 +136,7 @@ export async function generateMetadata({ params }: NewsArticlePageProps): Promis
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.metaTitle || post.title,
+      title: post.metaTitle || displayTitle,
       description: post.metaDescription || post.excerpt,
       images: [ogImage],
     },
@@ -181,10 +184,14 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
   }
 
   // NewsArticle structured data - REQUIRED for Google News
+  // Use newsContent/newsTitle when available (optimized for news)
+  const articleContent = post.newsContent || post.content;
+  const articleTitle = post.newsTitle || post.title;
+
   const newsArticleSchema = {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
-    headline: post.title,
+    headline: articleTitle,
     description: post.excerpt,
     image: [ogImageUrl],
     datePublished: post.publishedAt?.toISOString(),
@@ -211,7 +218,7 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
     },
     articleSection: post.league || post.sport || 'Sports',
     keywords: post.tags.join(', '),
-    wordCount: post.content.split(/\s+/).length,
+    wordCount: articleContent.split(/\s+/).length,
     isAccessibleForFree: true,
   };
 
@@ -271,7 +278,7 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
               </Link>
             </li>
             <li>/</li>
-            <li className="text-slate-500 truncate max-w-[200px]">{post.title}</li>
+            <li className="text-slate-500 truncate max-w-[200px]">{post.newsTitle || post.title}</li>
           </ol>
         </nav>
 
@@ -290,7 +297,7 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
 
             {/* Title */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-              {post.title}
+              {post.newsTitle || post.title}
             </h1>
 
             {/* Meta Info */}
@@ -353,7 +360,7 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
           <div className="max-w-4xl mx-auto">
             <div
               className="prose prose-invert prose-emerald max-w-none prose-headings:text-white prose-p:text-slate-300 prose-a:text-emerald-400 prose-strong:text-white prose-li:text-slate-300"
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              dangerouslySetInnerHTML={{ __html: post.newsContent || post.content }}
             />
           </div>
         </article>

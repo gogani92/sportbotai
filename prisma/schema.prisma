@@ -119,6 +119,8 @@ model BlogPost {
   slug               String       @unique
   excerpt            String
   content            String
+  newsContent        String?      // Google News optimized version (no CTAs, journalistic style)
+  newsTitle          String?      // News-style headline (shorter, more punchy)
   metaTitle          String?
   metaDescription    String?
   focusKeyword       String?
@@ -137,7 +139,7 @@ model BlogPost {
   awayTeam           String?
   finalScore         String?
   homeTeam           String?
-  league             String?
+  league            String?
   matchDate          DateTime?
   matchId            String?
   postMatchContent   String?
