@@ -43,6 +43,7 @@ interface NewsPageProps {
 interface NewsItem {
   id: string;
   title: string;
+  newsTitle: string | null;
   slug: string;
   excerpt: string;
   featuredImage: string | null;
@@ -87,6 +88,7 @@ async function getNewsArticles(page: number, sport?: string) {
       select: {
         id: true,
         title: true,
+        newsTitle: true,
         slug: true,
         excerpt: true,
         featuredImage: true,
@@ -250,7 +252,7 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                           </span>
                         </div>
                         <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 group-hover:text-emerald-300 transition-colors">
-                          {posts[0].title}
+                          {posts[0].newsTitle || posts[0].title}
                         </h2>
                         <p className="text-slate-400 line-clamp-3 mb-4">
                           {posts[0].excerpt}
@@ -308,7 +310,7 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                           </span>
                         )}
                         <h3 className="font-bold text-white group-hover:text-emerald-300 transition-colors line-clamp-2 mb-2">
-                          {post.title}
+                          {post.newsTitle || post.title}
                         </h3>
                         <p className="text-slate-400 text-sm line-clamp-2">
                           {post.excerpt}
