@@ -891,7 +891,7 @@ ${research.rosterContext}
   <div class="match-teams" style="display: flex; flex-direction: row; justify-content: space-around; align-items: center; text-align: center; gap: 16px; flex-wrap: wrap;">
     <div style="flex: 1; min-width: 120px;">
       <p style="font-size: 22px; font-weight: bold; color: #fff; margin: 0;">${match.homeTeam}</p>
-      <p style="color: #2AF6A0; font-size: 14px; margin: 4px 0 0 0;">HOME</p>
+      <p style="color: #10b981; font-size: 14px; margin: 4px 0 0 0;">HOME</p>
     </div>
     <div style="font-size: 24px; color: #64748b; font-weight: 300;">VS</div>
     <div style="flex: 1; min-width: 120px;">
@@ -911,7 +911,7 @@ ${research.rosterContext}
   <thead>
     <tr style="background: #334155;">
       <th style="padding: 12px; text-align: left; color: #fff;">Team</th>
-      <th style="padding: 12px; text-align: center; color: #2AF6A0;">W</th>
+      <th style="padding: 12px; text-align: center; color: #10b981;">W</th>
       <th style="padding: 12px; text-align: center; color: #fbbf24;">D</th>
       <th style="padding: 12px; text-align: center; color: #ef4444;">L</th>
       <th style="padding: 12px; text-align: left; color: #fff;">Form</th>
@@ -920,17 +920,17 @@ ${research.rosterContext}
   <tbody>
     <tr style="border-bottom: 1px solid #334155;">
       <td style="padding: 12px; color: #fff;">${match.homeTeam}</td>
-      <td style="padding: 12px; text-align: center; color: #2AF6A0;">[WINS]</td>
+      <td style="padding: 12px; text-align: center; color: #10b981;">[WINS]</td>
       <td style="padding: 12px; text-align: center; color: #fbbf24;">[DRAWS]</td>
       <td style="padding: 12px; text-align: center; color: #ef4444;">[LOSSES]</td>
-      <td style="padding: 12px;"><span style="color: #2AF6A0;">●</span><span style="color: #2AF6A0;">●</span><span style="color: #fbbf24;">●</span><span style="color: #ef4444;">●</span><span style="color: #2AF6A0;">●</span></td>
+      <td style="padding: 12px;"><span style="color: #10b981;">●</span><span style="color: #10b981;">●</span><span style="color: #fbbf24;">●</span><span style="color: #ef4444;">●</span><span style="color: #10b981;">●</span></td>
     </tr>
     <tr>
       <td style="padding: 12px; color: #fff;">${match.awayTeam}</td>
-      <td style="padding: 12px; text-align: center; color: #2AF6A0;">[WINS]</td>
+      <td style="padding: 12px; text-align: center; color: #10b981;">[WINS]</td>
       <td style="padding: 12px; text-align: center; color: #fbbf24;">[DRAWS]</td>
       <td style="padding: 12px; text-align: center; color: #ef4444;">[LOSSES]</td>
-      <td style="padding: 12px;"><span style="color: #2AF6A0;">●</span><span style="color: #ef4444;">●</span><span style="color: #2AF6A0;">●</span><span style="color: #2AF6A0;">●</span><span style="color: #fbbf24;">●</span></td>
+      <td style="padding: 12px;"><span style="color: #10b981;">●</span><span style="color: #ef4444;">●</span><span style="color: #10b981;">●</span><span style="color: #10b981;">●</span><span style="color: #fbbf24;">●</span></td>
     </tr>
   </tbody>
 </table>
@@ -938,15 +938,15 @@ ${research.rosterContext}
 3. HEAD-TO-HEAD BOX (in H2H section):
 <div style="background: #1e293b; border-radius: 8px; padding: 20px; margin: 20px 0;">
   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
-    <div style="background: rgba(42, 246, 160, 0.15); padding: 16px; border-radius: 8px;">
-      <p style="font-size: 32px; font-weight: bold; color: #2AF6A0;">[HOME_WINS]</p>
+    <div style="background: #10b981/20; padding: 16px; border-radius: 8px;">
+      <p style="font-size: 32px; font-weight: bold; color: #10b981;">[HOME_WINS]</p>
       <p style="color: #94a3b8; font-size: 14px;">${match.homeTeam} Wins</p>
     </div>
-    <div style="background: rgba(100, 116, 139, 0.15); padding: 16px; border-radius: 8px;">
+    <div style="background: #64748b/20; padding: 16px; border-radius: 8px;">
       <p style="font-size: 32px; font-weight: bold; color: #64748b;">[DRAWS]</p>
       <p style="color: #94a3b8; font-size: 14px;">Draws</p>
     </div>
-    <div style="background: rgba(239, 68, 68, 0.15); padding: 16px; border-radius: 8px;">
+    <div style="background: #ef4444/20; padding: 16px; border-radius: 8px;">
       <p style="font-size: 32px; font-weight: bold; color: #ef4444;">[AWAY_WINS]</p>
       <p style="color: #94a3b8; font-size: 14px;">${match.awayTeam} Wins</p>
     </div>
@@ -954,10 +954,10 @@ ${research.rosterContext}
 </div>
 
 4. PREDICTION BOX (in prediction section):
-<div style="background: linear-gradient(135deg, rgba(42, 246, 160, 0.1) 0%, #0f172a 100%); border: 2px solid rgba(42, 246, 160, 0.3); border-radius: 12px; padding: 24px; margin: 24px 0;">
+<div style="background: linear-gradient(135deg, #10b981/10 0%, #0f172a 100%); border: 2px solid #10b981/30; border-radius: 12px; padding: 24px; margin: 24px 0;">
   <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
     <span style="font-size: 24px;">🎯</span>
-    <h3 style="color: #2AF6A0; font-size: 18px; font-weight: bold; margin: 0;">SportBot AI Prediction</h3>
+    <h3 style="color: #10b981; font-size: 18px; font-weight: bold; margin: 0;">SportBot AI Prediction</h3>
   </div>
   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center; margin-bottom: 16px;">
     <div style="background: #1e293b; padding: 16px; border-radius: 8px;">
@@ -978,8 +978,8 @@ ${research.rosterContext}
 
 5. KEY PLAYERS BOXES (in key players section):
 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0;">
-  <div style="background: #1e293b; border-radius: 8px; padding: 16px; border-left: 4px solid #2AF6A0;">
-    <h4 style="color: #2AF6A0; margin: 0 0 12px 0;">${match.homeTeam} Key Players</h4>
+  <div style="background: #1e293b; border-radius: 8px; padding: 16px; border-left: 4px solid #10b981;">
+    <h4 style="color: #10b981; margin: 0 0 12px 0;">${match.homeTeam} Key Players</h4>
     <ul style="list-style: none; padding: 0; margin: 0;">
       <li style="color: #fff; padding: 8px 0; border-bottom: 1px solid #334155;">⭐ [Player 1] - [Position/Role]</li>
       <li style="color: #fff; padding: 8px 0; border-bottom: 1px solid #334155;">⭐ [Player 2] - [Position/Role]</li>
@@ -997,10 +997,10 @@ ${research.rosterContext}
 </div>
 
 6. CTA BOX - INLINE (use after Form Analysis section):
-<div style="background: rgba(42, 246, 160, 0.1); border: 1px solid rgba(42, 246, 160, 0.3); border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
-  <p style="color: #2AF6A0; font-size: 16px; font-weight: 600; margin: 0 0 8px 0;">🤖 Want Real-Time AI Analysis?</p>
+<div style="background: linear-gradient(135deg, #10b981/20 0%, #0ea5e9/20 100%); border: 1px solid #10b981/50; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
+  <p style="color: #10b981; font-size: 16px; font-weight: 600; margin: 0 0 8px 0;">🤖 Want Real-Time AI Analysis?</p>
   <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px 0;">Get live probability updates, injury alerts, and deeper insights with SportBot AI</p>
-  <a href="/register" style="display: inline-block; background: #2AF6A0; color: #0f172a; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Get Started Free →</a>
+  <a href="/register" style="display: inline-block; background: #10b981; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Get Started Free →</a>
 </div>
 
 7. CTA BOX - AFTER H2H SECTION:
@@ -1019,21 +1019,21 @@ ${research.rosterContext}
     <p style="color: #fff; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">🎯 Get Match-Specific Insights</p>
     <p style="color: #94a3b8; font-size: 14px; margin: 0;">Ask our AI any question about any match - lineups, injuries, or tactical matchups.</p>
   </div>
-  <a href="/register" style="display: inline-block; background: #2AF6A0; color: #0f172a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; white-space: nowrap;">Try SportBot AI Free →</a>
+  <a href="/register" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%); color: #fff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; white-space: nowrap;">Try SportBot AI Free →</a>
 </div>
 
 9. CTA BOX - MINI (sprinkle 1-2 throughout):
-<p style="background: rgba(42, 246, 160, 0.1); border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 14px; color: #94a3b8;">
-  💡 <strong style="color: #2AF6A0;">Pro tip:</strong> <a href="/matches" style="color: #2AF6A0; text-decoration: none;">Browse all matches</a> with real-time probability updates as kickoff approaches.
+<p style="background: #10b981/10; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 14px; color: #94a3b8;">
+  💡 <strong style="color: #10b981;">Pro tip:</strong> <a href="/matches" style="color: #10b981; text-decoration: none;">Browse all matches</a> with real-time probability updates as kickoff approaches.
 </p>
 
 10. CTA BOX - END OF ARTICLE:
-<div style="background: #2AF6A0; border-radius: 16px; padding: 32px; margin: 32px 0; text-align: center;">
-  <h3 style="color: #0f172a; font-size: 24px; font-weight: bold; margin: 0 0 12px 0;">Ready for Deeper Analysis?</h3>
-  <p style="color: #0f172a; opacity: 0.8; font-size: 16px; margin: 0 0 20px 0; max-width: 500px; margin-left: auto; margin-right: auto;">Join thousands of sports fans using AI-powered insights to understand matches better.</p>
+<div style="background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%); border-radius: 16px; padding: 32px; margin: 32px 0; text-align: center;">
+  <h3 style="color: #fff; font-size: 24px; font-weight: bold; margin: 0 0 12px 0;">Ready for Deeper Analysis?</h3>
+  <p style="color: #fff/90; font-size: 16px; margin: 0 0 20px 0; max-width: 500px; margin-left: auto; margin-right: auto;">Join thousands of sports fans using AI-powered insights to understand matches better.</p>
   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-    <a href="/register" style="display: inline-block; background: #0f172a; color: #2AF6A0; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start Free Trial</a>
-    <a href="/pricing" style="display: inline-block; background: transparent; color: #0f172a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; border: 2px solid #0f172a;">View Plans</a>
+    <a href="/register" style="display: inline-block; background: #fff; color: #10b981; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start Free Trial</a>
+    <a href="/pricing" style="display: inline-block; background: transparent; color: #fff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; border: 2px solid #fff;">View Plans</a>
   </div>
 </div>
 
