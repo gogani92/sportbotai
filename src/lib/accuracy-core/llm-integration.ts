@@ -247,39 +247,39 @@ function getAngleGuidance(angle: NarrativeAngle): string {
   switch (angle) {
     case 'CHAOS':
       return `NARRATIVE ANGLE: CHAOS
-- "This match refuses to be simple. The noise is the signal."
-- High volatility - acknowledge uncertainty
-- Multiple scenarios equally viable
-- Don't force a clear verdict - embrace the chaos`;
+- High volatility - acknowledge uncertainty honestly
+- Multiple scenarios are equally viable
+- Don't force a clear verdict - embrace the unpredictability
+- Convey that this match is genuinely hard to call`;
 
     case 'TRAP_SPOT':
       return `NARRATIVE ANGLE: TRAP SPOT
-- "The setup looks clean. Too clean. Worth noting."
-- Popular team in sketchy form
-- Name value vs current reality
-- Call out the narrative that doesn't match the stats`;
+- Popular team in sketchy form - something doesn't add up
+- Name value vs current reality - the gap is notable
+- Call out the narrative that doesn't match the underlying stats
+- Be contrarian but grounded in data`;
 
     case 'BLOWOUT_POTENTIAL':
       return `NARRATIVE ANGLE: BLOWOUT POTENTIAL
-- "When the data is this loud, you listen."
-- Large power gap - be confident
-- Structure is clear
-- Don't hedge unnecessarily`;
+- Large power gap between these teams
+- Structure is clear - be confident in the analysis
+- Don't hedge unnecessarily when the data is strong
+- Express conviction naturally without sounding repetitive`;
 
     case 'CONTROL':
       return `NARRATIVE ANGLE: CONTROL
-- "This isn't complicated. The setup is clean."
-- Clear favorite, stable setup
-- Data supports the verdict
-- Be direct and confident`;
+- Clear favorite with a stable setup
+- Data supports the verdict strongly
+- Be direct and confident in delivery
+- Clean read - express it cleanly`;
 
     case 'MIRROR_MATCH':
     default:
       return `NARRATIVE ANGLE: MIRROR MATCH
-- "On paper: close. In reality: could go either way."
-- Evenly matched teams
-- Small edges matter
-- Acknowledge the balance`;
+- Evenly matched teams - genuine toss-up
+- Small edges matter in games like this
+- Acknowledge the balance honestly
+- It could go either way and that's the takeaway`;
   }
 }
 

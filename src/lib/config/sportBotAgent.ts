@@ -492,7 +492,7 @@ CONFIDENCE: ${analysis.confidence.toUpperCase()}
 === NARRATIVE ANGLE: ${analysis.narrativeAngle} ===
 ${angleGuidance}
 
-TONE HOOK (use naturally): "${analysis.catchphrase}"
+TONE INSPIRATION (do NOT copy verbatim - use the VIBE, not the words): "${analysis.catchphrase}"
 STYLE MOTIF: "${analysis.motif}"
 
 CONVICTION: ${convictionInfo.display} (${convictionInfo.descriptor})
@@ -510,13 +510,16 @@ ${additionalContext ? `ADDITIONAL CONTEXT:\n${additionalContext}` : ''}
 
 RULES:
 1. Keep it to 1-3 sentences MAX
-2. Lead with the insight
+2. Lead with the insight - don't start with the same phrase every time
 3. Use the computed analysis - never contradict it
-4. Inject the TONE HOOK naturally
-5. NO betting advice, recommendations, or implied actions
-6. Pure observation and analysis
-7. No emojis. No markdown formatting.
-8. Be quotable and sharp
+4. Draw INSPIRATION from the tone hook - but NEVER copy it word-for-word
+5. BE CREATIVE - vary your sentence structure and opening each time
+6. NO betting advice, recommendations, or implied actions
+7. Pure observation and analysis
+8. No emojis. No markdown formatting.
+9. Be quotable and sharp - but original
+
+VARIETY IS KEY: If you've said "Pattern recognition says" before, find a different way to express conviction. The same insight can be delivered many ways.
 
 Return ONLY the post text. No quotes, no formatting, no explanation.
 If there's nothing interesting to post, return exactly: NO_POST`;
@@ -528,21 +531,26 @@ If there's nothing interesting to post, return exactly: NO_POST`;
 function getAngleGuidanceForPost(angle: NarrativeAngle): string {
   switch (angle) {
     case 'CHAOS':
-      return `HIGH CHAOS - Acknowledge uncertainty. "This match refuses to be simple."
-Don't force a verdict. The noise IS the signal.`;
+      return `HIGH CHAOS - Acknowledge uncertainty naturally.
+This match is genuinely unpredictable. Don't force a clear narrative.
+Express the volatility in your own words - be creative about how you convey uncertainty.`;
     case 'TRAP_SPOT':
-      return `TRAP SPOT - Popular narrative may be wrong.
-Challenge the market with evidence. "The setup looks clean. Too clean."`;
+      return `TRAP SPOT - The popular narrative may be wrong here.
+Challenge the market with evidence. Something doesn't add up.
+Find your own way to express the disconnect between perception and reality.`;
     case 'BLOWOUT_POTENTIAL':
-      return `BLOWOUT POTENTIAL - Large gap between teams.
-Be confident. "When the data is this loud, you listen."`;
+      return `BLOWOUT POTENTIAL - Large gap between these teams.
+Be confident - the data supports conviction here.
+Express strength naturally without using cliché phrases.`;
     case 'CONTROL':
       return `CONTROL - Clear favorite, stable setup.
-Be direct. "This isn't complicated."`;
+Be direct. The read is clean.
+Vary how you express confidence - don't start with the same phrase every time.`;
     case 'MIRROR_MATCH':
     default:
       return `MIRROR MATCH - Evenly balanced contest.
-Acknowledge the balance. "On paper: close. In reality: could go either way."`;
+Acknowledge the balance honestly. This is genuinely close.
+Find interesting ways to describe a tight matchup.`;
   }
 }
 

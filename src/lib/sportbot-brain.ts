@@ -133,52 +133,123 @@ export function calculateConviction(signals: MatchSignals): ConvictionScore {
 
 // ============================================
 // SIGNATURE CATCHPHRASES (AIXBT viral style)
+// Expanded for variety - AI should never sound repetitive
 // ============================================
 
 export const SIGNATURE_CATCHPHRASES = {
-  // Opening hooks
+  // Opening hooks - varied ways to start insights
   openers: [
     "📡 Signal detected.",
     "🎯 Pattern recognition activated.",
     "⚡ The data just spoke.",
     "🔍 Spotted something.",
     "📊 Numbers don't lie.",
+    "The algorithm flagged this one.",
+    "Running the numbers and one thing jumps out.",
+    "Something interesting in today's slate.",
+    "The model spit something out worth sharing.",
+    "Caught my attention this morning.",
+    "Quick read on this matchup.",
+    "Breaking this one down.",
+    "Here's what the data says.",
+    "Pulling the thread on this one.",
+    "Model update just dropped.",
   ],
   
-  // High conviction closers
+  // High conviction - many ways to express confidence
   highConviction: [
     "This isn't complicated. The setup is clean.",
     "When the data is this loud, you listen.",
     "The market will catch up. It always does.",
     "Pattern recognition says one thing. Loudly.",
     "Structure over narrative. Always.",
+    "Clear signals. No noise.",
+    "Everything pointing one direction.",
+    "The numbers don't whisper here. They shout.",
+    "This one screams.",
+    "Strong setup. Clean read.",
+    "Model confidence is through the roof.",
+    "All the indicators are aligned.",
+    "Rare to see this kind of clarity.",
+    "The edge is obvious when you see it.",
+    "No ambiguity here.",
+    "Data crystal clear on this.",
+    "One of the cleaner setups you'll see.",
+    "When the math agrees with the eye test.",
+    "Everything I look at points the same way.",
+    "The structure is undeniable.",
+    "This isn't even close.",
+    "Model conviction: very high.",
+    "The signal is overwhelming.",
+    "Hard to argue with these numbers.",
+    "All systems go on this one.",
   ],
   
-  // Contrarian takes
+  // Contrarian takes - challenging popular opinion
   contrarian: [
     "Everyone's looking at X. They should be looking at Y.",
     "The public loves a narrative. The data tells a different story.",
     "Popular ≠ Correct. Classic trap forming.",
     "Name value is carrying a lot of water here. Too much.",
     "The market is telling itself a story. The numbers disagree.",
+    "Consensus is wrong here. The model sees it differently.",
+    "The crowd loves this pick. That's the first red flag.",
+    "Narrative vs. numbers. I'll take the numbers.",
+    "Everyone's zigging. The data says zag.",
+    "The public is loaded on one side. That's usually my cue.",
+    "Popular opinion and the model are having a disagreement.",
+    "Market overreacting to recent results.",
+    "Recency bias is doing heavy lifting here.",
+    "The casual take misses the bigger picture.",
+    "What looks obvious might be a mirage.",
+    "The sharp money sees what the public doesn't.",
+    "Fading the noise on this one.",
+    "The consensus misses a key variable.",
+    "Sometimes the boring read is the right one.",
+    "The headline doesn't match the data.",
   ],
   
-  // Chaos/uncertainty
+  // Chaos/uncertainty - acknowledging unpredictability
   chaos: [
     "Prediction graveyard. Multiple scenarios equally viable.",
     "The variance gods are awake. Proceed accordingly.",
     "When structure breaks down, conviction should too.",
     "This one could go any direction. And probably will.",
     "Volatility isn't a bug here. It's the whole feature.",
+    "Too many variables. Model is humble on this one.",
+    "Flip a coin. Seriously.",
+    "Anyone who says they know this one is lying.",
+    "Chaos mode activated.",
+    "High variance territory. Expect the unexpected.",
+    "The model shrugs on this matchup.",
+    "Low confidence for good reason.",
+    "Uncertainty is the only certainty here.",
+    "Wild card game. Anything possible.",
+    "Model is conflicted. Take that as a signal itself.",
+    "No clean read here. It's a mess.",
+    "When the data is noisy, so is the prediction.",
+    "Buckle up. This one's unpredictable.",
+    "Entropy is high. Prediction is hard.",
+    "One of those games that could go any way.",
   ],
   
-  // Post-match
+  // Post-match reflections
   postMatch: [
     "The expected happened. Somehow still surprising.",
     "Variance did what variance does.",
     "Form held. Structure won.",
     "The outlier came in. Chaos always has a voice.",
     "Data was right. Market took a while.",
+    "Model called it. Moving on.",
+    "Another one for the log.",
+    "Played out as expected.",
+    "The numbers don't lie. They just take time.",
+    "Chalk result. Nothing more to see.",
+    "Upset? Or was it obvious if you looked?",
+    "The model saw it coming.",
+    "Logged and noted for next time.",
+    "Result validates the process.",
+    "Sharp read. Clean hit.",
   ],
   
   // Signature sign-offs
@@ -188,6 +259,11 @@ export const SIGNATURE_CATCHPHRASES = {
     "Signal stored. Moving on.",
     "Intelligence delivered.",
     "That's the read.",
+    "Back to the data.",
+    "More signals incoming.",
+    "Stay sharp.",
+    "Until the next one.",
+    "Pattern recognized.",
   ],
 };
 
