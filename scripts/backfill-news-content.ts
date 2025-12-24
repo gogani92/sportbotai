@@ -56,48 +56,65 @@ REQUIREMENTS FOR NEWS VERSION:
    - Use present tense verbs: "face", "meet", "clash", "prepare"
    - Lead with the news angle (injuries, form, stakes)
    - Examples: "${homeTeam} Face Injury Crisis Ahead of ${awayTeam} Clash"
-   - NO words like "prediction", "preview", "tips", "best bets"
+   - NO words like "prediction", "preview", "tips", "best bets", "odds"
 
-2. CONTENT TO KEEP (these are informational, not promotional):
-   ✅ Match Info Box (teams, date, time, competition)
-   ✅ Form Comparison Table (W/D/L records)
-   ✅ Head-to-Head Box (historical stats)
-   ✅ Key Players Boxes (player information)
-   ✅ Prediction Box with probabilities (reframe as "analysis suggests" not "betting value")
-   ✅ All statistical tables and data visualizations
-   ✅ Injury/suspension lists
+2. CONTENT TO KEEP:
+   ✅ Match Info Box (teams, date, time, competition, venue)
+   ✅ Form Comparison Table (W/D/L records - this is sports journalism)
+   ✅ Head-to-Head statistics (historical record)
+   ✅ Key Players section (as regular text, not branded boxes)
+   ✅ Injury/suspension news
+   ✅ Team news and lineup information
 
-3. CONTENT TO REMOVE (promotional/sales-focused):
-   ❌ "Try SportBot AI" or "Get Started Free" CTAs
-   ❌ "Start Free Trial" or "View Plans" buttons
-   ❌ "Pro tip" boxes with links to /register or /pricing
-   ❌ "Unlock Advanced Stats" promotional boxes
-   ❌ "Ready for Deeper Analysis?" end CTAs
-   ❌ Any div with gradient background containing registration links
-   ❌ Betting language: "best bet", "stake", "wager", "betting value"
+3. CONTENT TO REMOVE (betting/promotional):
+   ❌ Prediction boxes with percentages (55%, 20%, 25%)
+   ❌ "SportBot AI Prediction" branded boxes
+   ❌ Any win probability percentages
+   ❌ "Start Free Trial" or "Sign Up" buttons
+   ❌ "View Plans" or pricing links
+   ❌ Registration forms or /register links
+   ❌ "Unlock Premium" or paywall mentions
+   ❌ Betting language: "best bet", "stake", "wager", "odds", "value bet"
+   ❌ "betting value", "statistical edge" 
+   ❌ Any CTA boxes with gradient backgrounds
 
-4. WRITING STYLE:
-   - Write in journalistic third-person style
-   - Lead with the most newsworthy angle (injury news, stakes, rivalry)
-   - Use quotes if available (manager statements, etc.)
-   - Frame predictions as "analysis suggests" or "statistical models indicate"
-   - Replace "gamblers/bettors" with "fans" or "observers"
+4. CONVERT PREDICTIONS TO JOURNALISM:
+   Instead of: "55% Chiefs, 20% Draw, 25% Broncos"
+   Write: "The Chiefs enter as favorites based on their recent form, though Denver's defense keeps this matchup competitive."
+   
+   Instead of: "SportBot AI Prediction: Team A to win"
+   Write: "Based on current form and head-to-head records, Team A appears to have the edge."
 
-5. STRUCTURE:
+5. WRITING STYLE:
+   - Pure sports journalism - like ESPN, BBC Sport, The Athletic
+   - Lead with the news angle (injuries, stakes, rivalry, playoff implications)
+   - Use quotes if available (coach statements, player interviews)
+   - No branded predictions or probability percentages
+   - Objective analysis based on form, stats, injuries
+
+6. STRUCTURE:
    - Opening paragraph: News lead (who, what, when, why it matters)
-   - Match Info Box (keep from original)
-   - Match context: What's at stake for each team
-   - Team news: Injuries, suspensions, form (keep Form Table)
-   - Head-to-head: Brief historical context (keep H2H Box)
-   - Key players section (keep Key Players Boxes)
-   - Analysis: Include Prediction Box with probabilities
-   - Closing: Match details (date, time, venue)
+   - Match Info Box (teams, date, time, venue)
+   - What's at stake for each team
+   - Team news: Injuries, suspensions, expected lineups
+   - Form analysis (keep Form Table)
+   - Head-to-head history
+   - Key players to watch (as regular paragraphs)
+   - Match outlook (journalistic analysis, no percentages)
+   - Closing: Where to watch, kickoff time
 
-6. END CTA - Replace aggressive CTAs with this subtle box:
-<div style="background: #1e293b; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center; border: 1px solid #334155;">
-  <p style="color: #94a3b8; font-size: 14px; margin: 0;">
-    📊 Want deeper match analysis? <a href="/matches" style="color: #10b981; text-decoration: none;">Explore all matches</a> with AI-powered insights.
+7. END SECTION - Use this visually prominent but editorial box:
+<div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 32px; margin: 32px 0; text-align: center; border: 1px solid #334155;">
+  <div style="font-size: 32px; margin-bottom: 12px;">⚡</div>
+  <h3 style="color: #f1f5f9; font-size: 20px; font-weight: 600; margin: 0 0 8px 0;">
+    More Matches to Follow
+  </h3>
+  <p style="color: #94a3b8; font-size: 15px; margin: 0 0 20px 0; max-width: 400px; margin-left: auto; margin-right: auto;">
+    Get AI-powered previews and analysis for upcoming games across all major leagues.
   </p>
+  <a href="/matches" style="display: inline-block; background: #10b981; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">
+    Browse All Matches →
+  </a>
 </div>
 
 Return your response in this exact JSON format:
