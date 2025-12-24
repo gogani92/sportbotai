@@ -84,36 +84,36 @@ export default function AboutPage() {
       />
 
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        {/* Header */}
-        <header className="pt-12 pb-8">
-          <div className="container mx-auto px-4">
-            <nav className="mb-6">
+        {/* Header - clean, minimal */}
+        <header className="pt-8 md:pt-12 pb-8 md:pb-12">
+          <div className="container mx-auto px-4 sm:px-6">
+            <nav className="mb-4 md:mb-6">
               <ol className="flex items-center gap-2 text-sm text-slate-400">
                 <li>
                   <Link href="/" className="hover:text-white transition-colors">Home</Link>
                 </li>
-                <li>/</li>
+                <li className="text-slate-600">/</li>
                 <li className="text-white">About</li>
               </ol>
             </nav>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 md:mb-4">
               About SportBot AI
             </h1>
-            <p className="text-xl text-slate-300 max-w-3xl">
+            <p className="text-base sm:text-lg md:text-xl text-slate-300 max-w-2xl leading-relaxed">
               Combining cutting-edge AI technology with expert sports analysis to help you understand any match in 60 seconds.
             </p>
           </div>
         </header>
 
         {/* Mission Section */}
-        <section className="py-12 border-t border-slate-700/50">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl">
-              <h2 className="text-2xl font-bold text-white mb-6">Our Mission</h2>
-              <p className="text-lg text-slate-300 mb-4">
+        <section className="py-8 md:py-12 border-t border-slate-700/30">
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="max-w-3xl">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">Our Mission</h2>
+              <p className="text-base md:text-lg text-slate-300 mb-4 leading-relaxed">
                 We believe everyone deserves access to professional-grade sports analysis. SportBot AI democratizes sports intelligence by combining real-time data, AI-powered insights, and expert curation.
               </p>
-              <p className="text-lg text-slate-300">
+              <p className="text-base md:text-lg text-slate-300 leading-relaxed">
                 Our platform is an <strong className="text-white">educational and analytical tool</strong> — we help you understand matches, not guarantee outcomes. We sell understanding, not winning.
               </p>
             </div>
@@ -121,15 +121,15 @@ export default function AboutPage() {
         </section>
 
         {/* Team Section */}
-        <section className="py-12 border-t border-slate-700/50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold text-white mb-8">Meet the Team</h2>
+        <section className="py-8 md:py-12 border-t border-slate-700/30">
+          <div className="container mx-auto px-4 sm:px-6">
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-6 md:mb-8">Meet the Team</h2>
             
-            {/* Stefan's Card */}
-            <div className="max-w-2xl bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 md:p-8">
-              <div className="flex flex-col md:flex-row gap-6">
+            {/* Stefan's Card - centered on mobile */}
+            <div className="max-w-xl bg-slate-800/40 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-5 sm:p-6 md:p-8">
+              <div className="flex flex-col items-center text-center sm:text-left sm:flex-row gap-5 sm:gap-6">
                 {/* Profile Photo */}
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden flex-shrink-0 relative">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden flex-shrink-0 relative ring-2 ring-emerald-500/30 ring-offset-2 ring-offset-slate-900">
                   <Image
                     src={TEAM.stefan.photo}
                     alt={TEAM.stefan.name}
@@ -140,22 +140,22 @@ export default function AboutPage() {
                 </div>
                 
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white mb-1">
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">
                     {TEAM.stefan.name}
                   </h3>
-                  <p className="text-emerald-400 font-medium mb-4">
+                  <p className="text-emerald-400 font-medium text-sm sm:text-base mb-3">
                     {TEAM.stefan.role}
                   </p>
-                  <p className="text-slate-300 mb-4">
+                  <p className="text-slate-300 text-sm sm:text-base mb-4 leading-relaxed">
                     {TEAM.stefan.bio}
                   </p>
                   
                   {/* Skills */}
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 mb-4">
                     {TEAM.stefan.skills.map((skill) => (
                       <span
                         key={skill}
-                        className="px-3 py-1 bg-slate-700/50 text-slate-300 text-sm rounded-full"
+                        className="px-2.5 py-1 bg-slate-700/50 text-slate-300 text-xs sm:text-sm rounded-full"
                       >
                         {skill}
                       </span>
@@ -163,14 +163,14 @@ export default function AboutPage() {
                   </div>
                   
                   {/* Social Links */}
-                  <div className="flex gap-4">
+                  <div className="flex justify-center sm:justify-start gap-4">
                     <a
                       href={TEAM.stefan.social.upwork}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors"
+                      className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors text-sm"
                     >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.561 13.158c-1.102 0-2.135-.467-3.074-1.227l.228-1.076.008-.042c.207-1.143.849-3.06 2.839-3.06 1.492 0 2.703 1.212 2.703 2.703-.001 1.489-1.212 2.702-2.704 2.702zm0-8.14c-2.539 0-4.51 1.649-5.31 4.366-1.22-1.834-2.148-4.036-2.687-5.892H7.828v7.112c-.002 1.406-1.141 2.546-2.547 2.546-1.405 0-2.543-1.14-2.543-2.546V3.492H0v7.112c0 2.914 2.37 5.303 5.281 5.303 2.913 0 5.283-2.389 5.283-5.303v-1.19c.529 1.107 1.182 2.229 1.974 3.221l-1.673 7.873h2.797l1.213-5.71c1.063.679 2.285 1.109 3.686 1.109 3 0 5.439-2.452 5.439-5.45 0-3-2.439-5.439-5.439-5.439z"/>
                       </svg>
                       Upwork
@@ -179,9 +179,9 @@ export default function AboutPage() {
                       href={TEAM.stefan.social.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors"
+                      className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors text-sm"
                     >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                       </svg>
                       LinkedIn
@@ -194,34 +194,34 @@ export default function AboutPage() {
         </section>
 
         {/* What We Do Section */}
-        <section className="py-12 border-t border-slate-700/50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold text-white mb-8">What We Do</h2>
-            <div className="grid md:grid-cols-3 gap-6 max-w-5xl">
-              <div className="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
-                <div className="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-4">
-                  <span className="text-2xl">📊</span>
+        <section className="py-8 md:py-12 border-t border-slate-700/30">
+          <div className="container mx-auto px-4 sm:px-6">
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-6 md:mb-8">What We Do</h2>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl">
+              <div className="bg-slate-800/30 rounded-xl p-5 md:p-6 border border-slate-700/40">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-3 md:mb-4">
+                  <span className="text-xl md:text-2xl">📊</span>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">AI-Powered Analysis</h3>
-                <p className="text-slate-400">
+                <h3 className="text-base md:text-lg font-semibold text-white mb-2">AI-Powered Analysis</h3>
+                <p className="text-slate-400 text-sm md:text-base leading-relaxed">
                   Real-time match analysis combining verified statistics with AI insights.
                 </p>
               </div>
-              <div className="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
-                <div className="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-4">
-                  <span className="text-2xl">⚡</span>
+              <div className="bg-slate-800/30 rounded-xl p-5 md:p-6 border border-slate-700/40">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-3 md:mb-4">
+                  <span className="text-xl md:text-2xl">⚡</span>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Real-Time Data</h3>
-                <p className="text-slate-400">
+                <h3 className="text-base md:text-lg font-semibold text-white mb-2">Real-Time Data</h3>
+                <p className="text-slate-400 text-sm md:text-base leading-relaxed">
                   Live odds, injury updates, and breaking news from trusted sources.
                 </p>
               </div>
-              <div className="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
-                <div className="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-4">
-                  <span className="text-2xl">🎯</span>
+              <div className="bg-slate-800/30 rounded-xl p-5 md:p-6 border border-slate-700/40 sm:col-span-2 md:col-span-1">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-3 md:mb-4">
+                  <span className="text-xl md:text-2xl">🎯</span>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Expert Curation</h3>
-                <p className="text-slate-400">
+                <h3 className="text-base md:text-lg font-semibold text-white mb-2">Expert Curation</h3>
+                <p className="text-slate-400 text-sm md:text-base leading-relaxed">
                   Every analysis is reviewed and curated by our sports experts.
                 </p>
               </div>
@@ -230,18 +230,18 @@ export default function AboutPage() {
         </section>
 
         {/* Data Sources Section */}
-        <section className="py-12 border-t border-slate-700/50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold text-white mb-6">Our Data Sources</h2>
-            <p className="text-slate-300 max-w-3xl mb-6">
+        <section className="py-8 md:py-12 border-t border-slate-700/30">
+          <div className="container mx-auto px-4 sm:px-6">
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">Our Data Sources</h2>
+            <p className="text-slate-300 text-sm md:text-base max-w-2xl mb-4 md:mb-6 leading-relaxed">
               We aggregate data from multiple trusted sources to ensure accuracy:
             </p>
-            <ul className="grid md:grid-cols-2 gap-3 max-w-3xl text-slate-300">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 max-w-2xl text-slate-300 text-sm md:text-base">
               <li className="flex items-center gap-2">
                 <span className="text-emerald-400">✓</span> Official league statistics
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span> Real-time odds from major bookmakers
+                <span className="text-emerald-400">✓</span> Real-time odds from bookmakers
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-emerald-400">✓</span> Verified player statistics
@@ -260,16 +260,16 @@ export default function AboutPage() {
         </section>
 
         {/* Contact CTA */}
-        <section className="py-12 border-t border-slate-700/50">
-          <div className="container mx-auto px-4">
-            <div className="max-w-2xl">
-              <h2 className="text-2xl font-bold text-white mb-4">Get in Touch</h2>
-              <p className="text-slate-300 mb-6">
+        <section className="py-8 md:py-12 border-t border-slate-700/30">
+          <div className="container mx-auto px-4 sm:px-6 pb-8">
+            <div className="max-w-xl">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-3 md:mb-4">Get in Touch</h2>
+              <p className="text-slate-300 text-sm md:text-base mb-5 md:mb-6">
                 Have questions or feedback? We&apos;d love to hear from you.
               </p>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm md:text-base font-medium rounded-lg transition-colors"
               >
                 Contact Us
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
