@@ -80,7 +80,7 @@ export async function GET() {
       <description><![CDATA[${cleanExcerpt}]]></description>
       <category>${category}</category>
       ${article.tags.map((tag) => `<category>${tag}</category>`).join('\n      ')}
-      <author>editorial@sportbotai.com (SportBot AI Editorial)</author>
+      <author>stefan@sportbotai.com (Stefan Mitrovic)</author>
       ${imageUrl ? `<enclosure url="${imageUrl}" type="image/png" length="0"/>` : ''}
       <media:content url="${imageUrl}" medium="image" type="image/png"/>
       <media:thumbnail url="${imageUrl}"/>
@@ -109,7 +109,7 @@ export async function GET() {
       <height>144</height>
     </image>
     <copyright>Copyright ${new Date().getFullYear()} SportBot AI. All rights reserved.</copyright>
-    <managingEditor>editorial@sportbotai.com (SportBot AI Editorial)</managingEditor>
+    <managingEditor>stefan@sportbotai.com (Stefan Mitrovic)</managingEditor>
     <webMaster>contact@sportbotai.com (SportBot AI)</webMaster>
     <category>Sports</category>
     <category>Sports News</category>

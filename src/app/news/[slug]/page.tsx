@@ -16,10 +16,15 @@ interface NewsArticlePageProps {
   params: Promise<{ slug: string }>;
 }
 
-// Author info for Google News
+// Author info for Google News E-E-A-T
 const AUTHOR = {
-  name: 'SportBot AI Editorial',
+  name: 'Stefan Mitrovic',
   url: `${SITE_CONFIG.url}/about`,
+  jobTitle: 'Sports Analyst & Editor',
+  sameAs: [
+    'https://www.upwork.com/freelancers/~017b8c67c94029389f',
+    'https://www.linkedin.com/company/automateed/',
+  ],
 };
 
 interface RelatedArticle {
@@ -200,6 +205,8 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
       '@type': 'Person',
       name: AUTHOR.name,
       url: AUTHOR.url,
+      jobTitle: AUTHOR.jobTitle,
+      sameAs: AUTHOR.sameAs,
     },
     publisher: {
       '@type': 'Organization',
@@ -297,9 +304,14 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
                 {post.newsTitle || post.title}
               </h1>
 
-              {/* Meta - simplified to match blog */}
+              {/* Meta - with author link */}
               <div className="flex flex-wrap items-center gap-4 text-slate-400 text-sm mb-8">
-                <span>{AUTHOR.name}</span>
+                <Link href="/about" className="flex items-center gap-2 hover:text-emerald-400 transition-colors">
+                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white">
+                    SM
+                  </span>
+                  <span>{AUTHOR.name}</span>
+                </Link>
                 <span>•</span>
                 <span>
                   {post.publishedAt
