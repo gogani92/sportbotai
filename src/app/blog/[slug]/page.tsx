@@ -74,29 +74,30 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
   const { post } = data;
 
-  // Generate dynamic OG image URL for better Twitter/social sharing
-  // SVG images don't work on Twitter, so we use the /api/og PNG generator
+  // Determine OG image URL for social sharing
+  // New posts have PNG images that work on Twitter/X
+  // Old posts have SVG images that don't work, so we fall back to /api/og
   let ogImageUrl = post.featuredImage;
   
-  // For match preview posts, generate dynamic OG image with teams
-  if (post.homeTeam && post.awayTeam) {
-    const ogParams = new URLSearchParams({
-      home: post.homeTeam,
-      away: post.awayTeam,
-      league: post.league || post.sport || 'Match Preview',
-      verdict: 'AI Match Analysis',
-      date: post.matchDate ? new Date(post.matchDate).toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-      }) : '',
-    });
-    ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://sportbot.ai'}/api/og?${ogParams.toString()}`;
-  }
-  
-  // Fallback: If no OG image or it's an SVG, use default
+  // If no image or it's an SVG, use the dynamic /api/og generator
   if (!ogImageUrl || ogImageUrl.endsWith('.svg')) {
-    ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://sportbot.ai'}/api/og?home=${encodeURIComponent(post.title.split(' vs ')[0] || 'Match')}&away=${encodeURIComponent(post.title.split(' vs ')[1]?.split(' ')[0] || 'Preview')}`;
+    if (post.homeTeam && post.awayTeam) {
+      const ogParams = new URLSearchParams({
+        home: post.homeTeam,
+        away: post.awayTeam,
+        league: post.league || post.sport || 'Match Preview',
+        verdict: 'AI Match Analysis',
+        date: post.matchDate ? new Date(post.matchDate).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        }) : '',
+      });
+      ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://sportbot.ai'}/api/og?${ogParams.toString()}`;
+    } else {
+      // Generic fallback for non-match posts
+      ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://sportbot.ai'}/api/og?home=${encodeURIComponent(post.title.split(' vs ')[0] || 'SportBot')}&away=${encodeURIComponent(post.title.split(' vs ')[1]?.split(' ')[0] || 'AI')}`;
+    }
   }
 
   return {
