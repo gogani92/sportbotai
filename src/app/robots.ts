@@ -5,12 +5,28 @@ export default function robots(): MetadataRoute.Robots {
   
   return {
     rules: [
+      // Googlebot-News - for Google News indexing
+      {
+        userAgent: 'Googlebot-News',
+        allow: [
+          '/news',
+          '/news/*',
+          '/api/og',
+        ],
+        disallow: [
+          '/blog',  // Only index /news/ section for Google News
+          '/admin/',
+          '/account/',
+        ],
+      },
       // Twitterbot - MUST allow /api/og for social sharing images
       {
         userAgent: 'Twitterbot',
         allow: [
           '/',
           '/api/og',  // OG images for Twitter cards - CRITICAL
+          '/news',
+          '/news/*',
           '/blog',
           '/blog/*',
           '/matches',
@@ -28,6 +44,9 @@ export default function robots(): MetadataRoute.Robots {
         allow: [
           '/',
           '/api/og',  // Allow OG images for social sharing
+          '/news',
+          '/news/*',
+          '/news/feed.xml',  // RSS feed for Google News
           '/matches',
           '/ai-desk',
           '/blog',

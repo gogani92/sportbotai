@@ -79,6 +79,13 @@ export default function Header() {
               Pricing
             </Link>
             <Link 
+              href="/news" 
+              className="text-text-secondary hover:text-text-primary font-medium transition-colors text-sm flex items-center gap-1.5"
+            >
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+              News
+            </Link>
+            <Link 
               href="/blog" 
               className="text-text-secondary hover:text-text-primary font-medium transition-colors text-sm"
             >
@@ -232,6 +239,16 @@ export default function Header() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Pricing
+              </Link>
+              <Link
+                href="/news"
+                className="flex items-center gap-3 text-text-secondary hover:text-text-primary hover:bg-bg-hover font-medium px-4 py-3.5 rounded-btn transition-colors active:scale-[0.98]"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                </div>
+                News
               </Link>
               <Link
                 href="/blog"

@@ -10,6 +10,9 @@ const STATIC_PAGES = [
   { path: '/matches', priority: 0.95, changeFreq: 'hourly' as const },
   { path: '/ai-desk', priority: 0.95, changeFreq: 'hourly' as const },
   
+  // News Section (Google News eligible)
+  { path: '/news', priority: 0.95, changeFreq: 'hourly' as const },
+  
   // Content & Conversion
   { path: '/blog', priority: 0.85, changeFreq: 'daily' as const },
   { path: '/pricing', priority: 0.8, changeFreq: 'monthly' as const },
@@ -63,10 +66,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[Sitemap] Error fetching blog posts:', error);
   }
 
+  // Fetch news articles (match previews) - these go under /news/ path
+  let newsEntries: MetadataRoute.Sitemap = [];
+  try {
+    const newsArticles = await prisma.blogPost.findMany({
+      where: {
+        status: 'PUBLISHED',
+        publishedAt: { not: null },
+        postType: { in: ['MATCH_PREVIEW', 'NEWS'] },
+      },
+      select: {
+        slug: true,
+        updatedAt: true,
+        publishedAt: true,
+      },
+      orderBy: { publishedAt: 'desc' },
+      take: 200, // More news articles for Google News
+    });
+
+    newsEntries = newsArticles.map(article => ({
+      url: `${BASE_URL}/news/${article.slug}`,
+      lastModified: article.updatedAt?.toISOString() || article.publishedAt?.toISOString() || currentDate,
+      changeFrequency: 'daily' as const, // News changes more frequently
+      priority: 0.8, // Higher priority for news
+    }));
+  } catch (error) {
+    console.error('[Sitemap] Error fetching news articles:', error);
+  }
+
   // NOTE: Team pages removed from sitemap - they require numeric teamId from API-Football,
   // but sitemap was generating slug-based URLs which cause 500 errors.
   // TODO: Implement proper team slug -> teamId resolution before re-adding to sitemap.
   const teamEntries: MetadataRoute.Sitemap = [];
 
-  return [...staticEntries, ...blogEntries, ...teamEntries];
+  return [...staticEntries, ...newsEntries, ...blogEntries, ...teamEntries];
 }
