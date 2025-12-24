@@ -2,6 +2,7 @@
 // E-E-A-T signals: Author bio, credentials, social proof
 
 import { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { SITE_CONFIG } from '@/lib/seo';
 
@@ -23,6 +24,7 @@ const TEAM = {
   stefan: {
     name: 'Stefan Mitrovic',
     role: 'Sports Analyst & Editor',
+    photo: 'https://www.upwork.com/profile-portraits/c1QVpOOlRVMXCujp1syLSScOWIl0cbOsxFl4HtH9scBn6y1CaZPeWLI5v_eg78VPCd',
     bio: 'Stefan is a passionate sports enthusiast, writer, and analyst with a knack for creating innovative applications. With years of experience analyzing sports data and trends, he brings a unique blend of technical expertise and sports knowledge to SportBot AI. His creative approach to sports analytics helps deliver insights that matter.',
     skills: ['Sports Analysis', 'Data Analytics', 'Content Strategy', 'App Development'],
     social: {
@@ -126,9 +128,15 @@ export default function AboutPage() {
             {/* Stefan's Card */}
             <div className="max-w-2xl bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 md:p-8">
               <div className="flex flex-col md:flex-row gap-6">
-                {/* Avatar placeholder */}
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-3xl md:text-4xl font-bold text-white flex-shrink-0">
-                  SM
+                {/* Profile Photo */}
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden flex-shrink-0 relative">
+                  <Image
+                    src={TEAM.stefan.photo}
+                    alt={TEAM.stefan.name}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
                 </div>
                 
                 <div className="flex-1">
