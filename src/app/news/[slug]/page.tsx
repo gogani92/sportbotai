@@ -266,145 +266,122 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
       />
 
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        {/* Breadcrumb */}
-        <nav className="container mx-auto px-4 py-4">
-          <ol className="flex items-center gap-2 text-sm text-slate-400">
-            <li>
-              <Link href="/" className="hover:text-emerald-400 transition-colors">
-                Home
-              </Link>
-            </li>
-            <li>/</li>
-            <li>
-              <Link href="/news" className="hover:text-emerald-400 transition-colors">
-                News
-              </Link>
-            </li>
-            <li>/</li>
-            <li className="text-slate-500 truncate max-w-[200px]">{post.newsTitle || post.title}</li>
-          </ol>
-        </nav>
+        {/* Hero Section - matches blog structure */}
+        <header className="pt-8 pb-12">
+          <div className="container mx-auto px-4">
+            {/* Breadcrumb */}
+            <nav className="mb-8">
+              <ol className="flex items-center gap-2 text-sm text-slate-400">
+                <li>
+                  <Link href="/" className="hover:text-white">Home</Link>
+                </li>
+                <li>/</li>
+                <li>
+                  <Link href="/news" className="hover:text-white">News</Link>
+                </li>
+                <li>/</li>
+                <li className="text-slate-300 truncate max-w-[200px]">{post.newsTitle || post.title}</li>
+              </ol>
+            </nav>
 
-        {/* Article Header */}
-        <header className="container mx-auto px-4 pb-8">
-          <div className="max-w-4xl mx-auto">
-            {/* League/Sport Badge */}
-            {post.league && (
-              <Link
-                href={`/news?sport=${post.sport?.toLowerCase() || ''}`}
-                className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-sm font-semibold rounded-full mb-4 hover:bg-emerald-500/20 transition-colors"
-              >
-                {post.league}
-              </Link>
-            )}
+            <div className="max-w-4xl mx-auto">
+              {/* League Badge - styled like blog category */}
+              {post.league && (
+                <Link
+                  href={`/news?sport=${post.sport?.toLowerCase() || ''}`}
+                  className="inline-block text-emerald-400 text-sm font-medium mb-4 hover:text-emerald-300"
+                >
+                  {post.league}
+                </Link>
+              )}
 
-            {/* Title */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-              {post.newsTitle || post.title}
-            </h1>
+              {/* Title */}
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+                {post.newsTitle || post.title}
+              </h1>
 
-            {/* Meta Info */}
-            <div className="flex flex-wrap items-center gap-4 text-slate-400 mb-8">
-              {/* Author */}
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                  <span className="text-emerald-400 text-sm font-bold">S</span>
-                </div>
-                <span className="font-medium text-white">{AUTHOR.name}</span>
+              {/* Meta - simplified to match blog */}
+              <div className="flex flex-wrap items-center gap-4 text-slate-400 text-sm mb-8">
+                <span>{AUTHOR.name}</span>
+                <span>•</span>
+                <span>
+                  {post.publishedAt
+                    ? new Date(post.publishedAt).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : 'Draft'}
+                </span>
+                {post.matchDate && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      Match: {new Date(post.matchDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </>
+                )}
+                <span>•</span>
+                <span>{Math.ceil((post.newsContent || post.content).split(' ').length / 200)} min read</span>
               </div>
 
-              <span className="text-slate-600">•</span>
-
-              {/* Published Date */}
-              <time dateTime={post.publishedAt?.toISOString()}>
-                {post.publishedAt
-                  ? new Date(post.publishedAt).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })
-                  : 'Draft'}
-              </time>
-
-              {post.matchDate && (
-                <>
-                  <span className="text-slate-600">•</span>
-                  <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Match: {new Date(post.matchDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </span>
-                </>
+              {/* Featured Image */}
+              {post.featuredImage && (
+                <div className="aspect-video relative rounded-xl overflow-hidden bg-slate-700 mb-8">
+                  <Image
+                    src={post.featuredImage}
+                    alt={post.imageAlt || post.title}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                </div>
               )}
             </div>
-
-            {/* Featured Image */}
-            {post.featuredImage && (
-              <div className="aspect-video relative rounded-2xl overflow-hidden bg-slate-800 mb-8">
-                <Image
-                  src={post.featuredImage}
-                  alt={post.imageAlt || post.title}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            )}
           </div>
         </header>
 
         {/* Article Content */}
         <article className="container mx-auto px-4 pb-16">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-3xl mx-auto">
+            {/* Use same blog-content CSS class for visual consistency */}
             <div
-              className="prose prose-invert prose-emerald max-w-none prose-headings:text-white prose-p:text-slate-300 prose-a:text-emerald-400 prose-strong:text-white prose-li:text-slate-300"
+              className="blog-content"
               dangerouslySetInnerHTML={{ __html: post.newsContent || post.content }}
             />
           </div>
         </article>
 
-        {/* Tags */}
-        {post.tags.length > 0 && (
-          <section className="container mx-auto px-4 pb-8">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-slate-800 text-slate-400 text-sm rounded-full"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Share / CTA */}
-        <section className="container mx-auto px-4 pb-16">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">
-                    Get AI-Powered Match Analysis
-                  </h3>
-                  <p className="text-slate-400 text-sm">
-                    Dive deeper with real-time probabilities and insights
-                  </p>
+        {/* Content Footer - Tags & Share (matches blog structure) */}
+        <section className="pb-16">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto">
+              {/* Tags */}
+              {post.tags.length > 0 && (
+                <div className="mt-12 pt-8 border-t border-slate-700">
+                  <h3 className="text-sm font-medium text-slate-400 mb-4">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {post.tags.map((tag: string) => (
+                      <Link
+                        key={tag}
+                        href={`/news?tag=${encodeURIComponent(tag)}`}
+                        className="px-3 py-1 bg-slate-800 text-slate-300 text-sm rounded-full hover:bg-slate-700"
+                      >
+                        #{tag}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-                <Link
-                  href="/matches"
-                  className="px-6 py-3 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-colors whitespace-nowrap"
-                >
-                  Analyze Matches →
-                </Link>
+              )}
+
+              {/* Share Section */}
+              <div className="mt-8 p-6 bg-slate-800/50 rounded-xl border border-slate-700">
+                <p className="text-slate-300 text-center">
+                  Stay informed with the latest sports news and AI-powered analysis
+                </p>
               </div>
             </div>
           </div>
@@ -412,15 +389,17 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
 
         {/* Related Articles */}
         {relatedArticles.length > 0 && (
-          <section className="container mx-auto px-4 pb-16">
-            <div className="max-w-6xl mx-auto">
-              <h2 className="text-2xl font-bold text-white mb-6">Related News</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {relatedArticles.map((article) => (
+          <section className="py-16 bg-slate-800/30">
+            <div className="container mx-auto px-4">
+              <h2 className="text-2xl font-bold text-white mb-8 text-center">
+                Related Articles
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                {relatedArticles.slice(0, 3).map((article) => (
                   <Link
                     key={article.slug}
                     href={`/news/${article.slug}`}
-                    className="group bg-slate-800/50 rounded-xl overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all"
+                    className="bg-slate-800/50 rounded-xl overflow-hidden border border-slate-700 hover:border-emerald-500/50 transition-all"
                   >
                     <div className="aspect-video relative bg-slate-700">
                       {article.featuredImage && (
@@ -434,13 +413,22 @@ export default async function NewsArticlePage({ params }: NewsArticlePageProps) 
                     </div>
                     <div className="p-4">
                       {article.league && (
-                        <span className="text-emerald-400 text-xs font-semibold">
+                        <span className="text-emerald-400 text-xs font-medium">
                           {article.league}
                         </span>
                       )}
-                      <h3 className="font-semibold text-white group-hover:text-emerald-300 transition-colors line-clamp-2 mt-1">
+                      <h3 className="font-semibold text-white hover:text-emerald-300 transition-colors line-clamp-2 mt-1">
                         {article.title}
                       </h3>
+                      {article.publishedAt && (
+                        <p className="text-slate-500 text-xs mt-2">
+                          {new Date(article.publishedAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </p>
+                      )}
                     </div>
                   </Link>
                 ))}
