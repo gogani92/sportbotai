@@ -74,6 +74,31 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
   const { post } = data;
 
+  // Generate dynamic OG image URL for better Twitter/social sharing
+  // SVG images don't work on Twitter, so we use the /api/og PNG generator
+  let ogImageUrl = post.featuredImage;
+  
+  // For match preview posts, generate dynamic OG image with teams
+  if (post.homeTeam && post.awayTeam) {
+    const ogParams = new URLSearchParams({
+      home: post.homeTeam,
+      away: post.awayTeam,
+      league: post.league || post.sport || 'Match Preview',
+      verdict: 'AI Match Analysis',
+      date: post.matchDate ? new Date(post.matchDate).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }) : '',
+    });
+    ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://sportbot.ai'}/api/og?${ogParams.toString()}`;
+  }
+  
+  // Fallback: If no OG image or it's an SVG, use default
+  if (!ogImageUrl || ogImageUrl.endsWith('.svg')) {
+    ogImageUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://sportbot.ai'}/api/og?home=${encodeURIComponent(post.title.split(' vs ')[0] || 'Match')}&away=${encodeURIComponent(post.title.split(' vs ')[1]?.split(' ')[0] || 'Preview')}`;
+  }
+
   return {
     title: post.metaTitle || `${post.title} | SportBot AI Blog`,
     description: post.metaDescription || post.excerpt,
@@ -86,13 +111,13 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       description: post.metaDescription || post.excerpt,
       type: 'article',
       publishedTime: post.publishedAt?.toISOString(),
-      images: post.featuredImage ? [post.featuredImage] : [],
+      images: ogImageUrl ? [ogImageUrl] : [],
     },
     twitter: {
       card: 'summary_large_image',
       title: post.metaTitle || post.title,
       description: post.metaDescription || post.excerpt,
-      images: post.featuredImage ? [post.featuredImage] : [],
+      images: ogImageUrl ? [ogImageUrl] : [],
     },
   };
 }
