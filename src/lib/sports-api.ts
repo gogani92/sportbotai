@@ -100,7 +100,13 @@ const SPORT_MAPPING: Record<string, string> = {
   'soccer_germany_bundesliga': 'soccer',
   'soccer_italy_serie_a': 'soccer',
   'soccer_france_ligue_one': 'soccer',
+  'soccer_portugal_primeira_liga': 'soccer',
+  'soccer_netherlands_eredivisie': 'soccer',
+  'soccer_turkey_super_league': 'soccer',
+  'soccer_belgium_first_div': 'soccer',
+  'soccer_spl': 'soccer',
   'soccer_uefa_champs_league': 'soccer',
+  'soccer_uefa_europa_league': 'soccer',
   // Common league names that should map to soccer
   'premier_league': 'soccer',
   'la_liga': 'soccer',

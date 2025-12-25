@@ -1420,7 +1420,13 @@ const ALL_BLOG_SPORTS = [
   'soccer_germany_bundesliga', // Bundesliga
   'soccer_italy_serie_a', // Serie A
   'soccer_france_ligue_one', // Ligue 1
+  'soccer_portugal_primeira_liga', // Primeira Liga
+  'soccer_netherlands_eredivisie', // Eredivisie
+  'soccer_turkey_super_league', // Süper Lig
+  'soccer_belgium_first_div', // Jupiler Pro League
+  'soccer_spl',           // Scottish Premiership
   'soccer_uefa_champs_league', // Champions League
+  'soccer_uefa_europa_league', // Europa League
   'basketball_nba',       // NBA
   'americanfootball_nfl', // NFL
   'icehockey_nhl',        // NHL

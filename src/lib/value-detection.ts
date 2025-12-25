@@ -284,6 +284,54 @@ export const LEAGUE_CALIBRATION: Record<string, LeagueProfile> = {
     homeWinRate: 0.514,
     awayWinRate: 0.271,
   },
+  
+  // Primeira Liga (Portugal) - Balanced scoring
+  'soccer_portugal_primeira_liga': {
+    goalsPerGame: 2.72,
+    drawRate: 0.241,
+    homeWinRate: 0.461,
+    awayWinRate: 0.298,
+  },
+  
+  // Eredivisie (Netherlands) - High scoring, attacking football
+  'soccer_netherlands_eredivisie': {
+    goalsPerGame: 3.21,
+    drawRate: 0.198,
+    homeWinRate: 0.468,
+    awayWinRate: 0.334,
+  },
+  
+  // Süper Lig (Turkey) - Strong home advantage
+  'soccer_turkey_super_league': {
+    goalsPerGame: 2.78,
+    drawRate: 0.232,
+    homeWinRate: 0.498,
+    awayWinRate: 0.270,
+  },
+  
+  // Jupiler Pro League (Belgium) - High scoring
+  'soccer_belgium_first_div': {
+    goalsPerGame: 2.95,
+    drawRate: 0.212,
+    homeWinRate: 0.475,
+    awayWinRate: 0.313,
+  },
+  
+  // Scottish Premiership - Very strong home advantage
+  'soccer_spl': {
+    goalsPerGame: 2.89,
+    drawRate: 0.187,
+    homeWinRate: 0.521,
+    awayWinRate: 0.292,
+  },
+  
+  // Europa League - Neutral venue dynamics
+  'soccer_uefa_europa_league': {
+    goalsPerGame: 2.68,
+    drawRate: 0.248,
+    homeWinRate: 0.445,
+    awayWinRate: 0.307,
+  },
 };
 
 /**

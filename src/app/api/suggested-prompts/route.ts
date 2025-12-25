@@ -82,10 +82,17 @@ async function getUpcomingMatchPrompts(): Promise<string[]> {
       'soccer_spain_la_liga', 
       'soccer_germany_bundesliga',
       'soccer_italy_serie_a',
+      'soccer_france_ligue_one',
+      'soccer_portugal_primeira_liga',
+      'soccer_netherlands_eredivisie',
+      'soccer_turkey_super_league',
+      'soccer_belgium_first_div',
+      'soccer_spl',
+      'soccer_uefa_champs_league',
+      'soccer_uefa_europa_league',
       'basketball_nba',
       'americanfootball_nfl',
       'icehockey_nhl',
-      'soccer_uefa_champs_league',
     ];
 
     const now = new Date();
