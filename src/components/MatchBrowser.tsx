@@ -63,14 +63,15 @@ const SPORTS = [
       { key: 'icehockey_sweden_allsvenskan', name: 'SHL' },
     ],
   },
-  {
-    id: 'mma',
-    name: 'MMA / UFC',
-    icon: '🥊',
-    leagues: [
-      { key: 'mma_mixed_martial_arts', name: 'UFC' },
-    ],
-  },
+  // MMA disabled - The Odds API shows speculative betting markets, not confirmed events
+  // {
+  //   id: 'mma',
+  //   name: 'MMA / UFC',
+  //   icon: '🥊',
+  //   leagues: [
+  //     { key: 'mma_mixed_martial_arts', name: 'UFC' },
+  //   ],
+  // },
 ];
 
 export default function MatchBrowser({ initialSport = 'soccer', maxMatches = 12 }: MatchBrowserProps) {
