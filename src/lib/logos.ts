@@ -924,6 +924,7 @@ const SOCCER_TEAM_LOGOS: Record<string, string> = {
   'Gençlerbirliği': 'https://media.api-sports.io/football/teams/995.png',
   'Genclerbirligi': 'https://media.api-sports.io/football/teams/995.png',
   'Genclerbirligi SK': 'https://media.api-sports.io/football/teams/995.png',
+  'Kocaelispor': 'https://ankara.gsb.gov.tr/public/Images/GSB/012014/kocaelispor-logo.jpg',
   
   // ============================================
   // JUPILER PRO LEAGUE (Belgium) - Full roster
