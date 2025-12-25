@@ -380,13 +380,8 @@ export default function MatchBrowser({ initialSport = 'soccer', maxMatches = 12 
                 key={fight.id}
                 fight={fight}
                 onAnalyze={(fight) => {
-                  // Redirect to analyzer with prefilled data
-                  const params = new URLSearchParams({
-                    sport: 'mma',
-                    fighter1: fight.fighter1.name,
-                    fighter2: fight.fighter2.name,
-                  });
-                  window.location.href = `/analyzer?${params.toString()}`;
+                  // Navigate to dedicated fight analysis page
+                  window.location.href = `/fight/${fight.id}`;
                 }}
               />
             ))}

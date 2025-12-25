@@ -5,7 +5,7 @@
  * Returns real confirmed fights with fighter photos.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const API_KEY = process.env.API_FOOTBALL_KEY || '';
 const MMA_API_URL = 'https://v1.mma.api-sports.io';
@@ -57,11 +57,8 @@ interface NormalizedMMAFight {
   };
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const showAll = searchParams.get('all') === 'true';
-    
     if (!API_KEY) {
       return NextResponse.json(
         { error: 'API_FOOTBALL_KEY not configured' },
@@ -101,27 +98,28 @@ export async function GET(request: NextRequest) {
       ...(nextYearData.response || []),
     ];
 
-    // Filter to upcoming fights (NS = Not Started) unless showAll is true
-    // Also filter out TBA fights
-    const now = new Date();
-    const filteredFights = showAll 
-      ? allFights 
-      : allFights.filter(f => {
-          // Skip TBA placeholder fights
-          if (f.fighters.first.name === 'TBA' || f.fighters.second.name === 'TBA' ||
-              f.fighters.first.name === 'Opponent TBA' || f.fighters.second.name === 'Opponent TBA') {
-            return false;
-          }
-          // Include upcoming fights (NS) or very recent finished fights
-          const fightDate = new Date(f.timestamp * 1000);
-          const isUpcoming = f.status.short === 'NS';
-          const isRecent = f.status.short === 'FT' && 
-            (now.getTime() - fightDate.getTime()) < 7 * 24 * 60 * 60 * 1000; // Within 7 days
-          return isUpcoming || isRecent;
-        });
+    // Filter to upcoming fights only (NS = Not Started)
+    // Also filter out TBA placeholder fights
+    const filteredFights = allFights.filter(f => {
+      // Skip TBA placeholder fights
+      if (f.fighters.first.name === 'TBA' || f.fighters.second.name === 'TBA' ||
+          f.fighters.first.name === 'Opponent TBA' || f.fighters.second.name === 'Opponent TBA') {
+        return false;
+      }
+      // Only show upcoming fights (NS = Not Started), no past fights
+      return f.status.short === 'NS';
+    });
 
-    // Sort by date (upcoming first)
-    filteredFights.sort((a, b) => a.timestamp - b.timestamp);
+    // Sort by: date first (soonest first), then main events prioritized
+    filteredFights.sort((a, b) => {
+      // First sort by date
+      const dateDiff = a.timestamp - b.timestamp;
+      if (dateDiff !== 0) return dateDiff;
+      // Within same event, main card fights come first
+      if (a.is_main && !b.is_main) return -1;
+      if (!a.is_main && b.is_main) return 1;
+      return 0;
+    });
 
     // Normalize the data
     const normalizedFights: NormalizedMMAFight[] = filteredFights.map(fight => ({
