@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     } : undefined;
     
     // Try unified service first for consistent data
-    let unifiedAnalysis = odds ? await getQuickAnalysis(matchIdentifier, odds) : null;
+    const unifiedAnalysis = odds ? await getQuickAnalysis(matchIdentifier, odds) : null;
     
     // Fallback to quick analysis if unified service fails
     // Convert odds to match MinimalMatchData interface (draw can't be null)
