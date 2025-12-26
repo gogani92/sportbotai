@@ -1174,38 +1174,32 @@ const SOCCER_TEAM_LOGOS: Record<string, string> = {
 const BASKETBALL_TEAM_LOGOS: Record<string, string> = {
   // ============================================
   // EUROLEAGUE TEAMS (official logos from euroleaguebasketball.net)
+  // NOTE: Use basketball-specific names to avoid conflicts with soccer teams
   // ============================================
-  // Real Madrid
+  // Real Madrid Basketball
   'Real Madrid Baloncesto': 'https://media-cdn.incrowdsports.com/371b0d9b-9250-4c09-bda7-0686cf024657.png',
   'Real Madrid Basketball': 'https://media-cdn.incrowdsports.com/371b0d9b-9250-4c09-bda7-0686cf024657.png',
-  'Real Madrid': 'https://media-cdn.incrowdsports.com/371b0d9b-9250-4c09-bda7-0686cf024657.png',
-  // FC Barcelona
+  // FC Barcelona Basketball
   'FC Barcelona Basket': 'https://media-cdn.incrowdsports.com/35dfa503-e417-481f-963a-bdf6f013763e.png',
   'FC Barcelona Basketball': 'https://media-cdn.incrowdsports.com/35dfa503-e417-481f-963a-bdf6f013763e.png',
-  'FC Barcelona': 'https://media-cdn.incrowdsports.com/35dfa503-e417-481f-963a-bdf6f013763e.png',
   'FC Barcelona Bàsquet': 'https://media-cdn.incrowdsports.com/35dfa503-e417-481f-963a-bdf6f013763e.png',
   'Barcelona Basket': 'https://media-cdn.incrowdsports.com/35dfa503-e417-481f-963a-bdf6f013763e.png',
   'Barcelona Basketball': 'https://media-cdn.incrowdsports.com/35dfa503-e417-481f-963a-bdf6f013763e.png',
-  'Barcelona': 'https://media-cdn.incrowdsports.com/35dfa503-e417-481f-963a-bdf6f013763e.png',
-  // Olympiacos
-  'Olympiacos': 'https://media-cdn.incrowdsports.com/789423ac-3cdf-4b89-b11c-b458aa5f59a6.png',
+  // Olympiacos Basketball
   'Olympiacos BC': 'https://media-cdn.incrowdsports.com/789423ac-3cdf-4b89-b11c-b458aa5f59a6.png',
   'Olympiacos Piraeus': 'https://media-cdn.incrowdsports.com/789423ac-3cdf-4b89-b11c-b458aa5f59a6.png',
-  'Olympiakos': 'https://media-cdn.incrowdsports.com/789423ac-3cdf-4b89-b11c-b458aa5f59a6.png',
+  'Olympiacos Basketball': 'https://media-cdn.incrowdsports.com/789423ac-3cdf-4b89-b11c-b458aa5f59a6.png',
   'Olympiakos BC': 'https://media-cdn.incrowdsports.com/789423ac-3cdf-4b89-b11c-b458aa5f59a6.png',
-  // Panathinaikos
-  'Panathinaikos': 'https://media-cdn.incrowdsports.com/e3dff28a-9ec6-4faf-9d96-ecbc68f75780.png',
+  'Olympiakos Basketball': 'https://media-cdn.incrowdsports.com/789423ac-3cdf-4b89-b11c-b458aa5f59a6.png',
+  // Panathinaikos Basketball
   'Panathinaikos BC': 'https://media-cdn.incrowdsports.com/e3dff28a-9ec6-4faf-9d96-ecbc68f75780.png',
   'Panathinaikos Athens': 'https://media-cdn.incrowdsports.com/e3dff28a-9ec6-4faf-9d96-ecbc68f75780.png',
   'Panathinaikos AKTOR Athens': 'https://media-cdn.incrowdsports.com/e3dff28a-9ec6-4faf-9d96-ecbc68f75780.png',
-  // Fenerbahce
-  'Fenerbahce': 'https://media-cdn.cortextech.io/3b7f020e-5b39-49a1-b4b2-efea918edab7.png',
-  'Fenerbahce SK': 'https://media-cdn.cortextech.io/3b7f020e-5b39-49a1-b4b2-efea918edab7.png',
+  'Panathinaikos Basketball': 'https://media-cdn.incrowdsports.com/e3dff28a-9ec6-4faf-9d96-ecbc68f75780.png',
+  // Fenerbahce Basketball
   'Fenerbahce Basketball': 'https://media-cdn.cortextech.io/3b7f020e-5b39-49a1-b4b2-efea918edab7.png',
   'Fenerbahce Beko': 'https://media-cdn.cortextech.io/3b7f020e-5b39-49a1-b4b2-efea918edab7.png',
   'Fenerbahce Beko Istanbul': 'https://media-cdn.cortextech.io/3b7f020e-5b39-49a1-b4b2-efea918edab7.png',
-  'Fenerbahçe': 'https://media-cdn.cortextech.io/3b7f020e-5b39-49a1-b4b2-efea918edab7.png',
-  'Fenerbahçe SK': 'https://media-cdn.cortextech.io/3b7f020e-5b39-49a1-b4b2-efea918edab7.png',
   // Anadolu Efes
   'Anadolu Efes': 'https://media-cdn.cortextech.io/9a463aa2-ceb2-481c-9a95-1cddee0a248e.png',
   'Anadolu Efes Istanbul': 'https://media-cdn.cortextech.io/9a463aa2-ceb2-481c-9a95-1cddee0a248e.png',
@@ -1214,10 +1208,9 @@ const BASKETBALL_TEAM_LOGOS: Record<string, string> = {
   // CSKA Moscow (not in current EuroLeague)
   'CSKA Moscow': 'https://media.api-sports.io/basketball/teams/130.png',
   'CSKA': 'https://media.api-sports.io/basketball/teams/130.png',
-  // Maccabi Tel Aviv
-  'Maccabi Tel Aviv': 'https://media-cdn.cortextech.io/1b533342-78f5-4932-b714-a7d80b5826b5.png',
-  'Maccabi': 'https://media-cdn.cortextech.io/1b533342-78f5-4932-b714-a7d80b5826b5.png',
-  'Maccabi Playtika Tel Aviv': 'https://media-cdn.cortextech.io/1b533342-78f5-4932-b714-a7d80b5826b5.png',
+  // Maccabi Tel Aviv (Basketball) - ESPN doesn't have basketball logos, use API-Sports
+  'Maccabi Tel Aviv Basketball': 'https://media.api-sports.io/basketball/teams/139.png',
+  'Maccabi Playtika Tel Aviv': 'https://media.api-sports.io/basketball/teams/139.png',
   // FC Bayern Munich Basketball
   'Bayern Munich Basketball': 'https://media-cdn.incrowdsports.com/817b0e58-d595-4b09-ab0b-1e7cc26249ff.png',
   'Bayern München Basketball': 'https://media-cdn.incrowdsports.com/817b0e58-d595-4b09-ab0b-1e7cc26249ff.png',
@@ -1925,6 +1918,7 @@ const LEAGUE_LOGOS: Record<string, string> = {
   'Maccabi Tel Aviv': 'https://a.espncdn.com/i/teamlogos/soccer/500/524.png',
   'Maccabi Tel-Aviv': 'https://a.espncdn.com/i/teamlogos/soccer/500/524.png',
   'Maccabi TA': 'https://a.espncdn.com/i/teamlogos/soccer/500/524.png',
+  'Maccabi': 'https://a.espncdn.com/i/teamlogos/soccer/500/524.png',
   'Man United': 'https://img.uefa.com/imgml/TP/teams/logos/240x240/52682.png',
   'Manchester United': 'https://img.uefa.com/imgml/TP/teams/logos/240x240/52682.png',
   'Manchester United FC': 'https://img.uefa.com/imgml/TP/teams/logos/240x240/52682.png',
