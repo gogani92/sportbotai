@@ -96,8 +96,29 @@ export function UserMenu() {
     .toUpperCase()
     .slice(0, 2) || session.user?.email?.[0].toUpperCase() || 'U';
 
-  const plan = session.user?.plan || 'FREE';
+  // Use live plan from API, fallback to session
+  const [livePlan, setLivePlan] = useState<string>(session.user?.plan || 'FREE');
+  
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const res = await fetch('/api/usage');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.plan) {
+            setLivePlan(data.plan);
+          }
+        }
+      } catch (e) {
+        // Ignore - use session plan
+      }
+    };
+    fetchPlan();
+  }, []);
+
+  const plan = livePlan;
   const isPro = plan === 'PRO' || plan === 'PREMIUM';
+  const isPremium = plan === 'PREMIUM';
 
   return (
     <div className="relative">
@@ -218,6 +239,20 @@ export function UserMenu() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 Upgrade to Pro
+              </Link>
+            )}
+            
+            {isPro && !isPremium && (
+              <Link
+                href="/pricing"
+                onClick={closeMenu}
+                className="flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:text-slate-200 hover:bg-slate-500/10 transition-colors font-medium"
+                role="menuitem"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Upgrade to Premium
               </Link>
             )}
           </div>
