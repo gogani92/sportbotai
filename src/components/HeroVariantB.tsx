@@ -49,10 +49,10 @@ export default function HeroVariantB() {
             </h1>
 
             {/* Subheadline - VARIANT B: More benefit-focused */}
-            <p className="text-base sm:text-lg text-gray-200 leading-relaxed mb-6 sm:mb-8 max-w-xl mx-auto lg:mx-0 bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-              Stop guessing. Get <strong className="text-white">AI-analyzed insights</strong> on any match:
+            <p className="text-base sm:text-lg text-white leading-relaxed mb-6 sm:mb-8 max-w-xl mx-auto lg:mx-0 bg-black/60 backdrop-blur-md rounded-xl px-5 py-4 shadow-xl border border-white/10">
+              Stop guessing. Get <strong className="text-accent">AI-analyzed insights</strong> on any match:
               form trends, head-to-head patterns, and what the data actually says.
-              <span className="block mt-2 text-gray-300 font-medium">Soccer • NBA • NFL • NHL • UFC</span>
+              <span className="block mt-2 text-gray-200 font-semibold">Soccer • NBA • NFL • NHL • UFC</span>
             </p>
 
             {/* CTA Buttons - VARIANT B: Reversed order, different copy */}

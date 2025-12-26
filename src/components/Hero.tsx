@@ -49,9 +49,9 @@ export default function Hero() {
             </h1>
 
             {/* Subheadline */}
-            <p className="text-base sm:text-lg text-gray-200 leading-relaxed mb-6 sm:mb-8 max-w-xl mx-auto lg:mx-0 bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+            <p className="text-base sm:text-lg text-white leading-relaxed mb-6 sm:mb-8 max-w-xl mx-auto lg:mx-0 bg-black/60 backdrop-blur-md rounded-xl px-5 py-4 shadow-xl border border-white/10">
               Pre-match intelligence: headlines, form, H2H history & AI insights.
-              <strong className="text-white"> Soccer, NBA, NFL, NHL & UFC—all in 60 seconds.</strong>
+              <strong className="text-accent"> Soccer, NBA, NFL, NHL & UFC—all in 60 seconds.</strong>
             </p>
 
             {/* CTA Buttons - Stack on mobile */}
