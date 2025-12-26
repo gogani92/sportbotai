@@ -463,6 +463,42 @@ button:focus-visible {
    ANIMATIONS
    ======================================== */
 
+/* Heart burst animation for double-tap */
+@keyframes heartBurst {
+  0% { 
+    transform: scale(0);
+    opacity: 0;
+  }
+  15% { 
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  30% { 
+    transform: scale(0.95);
+  }
+  45% { 
+    transform: scale(1.1);
+  }
+  70% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/* Pull to refresh spin animation */
+@keyframes refresh-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-refresh-spin {
+  animation: refresh-spin 1s linear infinite;
+}
+
 /* Float animation */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }

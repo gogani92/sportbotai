@@ -4,12 +4,14 @@
  * Fixed bottom navigation for mobile devices.
  * Shows key navigation items with icons.
  * Only visible on screens < 768px (md breakpoint).
+ * Auto-hides on scroll down for more content space.
  */
 
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useHideOnScroll } from '@/hooks/useHideOnScroll';
 
 const navItems = [
   {
@@ -60,6 +62,7 @@ const navItems = [
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const isHidden = useHideOnScroll({ threshold: 10, mobileOnly: true });
 
   // Don't show on certain pages
   const hiddenPaths = ['/login', '/register'];
@@ -69,7 +72,12 @@ export default function MobileBottomNav() {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-bg-card/95 backdrop-blur-xl border-t border-divider/50"
+      className={`
+        fixed bottom-0 left-0 right-0 z-50 md:hidden 
+        bg-bg-card/95 backdrop-blur-xl border-t border-divider/50
+        transition-transform duration-300 ease-out
+        ${isHidden ? 'translate-y-full' : 'translate-y-0'}
+      `}
       style={{ 
         paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))',
       }}

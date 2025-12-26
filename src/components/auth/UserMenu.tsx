@@ -56,12 +56,16 @@ export function UserMenu() {
 
   // Close menu when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      // Small delay to allow click events to complete on mobile
+      // This prevents the menu from closing before a menu item click registers
+      const target = event.target as Node;
+      
       if (
         menuRef.current && 
         buttonRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
+        !menuRef.current.contains(target) &&
+        !buttonRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
@@ -75,12 +79,14 @@ export function UserMenu() {
     }
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Use 'click' instead of 'mousedown' to fix mobile touch issues
+      // mousedown fires before the click completes, causing menu to close prematurely
+      document.addEventListener('click', handleClickOutside, true);
       document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside, true);
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
