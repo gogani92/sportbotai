@@ -11,6 +11,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import MobileQuickActions from '@/components/MobileQuickActions';
 import NavigationProgress from '@/components/NavigationProgress';
 import { AuthProvider } from '@/components/auth';
 import { FavoritesProvider } from '@/lib/FavoritesContext';
@@ -215,6 +216,9 @@ export default function RootLayout({
                 
                 {/* Mobile Bottom Navigation */}
                 <MobileBottomNav />
+                
+                {/* Mobile Quick Actions FAB */}
+                <MobileQuickActions />
                 
                 {/* Scroll to Top Button */}
                 <ScrollToTop />

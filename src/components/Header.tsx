@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { UserMenu } from './auth';
+import { useHideOnScroll } from '@/hooks/useHideOnScroll';
 
 // Admin emails list (same as in admin/page.tsx)
 const ADMIN_EMAILS = [
@@ -96,9 +97,17 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: session } = useSession();
   const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+  const { isVisible } = useHideOnScroll({ threshold: 15, mobileOnly: true });
 
   return (
-    <header className="bg-bg/95 backdrop-blur-md border-b border-divider fixed top-0 left-0 right-0 z-50">
+    <header 
+      className={`
+        bg-bg/95 backdrop-blur-md border-b border-divider 
+        fixed top-0 left-0 right-0 z-50
+        transition-transform duration-300 ease-out
+        ${isVisible ? 'translate-y-0' : '-translate-y-full md:translate-y-0'}
+      `}
+    >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
