@@ -11,6 +11,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import NavigationProgress from '@/components/NavigationProgress';
 import { AuthProvider } from '@/components/auth';
 import { FavoritesProvider } from '@/lib/FavoritesContext';
 import { ToastProvider, ScrollToTop } from '@/components/ui';
@@ -190,6 +191,11 @@ export default function RootLayout({
           <FavoritesProvider>
             <ToastProvider>
               <KeyboardShortcutsProvider>
+                {/* Navigation Progress Bar */}
+                <Suspense fallback={null}>
+                  <NavigationProgress />
+                </Suspense>
+                
                 {/* Skip to content link for accessibility */}
                 <a href="#main-content" className="skip-link">
                   Skip to content

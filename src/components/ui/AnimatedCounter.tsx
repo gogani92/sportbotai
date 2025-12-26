@@ -3,11 +3,16 @@
  * 
  * Smooth number animations for stats and metrics.
  * Clean SaaS dashboard feel.
+ * 
+ * Features:
+ * - Smooth easeOutQuart animation
+ * - Optional viewport trigger (animateOnView)
+ * - Configurable duration, prefix, suffix, decimals
  */
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 interface AnimatedCounterProps {
   value: number;
@@ -16,6 +21,10 @@ interface AnimatedCounterProps {
   suffix?: string;
   decimals?: number;
   className?: string;
+  /** Only start animation when element enters viewport */
+  animateOnView?: boolean;
+  /** Threshold for intersection observer (0-1) */
+  viewThreshold?: number;
 }
 
 export default function AnimatedCounter({
@@ -25,15 +34,18 @@ export default function AnimatedCounter({
   suffix = '',
   decimals = 0,
   className = '',
+  animateOnView = false,
+  viewThreshold = 0.3,
 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(animateOnView ? 0 : 0);
+  const [hasAnimated, setHasAnimated] = useState(!animateOnView);
+  const elementRef = useRef<HTMLSpanElement>(null);
   const startTimeRef = useRef<number | null>(null);
   const animationRef = useRef<number | null>(null);
   const startValueRef = useRef(0);
 
-  useEffect(() => {
+  const startAnimation = useCallback((endValue: number) => {
     const startValue = startValueRef.current;
-    const endValue = value;
 
     const animate = (timestamp: number) => {
       if (!startTimeRef.current) {
@@ -57,18 +69,48 @@ export default function AnimatedCounter({
 
     startTimeRef.current = null;
     animationRef.current = requestAnimationFrame(animate);
+  }, [duration]);
+
+  // Viewport detection for animateOnView
+  useEffect(() => {
+    if (!animateOnView || hasAnimated) return;
+
+    const element = elementRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true);
+            startAnimation(value);
+          }
+        });
+      },
+      { threshold: viewThreshold }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [animateOnView, hasAnimated, value, viewThreshold, startAnimation]);
+
+  // Normal animation (when not using animateOnView, or when value changes after initial animation)
+  useEffect(() => {
+    if (animateOnView && !hasAnimated) return;
+    
+    startAnimation(value);
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [value, duration]);
+  }, [value, animateOnView, hasAnimated, startAnimation]);
 
   const formattedValue = displayValue.toFixed(decimals);
 
   return (
-    <span className={`tabular-nums ${className}`}>
+    <span ref={elementRef} className={`tabular-nums ${className}`}>
       {prefix}{formattedValue}{suffix}
     </span>
   );
