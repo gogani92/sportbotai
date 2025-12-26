@@ -1096,24 +1096,47 @@ Return the HTML content ONLY (no JSON wrapper).`;
  * More conservative approach - only remove explicit CTAs, keep match content
  */
 function stripPromotionalContent(content: string): string {
-  return content
-    // Remove specific CTA buttons/links (not entire sections)
-    .replace(/<a[^>]*href="\/(?:register|pricing|login)"[^>]*>[^<]*<\/a>/gi, '')
-    // Remove "Pro tip" paragraphs
-    .replace(/<p[^>]*>\s*(?:<[^>]+>)*\s*Pro tip[^<]*(?:<[^>]+>)*\s*<\/p>/gi, '')
-    // Remove explicit promotional text (but keep the structure)
-    .replace(/Try SportBot AI free|Get Started Free|Start Your Free|Join now|Subscribe today/gi, '')
-    // Remove probability percentages like "55%", "Win: 55%"
-    .replace(/\b(win|probability|chance):\s*\d+%/gi, '')
-    .replace(/\b\d+(\.\d+)?%\s*(probability|chance|win)/gi, '')
-    // Replace betting language with neutral terms
-    .replace(/best bet|betting value|value bet/gi, 'key factor')
-    .replace(/\bstake\b|\bwager\b/gi, 'consideration')
-    .replace(/gamblers?|bettors?/gi, 'fans')
-    .replace(/betting tips|betting preview/gi, 'match analysis')
-    // Clean up empty elements that might result
-    .replace(/<p[^>]*>\s*<\/p>/gi, '')
-    .replace(/<div[^>]*>\s*<\/div>/gi, '');
+  let result = content;
+  
+  // Remove the entire "SportBot AI Prediction" section (heading + following prediction box)
+  result = result.replace(/<h2[^>]*>\s*SportBot AI Prediction\s*<\/h2>/gi, '');
+  
+  // Remove prediction boxes - specifically the ones with "🎯" emoji and prediction content
+  result = result.replace(
+    /<div[^>]*style="[^"]*#10b981[^"]*"[^>]*>\s*<div[^>]*>\s*<span[^>]*>🎯<\/span>[\s\S]*?<\/div>\s*<\/div>/gi,
+    ''
+  );
+  
+  // Remove CTA link elements only (not the containing divs)
+  result = result.replace(/<a[^>]*href="\/(register|pricing|login)"[^>]*>[^<]*<\/a>/gi, '');
+  
+  // Remove inline CTA text that prompts users to sign up
+  result = result.replace(/🤖\s*Want Real-Time AI Analysis\?/gi, '');
+  result = result.replace(/Get live probability updates[^<]*/gi, '');
+  
+  // Remove "Pro tip" paragraphs
+  result = result.replace(/<p[^>]*>\s*(?:<[^>]+>)*\s*Pro tip[^<]*(?:<[^>]+>)*\s*<\/p>/gi, '');
+  
+  // Remove explicit promotional text
+  result = result.replace(/Try SportBot AI free|Get Started Free|Start Your Free|Join now|Subscribe today|See Pro Features|Unlock Advanced Stats/gi, '');
+  
+  // Remove probability percentages shown in prediction boxes like "55%", "Win: 55%"
+  result = result.replace(/\b(win|probability|chance):\s*\d+%/gi, '');
+  result = result.replace(/\b\d+(\.\d+)?%\s*(probability|chance|win)/gi, '');
+  
+  // Replace betting language with neutral terms
+  result = result.replace(/best bet|betting value|value bet/gi, 'key factor');
+  result = result.replace(/\bstake\b|\bwager\b/gi, 'consideration');
+  result = result.replace(/gamblers?|bettors?/gi, 'fans');
+  result = result.replace(/betting tips|betting preview/gi, 'match analysis');
+  
+  // Clean up empty elements (run multiple times to catch nested empties)
+  for (let i = 0; i < 3; i++) {
+    result = result.replace(/<p[^>]*>\s*<\/p>/gi, '');
+    result = result.replace(/<div[^>]*>\s*<\/div>/gi, '');
+  }
+  
+  return result;
 }
 
 /**
