@@ -30,6 +30,14 @@ function getPlanFromPriceId(priceId: string): 'FREE' | 'PRO' | 'PREMIUM' {
   return 'FREE';
 }
 
+// Extract plan type from planName metadata (e.g., "Pro Yearly" -> "PRO", "Premium Monthly" -> "PREMIUM")
+function extractPlanType(planName: string): 'PRO' | 'PREMIUM' {
+  const upper = planName.toUpperCase();
+  if (upper.includes('PREMIUM')) return 'PREMIUM';
+  if (upper.includes('PRO')) return 'PRO';
+  return 'PRO'; // Default to PRO
+}
+
 /**
  * POST /api/stripe/webhook
  */
@@ -103,7 +111,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   console.log('[Stripe Webhook] Checkout completed:', session.id);
   
   const customerEmail = session.customer_email || session.metadata?.userEmail;
-  const planName = session.metadata?.planName?.toUpperCase() || 'PRO';
+  const rawPlanName = session.metadata?.planName || 'Pro';
+  const planType = extractPlanType(rawPlanName);
+  
+  console.log(`[Stripe Webhook] Raw plan name: ${rawPlanName}, Extracted plan type: ${planType}`);
   
   if (!customerEmail) {
     console.error('[Stripe Webhook] No customer email found');
@@ -115,23 +126,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     await prisma.user.update({
       where: { email: customerEmail },
       data: {
-        plan: planName as 'FREE' | 'PRO' | 'PREMIUM',
+        plan: planType,
         stripeCustomerId: session.customer as string,
         stripeSubscriptionId: session.subscription as string,
         analysisCount: 0, // Reset count on upgrade
       },
     });
     
-    console.log(`[Stripe Webhook] User ${customerEmail} upgraded to ${planName}`);
+    console.log(`[Stripe Webhook] User ${customerEmail} upgraded to ${planType}`);
     
     // Send welcome email to customer
-    await sendWelcomeEmail(customerEmail, planName);
+    await sendWelcomeEmail(customerEmail, planType);
     
     // Notify admins about the new purchase
     const amount = session.amount_total 
       ? `$${(session.amount_total / 100).toFixed(2)} ${session.currency?.toUpperCase() || 'USD'}`
       : undefined;
-    await sendAdminPurchaseNotification(customerEmail, planName, amount);
+    await sendAdminPurchaseNotification(customerEmail, planType, amount);
   } catch (error) {
     console.error('[Stripe Webhook] Error updating user:', error);
   }

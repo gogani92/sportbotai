@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -73,13 +73,41 @@ const plans: PricingPlan[] = [
   },
 ];
 
+// Plan hierarchy for comparison
+const PLAN_RANK: Record<string, number> = {
+  FREE: 0,
+  PRO: 1,
+  PREMIUM: 2,
+};
+
 export default function PricingCards() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Single billing period toggle - yearly is default (true = yearly)
   const [isYearlyBilling, setIsYearlyBilling] = useState(true);
+  const [currentPlan, setCurrentPlan] = useState<string>('FREE');
   const { data: session } = useSession();
   const router = useRouter();
+
+  // Fetch user's current plan
+  useEffect(() => {
+    const fetchPlan = async () => {
+      if (!session) {
+        setCurrentPlan('FREE');
+        return;
+      }
+      try {
+        const res = await fetch('/api/usage');
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentPlan(data.plan || 'FREE');
+        }
+      } catch (error) {
+        console.error('Failed to fetch plan:', error);
+      }
+    };
+    fetchPlan();
+  }, [session]);
 
   // Get the toggle state for any plan
   const isYearly = () => isYearlyBilling;
@@ -165,8 +193,15 @@ export default function PricingCards() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
         {/* Free Plan Card */}
-        <div className="rounded-card p-5 sm:p-6 bg-bg-card border border-divider">
-          <div className="text-center mb-6">
+        <div className={`rounded-card p-5 sm:p-6 bg-bg-card ${
+          currentPlan === 'FREE' ? 'border-2 border-accent' : 'border border-divider'
+        } relative`}>
+          {currentPlan === 'FREE' && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-bg text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+              YOUR PLAN
+            </div>
+          )}
+          <div className="text-center mb-6 pt-2">
             <h3 className="text-xl font-bold mb-2 text-white">Free</h3>
             <div className="mb-2">
               <span className="text-4xl font-bold text-white">$0</span>
@@ -187,9 +222,14 @@ export default function PricingCards() {
 
           <button
             onClick={handleFreePlan}
-            className="w-full py-3 px-6 rounded-btn font-semibold transition-all duration-200 bg-bg-elevated text-white hover:bg-bg-elevated/80 border border-divider min-h-[48px]"
+            disabled={currentPlan === 'FREE'}
+            className={`w-full py-3 px-6 rounded-btn font-semibold transition-all duration-200 min-h-[48px] ${
+              currentPlan === 'FREE'
+                ? 'bg-accent/20 text-accent border border-accent/30 cursor-default'
+                : 'bg-bg-elevated text-white hover:bg-bg-elevated/80 border border-divider'
+            }`}
           >
-            Start Free
+            {currentPlan === 'FREE' ? '✓ Current Plan' : 'Start Free'}
           </button>
         </div>
 
@@ -198,25 +238,54 @@ export default function PricingCards() {
           const isPremium = plan.id === 'premium';
           const yearly = isYearly();
           const checkoutId = `${plan.id}-${yearly ? 'yearly' : 'monthly'}`;
+          const planKey = plan.id.toUpperCase(); // 'PRO' or 'PREMIUM'
+          const currentPlanRank = PLAN_RANK[currentPlan] || 0;
+          const thisPlanRank = PLAN_RANK[planKey] || 0;
+          const isCurrentPlan = currentPlan === planKey;
+          const isDowngrade = currentPlanRank > thisPlanRank;
+          const canUpgrade = !isCurrentPlan && !isDowngrade;
+          
+          // Determine button text based on subscription state
+          const getButtonText = () => {
+            if (isCurrentPlan) return '✓ Current Plan';
+            if (isDowngrade) return 'Manage Subscription';
+            return plan.buttonText;
+          };
+          
+          // Handle button click
+          const handleButtonClick = () => {
+            if (isCurrentPlan) return; // Do nothing for current plan
+            if (isDowngrade) {
+              // Go to Stripe portal to downgrade
+              router.push('/account');
+              return;
+            }
+            handleCheckout(plan);
+          };
           
           return (
             <div
               key={plan.id}
               className={`rounded-card p-5 sm:p-6 relative ${
-                plan.highlighted
+                plan.highlighted && canUpgrade
                   ? 'bg-bg-card border-2 border-primary shadow-glow-primary md:scale-105'
-                  : isPremium
+                  : isPremium && canUpgrade
                   ? 'bg-gradient-to-b from-slate-800/50 to-slate-900/50 border-2 border-slate-400/30 shadow-[0_0_20px_rgba(148,163,184,0.15)]'
+                  : isCurrentPlan
+                  ? 'bg-bg-card border-2 border-accent'
                   : 'bg-bg-card border border-divider'
               }`}
             >
               {/* Badge */}
-              {plan.highlighted && (
+              {isCurrentPlan ? (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-bg text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+                  YOUR PLAN
+                </div>
+              ) : plan.highlighted && canUpgrade ? (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
                   MOST POPULAR
                 </div>
-              )}
-              {isPremium && (
+              ) : isPremium && canUpgrade && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900 text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
                   BEST VALUE
                 </div>
@@ -268,10 +337,14 @@ export default function PricingCards() {
 
               {/* CTA Button */}
               <button
-                onClick={() => handleCheckout(plan)}
-                disabled={loading === checkoutId}
+                onClick={handleButtonClick}
+                disabled={loading === checkoutId || isCurrentPlan}
                 className={`w-full py-3 px-6 rounded-btn font-semibold transition-all duration-200 min-h-[48px] ${
-                  plan.highlighted
+                  isCurrentPlan
+                    ? 'bg-accent/20 text-accent border border-accent/30 cursor-default'
+                    : isDowngrade
+                    ? 'bg-bg-elevated text-text-secondary hover:bg-bg-elevated/80 border border-divider'
+                    : plan.highlighted
                     ? 'bg-primary text-white hover:bg-primary/80'
                     : isPremium
                     ? 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-900 hover:from-slate-200 hover:to-slate-300'
@@ -287,7 +360,7 @@ export default function PricingCards() {
                     Loading...
                   </span>
                 ) : (
-                  plan.buttonText
+                  getButtonText()
                 )}
               </button>
             </div>
