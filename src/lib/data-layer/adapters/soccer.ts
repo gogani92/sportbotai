@@ -59,6 +59,32 @@ const LEAGUE_MAPPINGS: Record<string, number> = {
   'major league soccer': LEAGUE_IDS.MLS,
   'champions league': LEAGUE_IDS.CHAMPIONS_LEAGUE,
   'ucl': LEAGUE_IDS.CHAMPIONS_LEAGUE,
+  // New leagues
+  'eredivisie': LEAGUE_IDS.EREDIVISIE,
+  'dutch league': LEAGUE_IDS.EREDIVISIE,
+  'netherlands': LEAGUE_IDS.EREDIVISIE,
+  'soccer_netherlands_eredivisie': LEAGUE_IDS.EREDIVISIE,
+  'primeira liga': LEAGUE_IDS.PRIMEIRA_LIGA,
+  'portuguese league': LEAGUE_IDS.PRIMEIRA_LIGA,
+  'liga portugal': LEAGUE_IDS.PRIMEIRA_LIGA,
+  'soccer_portugal_primeira_liga': LEAGUE_IDS.PRIMEIRA_LIGA,
+  'jupiler pro league': LEAGUE_IDS.JUPILER_PRO_LEAGUE,
+  'belgian league': LEAGUE_IDS.JUPILER_PRO_LEAGUE,
+  'belgium first div': LEAGUE_IDS.JUPILER_PRO_LEAGUE,
+  'soccer_belgium_first_div': LEAGUE_IDS.JUPILER_PRO_LEAGUE,
+  'super lig': LEAGUE_IDS.SUPER_LIG,
+  'turkish league': LEAGUE_IDS.SUPER_LIG,
+  'turkey super league': LEAGUE_IDS.SUPER_LIG,
+  'soccer_turkey_super_league': LEAGUE_IDS.SUPER_LIG,
+  'scottish premiership': LEAGUE_IDS.SCOTTISH_PREMIERSHIP,
+  'scottish league': LEAGUE_IDS.SCOTTISH_PREMIERSHIP,
+  'spfl': LEAGUE_IDS.SCOTTISH_PREMIERSHIP,
+  'soccer_spl': LEAGUE_IDS.SCOTTISH_PREMIERSHIP,
+  'europa league': LEAGUE_IDS.EUROPA_LEAGUE,
+  'uel': LEAGUE_IDS.EUROPA_LEAGUE,
+  'soccer_uefa_europa_league': LEAGUE_IDS.EUROPA_LEAGUE,
+  'europa conference league': LEAGUE_IDS.EUROPA_CONFERENCE_LEAGUE,
+  'uecl': LEAGUE_IDS.EUROPA_CONFERENCE_LEAGUE,
 };
 
 export class SoccerAdapter extends BaseSportAdapter {
@@ -125,6 +151,11 @@ export class SoccerAdapter extends BaseSportAdapter {
       LEAGUE_IDS.BUNDESLIGA,        // 78 - Germany
       LEAGUE_IDS.SERIE_A,           // 135 - Italy
       LEAGUE_IDS.LIGUE_1,           // 61 - France
+      LEAGUE_IDS.EREDIVISIE,        // 88 - Netherlands
+      LEAGUE_IDS.PRIMEIRA_LIGA,     // 94 - Portugal
+      LEAGUE_IDS.JUPILER_PRO_LEAGUE, // 144 - Belgium
+      LEAGUE_IDS.SUPER_LIG,         // 203 - Turkey
+      LEAGUE_IDS.SCOTTISH_PREMIERSHIP, // 179 - Scotland
       LEAGUE_IDS.CHAMPIONSHIP,      // 40 - England 2nd
       LEAGUE_IDS.LA_LIGA_2,         // 141 - Spain 2nd
       LEAGUE_IDS.BUNDESLIGA_2,      // 79 - Germany 2nd
@@ -132,6 +163,7 @@ export class SoccerAdapter extends BaseSportAdapter {
       LEAGUE_IDS.LIGUE_2,           // 62 - France 2nd
       LEAGUE_IDS.CHAMPIONS_LEAGUE,  // 2 - UCL
       LEAGUE_IDS.EUROPA_LEAGUE,     // 3 - UEL
+      LEAGUE_IDS.EUROPA_CONFERENCE_LEAGUE, // 848 - UECL
       LEAGUE_IDS.MLS,               // 253 - USA
     ];
     

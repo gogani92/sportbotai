@@ -30,6 +30,13 @@ export const LEAGUE_IDS = {
   MLS: 253,
   CHAMPIONS_LEAGUE: 2,
   EUROPA_LEAGUE: 3,
+  EUROPA_CONFERENCE_LEAGUE: 848,
+  // Soccer - Newly added leagues
+  EREDIVISIE: 88,              // Netherlands
+  PRIMEIRA_LIGA: 94,           // Portugal
+  JUPILER_PRO_LEAGUE: 144,     // Belgium
+  SUPER_LIG: 203,              // Turkey
+  SCOTTISH_PREMIERSHIP: 179,   // Scotland
   // Soccer - Second Divisions
   CHAMPIONSHIP: 40,      // England
   LA_LIGA_2: 141,        // Spain Segunda
