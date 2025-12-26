@@ -250,13 +250,13 @@ export function UserMenu() {
               <Link
                 href="/pricing"
                 onClick={closeMenu}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:text-slate-200 hover:bg-slate-500/10 transition-colors font-medium"
+                className="flex items-center gap-3 px-4 py-2 text-sm bg-gradient-to-r from-slate-300 via-slate-100 to-slate-300 bg-clip-text text-transparent hover:from-white hover:via-slate-200 hover:to-white hover:bg-slate-500/10 transition-colors font-semibold"
                 role="menuitem"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Upgrade to Premium
+                ✨ Upgrade to Premium
               </Link>
             )}
           </div>
