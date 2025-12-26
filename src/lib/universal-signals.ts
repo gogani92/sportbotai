@@ -212,8 +212,10 @@ function formRatingToLabel(rating: number): 'strong' | 'neutral' | 'weak' {
 
 /**
  * Calculate form trend (comparing first half vs second half of form string)
+ * @deprecated Reserved for future use
  */
-function calculateFormTrend(form: string): 'improving' | 'declining' | 'stable' {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _calculateFormTrend(form: string): 'improving' | 'declining' | 'stable' {
   if (!form || form.length < 4) return 'stable';
   
   const recent = form.slice(0, 2);

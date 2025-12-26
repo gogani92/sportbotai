@@ -16,14 +16,12 @@ import {
   PreMatchInsights,
   MatchHeadline,
   TeamStreak,
-  GoalsTimingPattern,
   VenueSplit,
   H2HInsights,
   FormMatch,
   HeadToHeadMatch,
   TeamStats,
   InjuryContext,
-  PlayerImportance,
 } from '@/types';
 
 interface GenerateInsightsParams {
@@ -312,7 +310,7 @@ function generateH2HInsights(
   // Count wins for each team (considering they might swap home/away)
   let homeTeamWins = 0;
   let awayTeamWins = 0;
-  let draws = 0;
+  let _draws = 0;
 
   h2h.forEach(match => {
     if (match.homeScore > match.awayScore) {
@@ -322,7 +320,7 @@ function generateH2HInsights(
       if (match.awayTeam === homeTeam) homeTeamWins++;
       else awayTeamWins++;
     } else {
-      draws++;
+      _draws++;
     }
   });
 
@@ -584,7 +582,7 @@ function generateHeadlines(params: {
   const headlines: MatchHeadline[] = [];
   const {
     homeTeam, awayTeam, homeStreaks, awayStreaks, h2hInsights, h2h,
-    keyAbsences, homeStats, awayStats, homeMomentumScore, awayMomentumScore,
+    keyAbsences, homeStats: _homeStats, awayStats: _awayStats, homeMomentumScore, awayMomentumScore,
   } = params;
 
   // High impact streaks

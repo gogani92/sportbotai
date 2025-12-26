@@ -12,7 +12,8 @@ import crypto from 'crypto';
 // ============================================
 
 const TWITTER_API_URL = 'https://api.twitter.com/2';
-const TWITTER_UPLOAD_URL = 'https://upload.twitter.com/1.1';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _TWITTER_UPLOAD_URL = 'https://upload.twitter.com/1.1'; // Reserved for media uploads
 
 interface TwitterConfig {
   apiKey: string;
@@ -270,7 +271,7 @@ class TwitterClient {
       }
 
       return { success: true };
-    } catch (error) {
+    } catch (_error) {
       return { success: false, error: 'Failed to connect to Twitter API' };
     }
   }

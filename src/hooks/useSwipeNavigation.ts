@@ -44,7 +44,7 @@ export function useSwipeNavigation({
     direction: null,
   });
   
-  const { trigger } = useHapticFeedback();
+  const { lightTap, mediumTap } = useHapticFeedback();
   const triggeredRef = useRef(false);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -79,7 +79,7 @@ export function useSwipeNavigation({
     
     // Haptic feedback when crossing threshold
     if (Math.abs(deltaX) >= threshold && !triggeredRef.current) {
-      if (haptic) trigger('light');
+      if (haptic) lightTap();
       triggeredRef.current = true;
     } else if (Math.abs(deltaX) < threshold) {
       triggeredRef.current = false;
@@ -91,7 +91,7 @@ export function useSwipeNavigation({
       isSwiping,
       direction,
     }));
-  }, [enabled, swipeState.startX, swipeState.startY, threshold, haptic, trigger]);
+  }, [enabled, swipeState.startX, swipeState.startY, threshold, haptic, lightTap]);
 
   const handleTouchEnd = useCallback(() => {
     if (!enabled || !swipeState.isSwiping) {
@@ -103,10 +103,10 @@ export function useSwipeNavigation({
     
     if (Math.abs(deltaX) >= threshold) {
       if (deltaX > 0 && onSwipeRight) {
-        if (haptic) trigger('medium');
+        if (haptic) mediumTap();
         onSwipeRight();
       } else if (deltaX < 0 && onSwipeLeft) {
-        if (haptic) trigger('medium');
+        if (haptic) mediumTap();
         onSwipeLeft();
       }
     }
@@ -118,7 +118,7 @@ export function useSwipeNavigation({
       isSwiping: false,
       direction: null,
     });
-  }, [enabled, swipeState, threshold, onSwipeLeft, onSwipeRight, haptic, trigger]);
+  }, [enabled, swipeState, threshold, onSwipeLeft, onSwipeRight, haptic, mediumTap]);
 
   // Calculate swipe offset for visual feedback
   const swipeOffset = swipeState.isSwiping 

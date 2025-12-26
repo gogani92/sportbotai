@@ -43,7 +43,7 @@ export function useLongPress({
   const [isLongPressed, setIsLongPressed] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startPosRef = useRef<Position | null>(null);
-  const { trigger } = useHapticFeedback();
+  const { mediumTap } = useHapticFeedback();
 
   const cancel = useCallback(() => {
     if (timerRef.current) {
@@ -78,12 +78,12 @@ export function useLongPress({
       setIsLongPressed(true);
       
       if (haptic) {
-        trigger('medium');
+        mediumTap();
       }
       
       onLongPress?.();
     }, threshold);
-  }, [disabled, threshold, haptic, trigger, onLongPress, onPressStart]);
+  }, [disabled, threshold, haptic, mediumTap, onLongPress, onPressStart]);
 
   const handleMove = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     if (!startPosRef.current || !timerRef.current) return;

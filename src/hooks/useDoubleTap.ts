@@ -27,7 +27,7 @@ export function useDoubleTap({
 }: UseDoubleTapOptions = {}) {
   const lastTapRef = useRef<number>(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { trigger } = useHapticFeedback();
+  const { success } = useHapticFeedback();
 
   const handleTap = useCallback(() => {
     const now = Date.now();
@@ -44,7 +44,7 @@ export function useDoubleTap({
       lastTapRef.current = 0;
       
       if (haptic) {
-        trigger('success');
+        success();
       }
       
       onDoubleTap?.();
@@ -58,7 +58,7 @@ export function useDoubleTap({
         lastTapRef.current = 0;
       }, threshold);
     }
-  }, [threshold, onDoubleTap, onSingleTap, haptic, trigger]);
+  }, [threshold, onDoubleTap, onSingleTap, haptic, success]);
 
   // Touch handler props
   const handlers = {
