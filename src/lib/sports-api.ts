@@ -563,6 +563,12 @@ const SOCCER_LEAGUE_IDS: Record<string, number> = {
   'eredivisie': 88,
   // Belgium
   'jupiler_pro': 144,
+  'belgian_first_div': 144,
+  'belgium_first_div': 144,
+  // Scotland
+  'scottish_premiership': 179,
+  'scotland_premiership': 179,
+  'spl': 179,
 };
 
 /**
@@ -574,7 +580,7 @@ async function detectSoccerLeagueForTeam(teamId: number, baseUrl: string): Promi
   
   if (teamResponse?.response?.[0]?.team) {
     // The team endpoint doesn't directly give league, so we'll try common leagues
-    const commonLeagues = [39, 140, 78, 135, 61, 2, 3]; // EPL, La Liga, Bundesliga, Serie A, Ligue 1, UCL, UEL
+    const commonLeagues = [39, 140, 78, 135, 61, 2, 3, 94, 88, 144, 179]; // EPL, La Liga, Bundesliga, Serie A, Ligue 1, UCL, UEL, Primeira, Eredivisie, Belgium, Scotland
     
     for (const leagueId of commonLeagues) {
       const testResponse = await apiRequest<any>(baseUrl, `/teams/statistics?team=${teamId}&season=${getCurrentSoccerSeason()}&league=${leagueId}`);
@@ -596,7 +602,7 @@ async function getSoccerTeamStats(teamId: number, baseUrl: string): Promise<Team
   const currentSeason = getCurrentSoccerSeason();
   
   // Try common leagues to find the team's stats
-  const leaguesToTry = [39, 140, 78, 135, 61, 2, 3, 94, 88]; // EPL, La Liga, Bundesliga, Serie A, Ligue 1, UCL, UEL, Primeira, Eredivisie
+  const leaguesToTry = [39, 140, 78, 135, 61, 2, 3, 94, 88, 144, 179]; // EPL, La Liga, Bundesliga, Serie A, Ligue 1, UCL, UEL, Primeira, Eredivisie, Belgium, Scotland
   
   let response = null;
   let foundLeague = null;

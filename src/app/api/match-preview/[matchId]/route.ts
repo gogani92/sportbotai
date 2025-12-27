@@ -1076,6 +1076,22 @@ function normalizeLeagueName(league: string): string {
     // Europa League
     'uefa europa league': 'Europa League',
     'europa league': 'Europa League',
+    // New leagues
+    'eredivisie': 'Eredivisie',
+    'netherlands - eredivisie': 'Eredivisie',
+    'dutch eredivisie': 'Eredivisie',
+    'primeira liga': 'Primeira Liga',
+    'portugal - primeira liga': 'Primeira Liga',
+    'liga portugal': 'Primeira Liga',
+    'jupiler pro league': 'Jupiler Pro League',
+    'belgium - first division a': 'Jupiler Pro League',
+    'belgian first div': 'Jupiler Pro League',
+    'scottish premiership': 'Scottish Premiership',
+    'scotland - premiership': 'Scottish Premiership',
+    'spfl premiership': 'Scottish Premiership',
+    'super lig': 'Super Lig',
+    'turkey - super lig': 'Super Lig',
+    'turkish super lig': 'Super Lig',
   };
 
   const normalized = league.toLowerCase().trim();

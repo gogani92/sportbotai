@@ -621,6 +621,11 @@ async function getTeamForm(teamId: number, leagueId?: number): Promise<TeamForm 
         'Italy': 135,
         'Germany': 78,
         'France': 61,
+        'Netherlands': 88,      // Eredivisie
+        'Portugal': 94,         // Primeira Liga
+        'Belgium': 144,         // Jupiler Pro League
+        'Turkey': 203,          // Super Lig
+        'Scotland': 179,        // Scottish Premiership
       };
       leagueId = leagueMap[country];
     }
@@ -984,6 +989,11 @@ export async function getTeamGoalTiming(teamId: number, leagueId?: number): Prom
         'Italy': 135,
         'Germany': 78,
         'France': 61,
+        'Netherlands': 88,      // Eredivisie
+        'Portugal': 94,         // Primeira Liga
+        'Belgium': 144,         // Jupiler Pro League
+        'Turkey': 203,          // Super Lig
+        'Scotland': 179,        // Scottish Premiership
       };
       leagueId = leagueMap[country];
     }
