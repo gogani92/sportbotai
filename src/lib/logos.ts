@@ -1197,6 +1197,9 @@ const SOCCER_TEAM_LOGOS: Record<string, string> = {
   'Malmo FF': 'https://a.espncdn.com/i/teamlogos/soccer/500/2720.png',
   'Malmö': 'https://a.espncdn.com/i/teamlogos/soccer/500/2720.png',
   'Malmo': 'https://a.espncdn.com/i/teamlogos/soccer/500/2720.png',
+  'Basel': 'https://a.espncdn.com/i/teamlogos/soccer/500/989.png',
+  'FC Basel': 'https://a.espncdn.com/i/teamlogos/soccer/500/989.png',
+  'FC Basel 1893': 'https://a.espncdn.com/i/teamlogos/soccer/500/989.png',
 };
 
 /**
