@@ -13,13 +13,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Revalidate blog pages
+    // Revalidate blog and news pages
     revalidatePath('/blog');
     revalidatePath('/blog/[slug]', 'page');
+    revalidatePath('/news');
+    revalidatePath('/news/[slug]', 'page');
 
     return NextResponse.json({
       success: true,
-      message: 'Blog cache cleared',
+      message: 'Blog and News cache cleared',
       revalidatedAt: new Date().toISOString(),
     });
 
