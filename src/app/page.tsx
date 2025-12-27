@@ -9,7 +9,7 @@
 
 import { Metadata } from 'next';
 import HeroABTest from '@/components/HeroABTest';
-import TrendingSection from '@/components/TrendingSection';
+import TrendingSectionServer from '@/components/TrendingSectionServer';
 import HowItWorks from '@/components/HowItWorks';
 import WhyNotTipster from '@/components/WhyNotTipster';
 import Features from '@/components/Features';
@@ -68,8 +68,8 @@ export default function HomePage() {
       {/* Stats strip - social proof */}
       <StatsStrip />
 
-      {/* Trending matches - daily habit driver */}
-      <TrendingSection maxMatches={6} />
+      {/* Trending matches - server-rendered for fast LCP */}
+      <TrendingSectionServer maxMatches={6} />
 
       {/* How it works - 3 steps */}
       <HowItWorks />
