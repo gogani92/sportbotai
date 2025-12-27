@@ -836,6 +836,10 @@ export default function MatchPreviewClient({ matchId }: MatchPreviewClientProps)
             awayTeam={data.matchInfo.awayTeam}
             verdict={data.headlines?.[0]?.text || `${data.matchInfo.homeTeam} vs ${data.matchInfo.awayTeam}`}
             kickoff={data.matchInfo.kickoff}
+            league={data.matchInfo.league}
+            risk={data.story.confidence === 'strong' ? 'LOW' : data.story.confidence === 'moderate' ? 'MEDIUM' : 'HIGH'}
+            confidence={data.story.confidence === 'strong' ? 85 : data.story.confidence === 'moderate' ? 70 : 55}
+            sport={data.matchInfo.sport}
           />
         </div>
 

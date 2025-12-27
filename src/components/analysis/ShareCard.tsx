@@ -3,11 +3,12 @@
  * 
  * Quick actions to share the analysis.
  * Generate shareable image, copy link, etc.
+ * Uses short URLs for cleaner sharing with OG image previews.
  */
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 interface ShareCardProps {
   matchId: string;
@@ -15,6 +16,10 @@ interface ShareCardProps {
   awayTeam: string;
   verdict: string;
   kickoff: string;
+  league?: string;
+  risk?: string;
+  confidence?: number;
+  sport?: string;
 }
 
 export default function ShareCard({
@@ -23,18 +28,63 @@ export default function ShareCard({
   awayTeam,
   verdict,
   kickoff,
+  league = '',
+  risk = 'MEDIUM',
+  confidence = 70,
+  sport = 'soccer',
 }: ShareCardProps) {
   const [copied, setCopied] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
-  const shareUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/match/${matchId}`
-    : '';
+  // Create a short share URL with OG metadata
+  const createShortUrl = useCallback(async (): Promise<string> => {
+    // Return cached URL if available
+    if (shortUrl) return shortUrl;
+    
+    // Fallback URL
+    const fallbackUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}/match/${matchId}`
+      : `https://www.sportbotai.com/match/${matchId}`;
+    
+    setIsCreating(true);
+    try {
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          homeTeam,
+          awayTeam,
+          league,
+          verdict,
+          risk,
+          confidence,
+          date: kickoff,
+          sport,
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success && data.url) {
+        setShortUrl(data.url);
+        return data.url;
+      }
+    } catch (err) {
+      console.error('Failed to create share URL:', err);
+    } finally {
+      setIsCreating(false);
+    }
+    
+    return fallbackUrl;
+  }, [matchId, homeTeam, awayTeam, league, verdict, risk, confidence, kickoff, sport, shortUrl]);
 
-  const shareText = `🎯 ${homeTeam} vs ${awayTeam}\n\n${verdict}\n\nFull AI analysis:`;
+  const getShareText = (url: string) => 
+    `🎯 ${homeTeam} vs ${awayTeam}\n\n${verdict}\n\nFull AI analysis:`;
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      const url = await createShortUrl();
+      await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -42,28 +92,33 @@ export default function ShareCard({
     }
   };
 
-  const handleShareTwitter = () => {
+  const handleShareTwitter = async () => {
+    const url = await createShortUrl();
+    const shareText = getShareText(url);
     const params = new URLSearchParams();
     params.set('text', shareText);
-    params.set('url', shareUrl);
+    params.set('url', url);
     params.set('via', 'SportBotAI');
     params.set('hashtags', 'SportBot,AIAnalysis');
-    const url = `https://twitter.com/intent/tweet?${params.toString()}`;
-    window.open(url, '_blank', 'width=550,height=420,noopener,noreferrer');
+    const twitterUrl = `https://twitter.com/intent/tweet?${params.toString()}`;
+    window.open(twitterUrl, '_blank', 'width=550,height=420,noopener,noreferrer');
   };
 
-  const handleShareWhatsApp = () => {
-    const url = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
-    window.open(url, '_blank');
+  const handleShareWhatsApp = async () => {
+    const url = await createShortUrl();
+    const shareText = getShareText(url);
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${url}`)}`;
+    window.open(waUrl, '_blank');
   };
 
   const handleNativeShare = async () => {
     if (navigator.share) {
       try {
+        const url = await createShortUrl();
         await navigator.share({
           title: `${homeTeam} vs ${awayTeam} Analysis`,
           text: verdict,
-          url: shareUrl,
+          url,
         });
       } catch (err) {
         console.error('Share failed:', err);
