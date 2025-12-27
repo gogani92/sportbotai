@@ -5,6 +5,11 @@ const nextConfig = {
   // Omogućava striktni React mode za bolje debagovanje
   reactStrictMode: true,
   
+  // Optimize for modern browsers only (removes polyfills)
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns'],
+  },
+  
   // Configure external image domains for Next.js Image component
   images: {
     remotePatterns: [
