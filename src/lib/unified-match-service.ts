@@ -380,10 +380,6 @@ async function getFromDatabase(match: MatchIdentifier): Promise<{
   predictionId?: string;
 } | null> {
   try {
-    // Build matchName pattern for search (reserved for future exact matching)
-    const _matchNamePattern = `${match.homeTeam} vs ${match.awayTeam}`;
-    const _matchNamePatternAlt = `${match.awayTeam} vs ${match.homeTeam}`;
-    
     // Check for existing prediction in database
     const prediction = await prisma.prediction.findFirst({
       where: {

@@ -1853,18 +1853,18 @@ async function findNBATeam(teamName: string, baseUrl: string): Promise<number | 
   // Search strategies in order of preference
   const searchStrategies = [
     // Exact name match
-    (t: any) => t.name?.toLowerCase() === normalizedName.toLowerCase(),
-    (t: any) => t.name?.toLowerCase() === teamName.toLowerCase(),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.name?.toLowerCase() === normalizedName.toLowerCase(),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.name?.toLowerCase() === teamName.toLowerCase(),
     // Nickname match (e.g., "Lakers")
-    (t: any) => t.nickname?.toLowerCase() === normalizedName.toLowerCase(),
-    (t: any) => t.nickname?.toLowerCase() === teamName.toLowerCase(),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.nickname?.toLowerCase() === normalizedName.toLowerCase(),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.nickname?.toLowerCase() === teamName.toLowerCase(),
     // City match (e.g., "Los Angeles")
-    (t: any) => t.city?.toLowerCase() === normalizedName.toLowerCase(),
-    (t: any) => t.city?.toLowerCase() === teamName.toLowerCase(),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.city?.toLowerCase() === normalizedName.toLowerCase(),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.city?.toLowerCase() === teamName.toLowerCase(),
     // Contains match
-    (t: any) => t.name?.toLowerCase().includes(normalizedName.toLowerCase()),
-    (t: any) => t.name?.toLowerCase().includes(teamName.toLowerCase()),
-    (t: any) => t.nickname?.toLowerCase().includes(normalizedName.toLowerCase()),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.name?.toLowerCase().includes(normalizedName.toLowerCase()),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.name?.toLowerCase().includes(teamName.toLowerCase()),
+    (t: { id: number; name?: string; nickname?: string; city?: string }) => t.nickname?.toLowerCase().includes(normalizedName.toLowerCase()),
   ];
   
   for (const strategy of searchStrategies) {
@@ -1994,7 +1994,8 @@ async function getNBAH2H(homeTeamId: number, awayTeamId: number, baseUrl: string
   return result;
 }
 
-async function fetchNBAData(homeTeam: string, awayTeam: string, baseUrl: string): Promise<MultiSportEnrichedData> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _fetchNBAData(homeTeam: string, awayTeam: string, baseUrl: string): Promise<MultiSportEnrichedData> {
   const [homeTeamId, awayTeamId] = await Promise.all([
     findNBATeam(homeTeam, baseUrl),
     findNBATeam(awayTeam, baseUrl),
