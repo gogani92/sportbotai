@@ -231,8 +231,8 @@ export class SoccerAdapter extends BaseSportAdapter {
         }
         
         // Only try first league variation if we found nothing - avoid too many API calls
-        // Increased to 6 to cover top + second tier of major leagues
-        if (!leagueId && leaguesToTry.indexOf(tryLeague) >= 6) {
+        // Increased to 10 to cover Belgian, Turkish, and other leagues
+        if (!leagueId && leaguesToTry.indexOf(tryLeague) >= 10) {
           console.log(`[Soccer] Stopping league search after checking ${leaguesToTry.indexOf(tryLeague) + 1} leagues`);
           break;
         }

@@ -981,6 +981,7 @@ const SOCCER_TEAM_LOGOS: Record<string, string> = {
   'Union Saint-Gilloise': 'https://a.espncdn.com/i/teamlogos/soccer/500/5807.png',
   'Zulte Waregem': 'https://a.espncdn.com/i/teamlogos/soccer/500/4691.png',
   'SV Zulte Waregem': 'https://a.espncdn.com/i/teamlogos/soccer/500/4691.png',
+  'SV Zulte-Waregem': 'https://a.espncdn.com/i/teamlogos/soccer/500/4691.png',
   'Zulte-Waregem': 'https://a.espncdn.com/i/teamlogos/soccer/500/4691.png',
   'Essevee': 'https://a.espncdn.com/i/teamlogos/soccer/500/4691.png',
   'RAAL La Louvière': 'https://a.espncdn.com/i/teamlogos/soccer/500/131235.png',

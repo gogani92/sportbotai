@@ -956,6 +956,7 @@ export class DataLayer {
       includeInjuries?: boolean;
       recentGamesLimit?: number;
       h2hLimit?: number;
+      league?: string;
     } = {}
   ): Promise<DataLayerResponse<EnrichedMatchData>> {
     const opts = {
@@ -965,14 +966,15 @@ export class DataLayer {
       includeInjuries: options.includeInjuries ?? true,
       recentGamesLimit: options.recentGamesLimit ?? 5,
       h2hLimit: options.h2hLimit ?? 5,
+      league: options.league,
     };
     
     this.log('getEnrichedMatchData', { sport, homeTeam, awayTeam, options: opts });
     
-    // Find both teams
+    // Find both teams - pass league to help resolve teams in less popular leagues
     const [homeTeamResult, awayTeamResult] = await Promise.all([
-      this.findTeam({ name: homeTeam, sport }),
-      this.findTeam({ name: awayTeam, sport }),
+      this.findTeam({ name: homeTeam, sport, league: opts.league }),
+      this.findTeam({ name: awayTeam, sport, league: opts.league }),
     ]);
     
     // Log team lookup results

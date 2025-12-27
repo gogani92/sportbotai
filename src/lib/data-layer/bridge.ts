@@ -155,7 +155,7 @@ export async function getEnrichedMatchDataV2(
   }
   
   try {
-    console.log(`[Bridge] Calling dataLayer.getEnrichedMatchData...`);
+    console.log(`[Bridge] Calling dataLayer.getEnrichedMatchData with league: ${league || 'auto-detect'}...`);
     const result = await dataLayer.getEnrichedMatchData(
       normalizedSport,
       homeTeam,
@@ -167,6 +167,7 @@ export async function getEnrichedMatchDataV2(
         includeInjuries: false, // Not used in old format
         recentGamesLimit: 5,
         h2hLimit: 10,
+        league, // Pass league to help resolve teams in less popular leagues
       }
     );
     
