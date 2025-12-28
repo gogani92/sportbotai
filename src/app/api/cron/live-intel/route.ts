@@ -39,6 +39,10 @@ const CRON_SECRET = process.env.CRON_SECRET;
 // Minimum conviction to post (1-5 scale, 3+ = worth posting)
 const MIN_CONVICTION_TO_POST = 3;
 
+// TWITTER AUTO-POST: Set to false to pause automatic Twitter posting
+// (for when account is in restricted mode - manual posts only)
+const TWITTER_AUTO_POST_ENABLED = false;
+
 // Categories to rotate through
 const AUTO_POST_CATEGORIES: PostCategory[] = [
   'LINEUP_INTEL',
@@ -470,9 +474,10 @@ export async function GET(request: NextRequest) {
     console.log(`[Live-Intel-Cron] Created post ${post.id} (confidence: ${postResult.confidence}/10) in ${Date.now() - startTime}ms`);
     
     // Post to Twitter only every 4th post AND only for high-confidence posts (7+)
+    // AND only if auto-posting is enabled (may be paused for account restrictions)
     const totalPosts = await prisma.agentPost.count();
     const isHighConfidence = postResult.confidence >= 7;
-    const shouldPostToTwitter = (totalPosts % 4 === 0) && isHighConfidence;
+    const shouldPostToTwitter = TWITTER_AUTO_POST_ENABLED && (totalPosts % 4 === 0) && isHighConfidence;
     
     let twitterResult = null;
     if (shouldPostToTwitter) {
