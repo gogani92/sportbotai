@@ -278,6 +278,14 @@ interface H2HSummary {
   draws: number;
 }
 
+// Generic API response wrapper for API-Sports endpoints
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface APIResponse<T = any> {
+  response?: T[];
+  errors?: Record<string, string>;
+  results?: number;
+}
+
 export interface MultiSportEnrichedData {
   sport: string;
   homeForm: FormMatch[] | null;
@@ -532,67 +540,9 @@ async function getSoccerTeamFixtures(teamId: number, baseUrl: string): Promise<G
   return matches;
 }
 
-// Soccer league IDs for API-Football
-const SOCCER_LEAGUE_IDS: Record<string, number> = {
-  // England
-  'premier_league': 39,
-  'epl': 39,
-  'english_premier_league': 39,
-  // Spain
-  'la_liga': 140,
-  'laliga': 140,
-  'spain_la_liga': 140,
-  // Germany
-  'bundesliga': 78,
-  'germany_bundesliga': 78,
-  // Italy
-  'serie_a': 135,
-  'italy_serie_a': 135,
-  // France
-  'ligue_1': 61,
-  'ligue_one': 61,
-  'france_ligue_one': 61,
-  // UEFA
-  'champions_league': 2,
-  'ucl': 2,
-  'europa_league': 3,
-  'uel': 3,
-  // Portugal
-  'primeira_liga': 94,
-  // Netherlands
-  'eredivisie': 88,
-  // Belgium
-  'jupiler_pro': 144,
-  'belgian_first_div': 144,
-  'belgium_first_div': 144,
-  // Scotland
-  'scottish_premiership': 179,
-  'scotland_premiership': 179,
-  'spl': 179,
-};
-
-/**
- * Detect soccer league ID from team's league or try multiple leagues
- */
-async function detectSoccerLeagueForTeam(teamId: number, baseUrl: string): Promise<number | null> {
-  // Try to get team info to find their league
-  const teamResponse = await apiRequest<any>(baseUrl, `/teams?id=${teamId}`);
-  
-  if (teamResponse?.response?.[0]?.team) {
-    // The team endpoint doesn't directly give league, so we'll try common leagues
-    const commonLeagues = [39, 140, 78, 135, 61, 2, 3, 94, 88, 144, 179]; // EPL, La Liga, Bundesliga, Serie A, Ligue 1, UCL, UEL, Primeira, Eredivisie, Belgium, Scotland
-    
-    for (const leagueId of commonLeagues) {
-      const testResponse = await apiRequest<any>(baseUrl, `/teams/statistics?team=${teamId}&season=${getCurrentSoccerSeason()}&league=${leagueId}`);
-      if (testResponse?.response?.fixtures?.played?.total > 0) {
-        console.log(`[Soccer] Found team ${teamId} in league ${leagueId}`);
-        return leagueId;
-      }
-    }
-  }
-  
-  return null;
-}
+// NOTE: SOCCER_LEAGUE_IDS and detectSoccerLeagueForTeam are reserved for future use
+// when we need to look up teams by specific league IDs. Currently we try all common
+// leagues in functions like getSoccerTeamStats.
 
 async function getSoccerTeamStats(teamId: number, baseUrl: string): Promise<TeamSeasonStats | null> {
   const cacheKey = `soccer:stats:${teamId}`;

@@ -195,7 +195,7 @@ export default function PricingCards() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
-        {/* Free Plan Card */}}
+        {/* Free Plan Card */}
         <div className={`rounded-card p-5 sm:p-6 bg-bg-card ${
           currentPlan === 'FREE' ? 'border-2 border-accent' : 'border border-divider'
         } relative`}>
